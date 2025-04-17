@@ -92,7 +92,7 @@ void DatabaseViewer::addEntry(){
                 int row = dbModel->rowCount();
 
                 dbModel->insertRow(row);
-                dbModel->addGame(game);
+                // dbModel->addGame(game);
                 for(int h = 0; h < game.headerInfo.size(); h++){
                     if(DATA_ORDER[h] > -1){
                         QModelIndex index = dbModel->index(row, DATA_ORDER[h]);

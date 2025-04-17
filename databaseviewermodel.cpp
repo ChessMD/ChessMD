@@ -99,7 +99,7 @@ QVariant DatabaseViewerModel::headerData(int section, Qt::Orientation orientatio
 }
 
 void DatabaseViewerModel::addGame(const PGNGameData& game) {
-    m_gameData.emplace_back(std::move(game)); // Non copyable
+    // m_gameData.emplace_back(std::move(game)); // Non copyable
 }
 
 const PGNGameData& DatabaseViewerModel::getGame(int row) const {
