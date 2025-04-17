@@ -125,9 +125,10 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
 
-    const PGNGameData& game = dbModel->getGame(row);
-    qDebug() << game.headerInfo.front().first;
-    emit gameActivated(game);
+    // const PGNGameData& game = dbModel->getGame(row);
+
+    const PGNGameData* game = new PGNGameData;
+    emit gameActivated(*game);
 }
 
 
