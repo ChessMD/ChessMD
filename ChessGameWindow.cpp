@@ -1,8 +1,7 @@
 #include "chessgamewindow.h"
 #include "notation.h"
-#include "notationviewer.h"
+#include "NotationViewer.h"
 #include "streamparser.h"
-#include "pgngamedata.h"
 #include "chessposition.h"
 
 #include <QDebug>
@@ -16,17 +15,18 @@
 #include <QPushButton>
 
 void setup(const QSharedPointer<NotationMove>& root){
-    QSharedPointer<NotationMove> move1(new NotationMove("e4"));
+    ChessPosition *pos = new ChessPosition;
+    QSharedPointer<NotationMove> move1(new NotationMove("e4", *pos));
     move1->FEN = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
-    QSharedPointer<NotationMove> move2(new NotationMove("e5"));
+    QSharedPointer<NotationMove> move2(new NotationMove("e5", *pos));
     move2->FEN = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2";
-    QSharedPointer<NotationMove> move3(new NotationMove("e6"));
+    QSharedPointer<NotationMove> move3(new NotationMove("e6", *pos));
     move3->FEN = "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
-    QSharedPointer<NotationMove> move4(new NotationMove("c5"));
+    QSharedPointer<NotationMove> move4(new NotationMove("c5", *pos));
     move4->FEN = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
-    QSharedPointer<NotationMove> move5(new NotationMove("Nf3"));
+    QSharedPointer<NotationMove> move5(new NotationMove("Nf3", *pos));
     move5->FEN = "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 0 2";
-    QSharedPointer<NotationMove> move6(new NotationMove("Nf3"));
+    QSharedPointer<NotationMove> move6(new NotationMove("Nf3", *pos));
     move6->FEN = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 0 2";
 
     linkMoves(root, move1);
@@ -49,9 +49,10 @@ ChessGameWindow::ChessGameWindow (QWidget *parent)
     boardView->setMinimumSize(200, 200);
     setCentralWidget(boardView);
 
-    QSharedPointer<NotationMove> rootMove(new NotationMove(""));
-    rootMove->FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    setup(rootMove);
+    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    if (rootMove->m_position != nullptr)
+        rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
+    // setup(rootMove);
 
     // Create our custom NotationViewer widget and set the notation data.
     m_notationViewer = new NotationViewer(parent);
@@ -70,6 +71,7 @@ ChessGameWindow::ChessGameWindow (QWidget *parent)
     buttonLayout->addWidget(resetBoard);
     buttonLayout->addWidget(exportPgn);
 
+    connect(chessPosition, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
     connect(pasteGame, &QPushButton::clicked, this, &ChessGameWindow::onPasteClicked);
     connect(loadPgn, &QPushButton::clicked, this, &ChessGameWindow::onLoadPgnClicked);
     connect(resetBoard, &QPushButton::clicked, this, &ChessGameWindow::onResetBoardClicked);
@@ -96,9 +98,11 @@ ChessGameWindow::ChessGameWindow (QWidget *parent)
     installEventFilter(this);
 
     QObject::connect(m_notationViewer, &NotationViewer::moveSelected, [=](const QSharedPointer<NotationMove>& move) {
-        if (!move.isNull()) {
-            QVector<QVector<QString>> boardData = convertFenToBoardData(move->FEN);
-            chessPosition->setBoardData(boardData);
+        if (!move.isNull() && move->m_position) {
+            qDebug() << move->m_position->plyCount;
+            chessPosition->setBoardData(move->m_position->boardData());
+            chessPosition->plyCount = move->m_position->plyCount;
+            // QVector<QVector<QString>> boardData = convertFenToBoardData(move->FEN);
         }
     });
 }
@@ -141,11 +145,24 @@ bool ChessGameWindow::eventFilter(QObject* obj, QEvent* event)
             deleteMovesAfter(m_notationViewer->m_selectedMove);
             m_notationViewer->refresh();
         } else if (keyEvent->key() == Qt::Key_BracketLeft){ // Key: '['
-            m_notationViewer->m_selectedMove =deleteVariation(m_notationViewer->m_selectedMove);
+            m_notationViewer->m_selectedMove = deleteVariation(m_notationViewer->m_selectedMove);
             emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
             m_notationViewer->refresh();
+        } else if (keyEvent->key() == Qt::Key_W){ // Key: '['
+            // m_notationViewer->m_selectedMove = promoteVariation(m_notationViewer->m_selectedMove);
+            // emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
+            // m_notationViewer->refresh();
         }
     }
     // For all other events, call the base class event filter.
     return QMainWindow::eventFilter(obj, event);
+}
+
+void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move) {
+    // e.g. push it into your notation pane
+    qDebug() << "Received";
+    linkMoves(m_notationViewer->m_selectedMove, move);
+    m_notationViewer->m_selectedMove = move;
+    emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
+    m_notationViewer->refresh();
 }

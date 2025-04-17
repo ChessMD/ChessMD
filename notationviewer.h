@@ -19,21 +19,19 @@ class NotationViewer : public QAbstractScrollArea
 public:
     explicit NotationViewer(QWidget* parent = nullptr);
 
-    // Set the starting position
     void setRootMove(const QSharedPointer<NotationMove>& notation);
     QSharedPointer<NotationMove> getRootMove();
     QSharedPointer<NotationMove> getSelectedMove();
 
     void refresh();
 
-    QSharedPointer<NotationMove> m_selectedMove; // Currently selected move
+    QSharedPointer<NotationMove> m_selectedMove; // Current move
 
 public slots:
     void selectPreviousMove();
     void selectNextMove();
 
 signals:
-    // Emitted when a move is selected (clicked or navigated).
     void moveSelected(const QSharedPointer<NotationMove>& move);
 
 protected:
@@ -43,26 +41,23 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
 private:
-    // Recursively layout and draw the notation.
+    // DFS traverse notation tree
     void drawNotation(QPainter& painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool shouldDrawMove = true);
+
+    // Draw individual move
     void drawMove(QPainter& painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y);
 
-    // Clear the cached layout information.
     void clearLayout();
-
-    // Rebuild layout (calculate MoveSegment positions).
     void layoutNotation();
 
-    // Returns the next X position given current text, wrapping if necessary.
     void drawTextSegment(QPainter &painter, const QString &text, int x, int &y, int indent, int availableWidth, QRect &outRect);
 
-    // Data members.
     QSharedPointer<NotationMove> m_rootMove;
-    QList<MoveSegment> m_moveSegments;   // Collected clickable segments
+    QList<MoveSegment> m_moveSegments;   // Clickable segments
 
-    // Parameters for drawing.
-    int m_indentStep;   // pixels to indent for each variation level
-    int m_lineSpacing;  // additional line spacing
+    // Parameters for drawing
+    int m_indentStep;
+    int m_lineSpacing;
 };
 
 

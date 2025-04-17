@@ -5,6 +5,8 @@
 #include <QVector>
 #include <QObject>
 
+#include "notation.h"
+
 class ChessPosition: public QObject
 {
     Q_OBJECT
@@ -23,6 +25,8 @@ public:
 
 signals:
     void boardDataChanged();
+
+    void moveMade(QSharedPointer<NotationMove> move);
 
 private:
     QVector<QVector<QString>> m_boardData;

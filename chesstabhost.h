@@ -1,6 +1,8 @@
 #ifndef CHESSTABHOST_H
 #define CHESSTABHOST_H
 
+#include "pgngamedata.h"
+
 #include <QWidget>
 #include <QTabBar>
 #include <QToolButton>
@@ -21,7 +23,7 @@ private slots:
     void onTabMoved(int from, int to);
     void onTabReplaced(const QString &fileIdentifier);
 
-    void onGameActivated();
+    void onGameActivated(const PGNGameData &game);
 
 private:
     QTabBar* tabBar;

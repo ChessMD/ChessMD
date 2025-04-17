@@ -97,3 +97,15 @@ QVariant DatabaseViewerModel::headerData(int section, Qt::Orientation orientatio
 
     return QVariant();
 }
+
+void DatabaseViewerModel::addGame(const PGNGameData& game) {
+    m_gameData.emplace_back(std::move(game)); // Non copyable
+}
+
+const PGNGameData& DatabaseViewerModel::getGame(int row) const {
+    if (row >= 0 && row < m_gameData.size()){
+        return m_gameData[row];
+    }
+    throw std::out_of_range("Invalid row index in getGame()");
+}
+

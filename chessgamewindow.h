@@ -17,10 +17,13 @@ private:
     NotationViewer* m_notationViewer;
 
 private slots:
+    void onMoveMade(QSharedPointer<NotationMove> move);
+
     void onPasteClicked();
     void onLoadPgnClicked();
     void onResetBoardClicked();
     void onExportPgnClicked();
+
 
 signals:
 };

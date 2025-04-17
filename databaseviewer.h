@@ -27,7 +27,7 @@ public:
     ~DatabaseViewer();
 
 signals:
-    void gameActivated();
+    void gameActivated(const PGNGameData& game);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

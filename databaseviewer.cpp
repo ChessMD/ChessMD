@@ -24,10 +24,9 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
 
     dbView->setSelectionBehavior(QAbstractItemView::SelectRows);
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
-    connect(dbView,
-            &QAbstractItemView::doubleClicked,
-            this,
-            &DatabaseViewer::onTableActivated);
+
+    // Signal when a row is double clicked and open a board
+    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onTableActivated);
 
     dbModel = new DatabaseViewerModel(this);
     proxyModel = new DatabaseFilterProxyModel(parent);
@@ -84,24 +83,24 @@ void DatabaseViewer::addEntry(){
         std::ifstream file(file_name.toStdString());
         if(file.fail()) return;
 
+        // Parse PGN and get headers
         StreamParser parser(file);
-
         std::vector<PGNGameData> database = parser.parseDatabase();
 
-        for(auto &i: database){
-            if(i.headerInfo.size() > 0){
+        for(auto &game: database){
+            if(game.headerInfo.size() > 0){
                 int row = dbModel->rowCount();
 
                 dbModel->insertRow(row);
-                for(int h = 0; h < i.headerInfo.size(); h++){
+                dbModel->addGame(game);
+                for(int h = 0; h < game.headerInfo.size(); h++){
                     if(DATA_ORDER[h] > -1){
                         QModelIndex index = dbModel->index(row, DATA_ORDER[h]);
-                        dbModel->setData(index, QString::fromStdString(i.headerInfo[h].second));
+                        dbModel->setData(index, QString::fromStdString(game.headerInfo[h].second));
                     }
-
                 }
             } else {
-                qDebug() << "Error: Empty Header!";
+                qDebug() << "Error: no game found!";
             }
         }
     }
@@ -120,7 +119,15 @@ void DatabaseViewer::filter(){
 }
 
 void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
-    emit gameActivated();
+    if (!proxyIndex.isValid())
+        return;
+
+    QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
+    int row = sourceIndex.row();
+
+    const PGNGameData& game = dbModel->getGame(row);
+    qDebug() << game.headerInfo.front().first;
+    emit gameActivated(game);
 }
 
 

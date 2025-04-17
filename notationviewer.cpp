@@ -7,11 +7,10 @@
 #include <QScrollBar>
 #include <QDebug>
 
-NotationViewer::NotationViewer(QWidget* parent)
-    : QAbstractScrollArea(parent),
-    m_indentStep(20),
-    m_lineSpacing(4)
+NotationViewer::NotationViewer(QWidget* parent) : QAbstractScrollArea(parent)
 {
+    m_indentStep = 20;
+    m_lineSpacing = 4;
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
@@ -42,14 +41,14 @@ void NotationViewer::clearLayout()
 
 void NotationViewer::layoutNotation()
 {
-    // Use a temporary painter to compute text layout.
+    // Temporary painter to compute text layout
     QPixmap dummy(viewport()->size());
     QPainter painter(&dummy);
     painter.setFont(font());
     int x = 0, y = 0;
     if (m_rootMove)
         drawNotation(painter, m_rootMove, 0, x, y);
-    // Set the viewport's height based on total text height.
+    // Set the viewport's height based on total text height
     verticalScrollBar()->setRange(0, qMax(0, y - viewport()->height()));
     verticalScrollBar()->setPageStep(viewport()->height());
 }
@@ -60,20 +59,18 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
     int availableWidth = viewport()->width() - indent - 10; // some padding
     int lineHeight = fm.height() + m_lineSpacing;
 
-    // Build the string parts.
     QString preComment = currentMove->commentBefore.isEmpty() ? "" : currentMove->commentBefore + " ";
     QString moveStr = currentMove->moveText;
     QString annotations = currentMove->annotation1 + currentMove->annotation2;
     QString postComment = currentMove->commentAfter;
     QString fullMove = preComment + moveStr + annotations + postComment + " ";
 
-    // If the move text does not fit in the remaining width, wrap to next line.
+    // Line wrap
     if (x + fm.horizontalAdvance(fullMove) > viewport()->width() - 10) {
         x = indent;
         y += lineHeight;
     }
 
-    // Draw the full move string.
     painter.drawText(x, y + fm.ascent(), fullMove);
 
     // Record the bounding rectangle for the move text portion (we want the move text clickable).
@@ -94,7 +91,7 @@ void NotationViewer::drawNotation(QPainter &painter, const QSharedPointer<Notati
     QFontMetrics fm(painter.font());
     int lineHeight = fm.height() + m_lineSpacing;
 
-    // Draw brackets around the variation if it is not a root.
+    // Draw brackets around the variation if it is not a root
     if (currentMove->isVarRoot) {
         // Draw opening bracket before the first move
         painter.drawText(x, y + fm.ascent(), "( ");
@@ -160,11 +157,11 @@ void NotationViewer::paintEvent(QPaintEvent* /*event*/)
 
 void NotationViewer::mousePressEvent(QMouseEvent *event)
 {
-    // Adjust for scroll offset.
+    // Adjust for scroll offset
     QPoint pos = event->pos();
     pos.setY(pos.y() + verticalScrollBar()->value());
 
-    // Check each move segment for a hit.
+    // Check for clicked move segment
     for (const MoveSegment &seg : m_moveSegments) {
         if (seg.rect.contains(pos)) {
             m_selectedMove = seg.move;
@@ -176,7 +173,6 @@ void NotationViewer::mousePressEvent(QMouseEvent *event)
     QAbstractScrollArea::mousePressEvent(event);
 }
 
-// Public slot: navigate to the previous move in the current variation.
 void NotationViewer::selectPreviousMove()
 {
     if (m_selectedMove != nullptr && m_selectedMove->m_previousMove != nullptr){
@@ -186,7 +182,6 @@ void NotationViewer::selectPreviousMove()
     }
 }
 
-// Public slot: navigate to the next move in the current variation.
 void NotationViewer::selectNextMove()
 {
     if (m_selectedMove != nullptr && !m_selectedMove->m_nextMoves.isEmpty()){

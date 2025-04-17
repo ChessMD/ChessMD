@@ -91,8 +91,8 @@ void ChessTabHost::onTabCloseRequested(int index) {
 }
 
 void ChessTabHost::onAddTabClicked() {
-    addNewTab(new DatabaseLibrary, "New Tab");
-    // addNewTab(new ChessGameWindow, "Board UI");
+    // addNewTab(new DatabaseLibrary, "New Tab");
+    addNewTab(new ChessGameWindow, "Board UI");
 }
 
 void ChessTabHost::onTabMoved(int from, int to) {
@@ -107,7 +107,7 @@ void ChessTabHost::onTabReplaced(const QString &fileIdentifier)
     addNewTab(new DatabaseViewer, fileIdentifier);
 }
 
-void ChessTabHost::onGameActivated() {
+void ChessTabHost::onGameActivated(const PGNGameData &game) {
     auto *gameWin = new ChessGameWindow;
     addNewTab(gameWin, QString("Game %1").arg(tabBar->count()+1));
 }
