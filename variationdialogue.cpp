@@ -41,7 +41,6 @@ QSharedPointer<NotationMove> VariationDialogue::selectedMove() const {
 }
 
 void VariationDialogue::keyPressEvent(QKeyEvent* event) {
-    qDebug() << "Dialogue: key pressed!";
     switch (event->key()) {
     case Qt::Key_Up:
         listWidget->setCurrentRow((listWidget->currentRow() - 1 + listWidget->count()) % listWidget->count());

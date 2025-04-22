@@ -8,7 +8,7 @@ class ChessGameWindow  : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit ChessGameWindow (QWidget *parent = nullptr);
+    explicit ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> rootMove);
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;

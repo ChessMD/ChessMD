@@ -7,6 +7,7 @@
 #include "databasefilter.h"
 #include "chesstabhost.h"
 #include "chessgamewindow.h"
+#include "chessposition.h"
 
 #include <fstream>
 #include <vector>
@@ -95,11 +96,11 @@ void DatabaseViewer::addEntry(){
                 int row = dbModel->rowCount();
 
                 dbModel->insertRow(row);
-                // dbModel->addGame(game);
+                dbModel->addGame(game);
                 for(int h = 0; h < game.headerInfo.size(); h++){
                     if(DATA_ORDER[h] > -1){
                         QModelIndex index = dbModel->index(row, DATA_ORDER[h]);
-                        dbModel->setData(index, QString::fromStdString(game.headerInfo[h].second));
+                        dbModel->setData(index, game.headerInfo[h].second);
                     }
                 }
             } else {
@@ -125,13 +126,21 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     if (!proxyIndex.isValid())
         return;
 
-    // QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
-    // int row = sourceIndex.row();
-    // const PGNGameData& game = dbModel->getGame(row);
 
-    // PGNGameData* game = new PGNGameData;
-    // emit gameActivated(*game);
-    gameHost->addNewTab(new ChessGameWindow, QString("Game %1").arg(gameHost->rowCount()+1));
+    QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
+    int row = sourceIndex.row();
+
+    const PGNGameData& game = dbModel->getGame(row);
+
+    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
+    buildNotationTree(game.getRootVariation(), rootMove);
+
+    ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
+
+
+    gameHost->addNewTab(gameWin, QString("Game %1").arg(gameHost->rowCount()+1));
+
 
     //set focus to new window
     //source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
@@ -139,6 +148,8 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     gameHost->raise();
     gameHost->activateWindow(); // for Windows
     gameHost->show();
+
+
 }
 
 

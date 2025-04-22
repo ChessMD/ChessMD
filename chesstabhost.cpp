@@ -1,6 +1,7 @@
 #include "chesstabhost.h"
 #include "ui_customtitlebar.h"
 #include "chessgamewindow.h"
+#include "chessposition.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
 
@@ -203,7 +204,3 @@ void ChessTabHost::onTabReplaced(const QString &fileIdentifier)
     addNewTab(new DatabaseViewer, fileIdentifier);
     onTabCloseRequested(closeIndex);
 }
-
-
-
-

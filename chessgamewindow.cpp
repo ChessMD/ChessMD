@@ -37,7 +37,7 @@ void setup(const QSharedPointer<NotationMove>& root){
     linkMoves(move3, move6);
 }
 
-ChessGameWindow::ChessGameWindow (QWidget *parent)
+ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> rootMove)
     : QMainWindow{parent}
 {
     QQuickWidget* boardView = new QQuickWidget;
@@ -49,9 +49,8 @@ ChessGameWindow::ChessGameWindow (QWidget *parent)
     boardView->setMinimumSize(200, 200);
     setCentralWidget(boardView);
 
-    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-    if (rootMove->m_position != nullptr)
-        rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
+    // QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    // rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
     // setup(rootMove);
 
     // Create our custom NotationViewer widget and set the notation data.
@@ -99,9 +98,7 @@ ChessGameWindow::ChessGameWindow (QWidget *parent)
 
     QObject::connect(m_notationViewer, &NotationViewer::moveSelected, [=](const QSharedPointer<NotationMove>& move) {
         if (!move.isNull() && move->m_position) {
-            qDebug() << move->m_position->plyCount;
-            chessPosition->setBoardData(move->m_position->boardData());
-            chessPosition->plyCount = move->m_position->plyCount;
+            chessPosition->copyFrom(*move->m_position);
             // QVector<QVector<QString>> boardData = convertFenToBoardData(move->FEN);
         }
     });
@@ -133,12 +130,10 @@ bool ChessGameWindow::eventFilter(QObject* obj, QEvent* event)
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
         // For left/right arrow keys, forward to the notation viewer.
         if (keyEvent->key() == Qt::Key_Left) {
-            // qDebug() << "Left arrow key pressed!";
             m_notationViewer->selectPreviousMove();
             // Do not block the event; let it propagate.
             return false;
         } else if (keyEvent->key() == Qt::Key_Right) {
-            // qDebug() << "Right arrow key pressed!";
             m_notationViewer->selectNextMove();
             return false;
         } else if (keyEvent->key() == Qt::Key_BracketRight){ // Key: ']'
@@ -159,8 +154,6 @@ bool ChessGameWindow::eventFilter(QObject* obj, QEvent* event)
 }
 
 void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move) {
-    // e.g. push it into your notation pane
-    qDebug() << "Received";
     linkMoves(m_notationViewer->m_selectedMove, move);
     m_notationViewer->m_selectedMove = move;
     emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
