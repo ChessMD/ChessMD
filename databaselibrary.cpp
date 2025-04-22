@@ -82,7 +82,7 @@ void DatabaseLibrary::addDatabase(){
 
 
     QStandardItem *item = new QStandardItem;
-    item->setIcon(QIcon(":/resources/img/fileicon.png"));
+    item->setIcon(QIcon(":/resource/img/fileicon.png"));
     item->setText(dbName);
     item->setTextAlignment(Qt::AlignCenter);
     item->setEditable(false);

@@ -160,6 +160,7 @@ void ChessPosition::release(int oldRow, int oldCol, int newRow, int newCol)
     ChessPosition* newPos = new ChessPosition;
     newPos->m_boardData = m_boardData;
     newPos->plyCount = plyCount+1;
+    newPos->m_sideToMove = (m_sideToMove == 'w' ? 'b' : 'w');
     newPos->m_boardData[newRow][newCol] = m_boardData[oldRow][oldCol];
     newPos->m_boardData[oldRow][oldCol] = "";  // Clear the old position
 
