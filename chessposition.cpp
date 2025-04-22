@@ -228,6 +228,36 @@ QVector<QVector<QString>> convertFenToBoardData(const QString &fen)
     return boardData;
 }
 
+QString ChessPosition::positionToFEN() const {
+    QStringList rowStr;
+    for (auto &row : m_boardData) {
+        QString s;
+        int empties = 0;
+        for (QString sq : row) {
+            if (sq.isEmpty()) { empties++; }
+            else {
+                if (empties) { s += QString::number(empties); empties = 0; }
+                QChar p = sq[1];
+                s += (sq[0] == 'w' ? p : p.toLower());
+            }
+        }
+        if (empties) s += QString::number(empties);
+        rowStr.append(s);
+    }
+    QString boardPart = rowStr.join('/');
+    QString sidePart = (m_sideToMove == 'w' ? "w" : "b");
+    QString cr;
+    if (m_castling.whiteKing)  cr += 'K';
+    if (m_castling.whiteQueen) cr += 'Q';
+    if (m_castling.blackKing)  cr += 'k';
+    if (m_castling.blackQueen) cr += 'q';
+    if (cr.isEmpty()) cr = "-";
+    QString ep = m_enPassantTarget;
+    QString hm = QString::number(m_halfmoveClock);
+    QString fm = QString::number(m_fullmoveNumber);
+    return QString("%1 %2 %3 %4 %5 %6").arg(boardPart, sidePart, cr, ep, hm, fm);
+}
+
 bool ChessPosition::makeMove(QString san) {
     // Handle castling
     if (san == "O-O" || san == "O-O-O") {
@@ -241,14 +271,10 @@ bool ChessPosition::makeMove(QString san) {
         // Validate
         if (!validateMove(row, oldKC, row, newKC)) return false;
 
-        // Move king
         applyMove(row, oldKC, row, newKC, '\0');
-        // Move rook
         applyMove(row, oldRC, row, newRC, '\0');
-        // Update castling rights
         if (color=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
         else { m_castling.blackKing=m_castling.blackQueen=false; }
-        // Advance clocks & side
         m_halfmoveClock++;
         if (m_sideToMove=='b') m_fullmoveNumber++;
         m_sideToMove = (m_sideToMove=='w'?'b':'w');
@@ -272,10 +298,8 @@ bool ChessPosition::makeMove(QString san) {
     for (auto &o : origins) {
         int sr = o.first, sc = o.second;
         int dr = 8 - dst[1].digitValue(), dc = dst[0].unicode() - 'a';
-        // Validate
         if (isLegalPseudo(sr, sc, dr, dc, promo)) {
             if (!applyMove(sr, sc, dr, dc, promo)) continue;
-            // Advance clocks & side
             m_halfmoveClock = (piece=='P' || capture)?0:m_halfmoveClock+1;
             if (m_sideToMove == 'b') m_fullmoveNumber++;
             m_sideToMove = (m_sideToMove=='w'?'b':'w');
@@ -290,7 +314,6 @@ bool ChessPosition::makeMove(QString san) {
     return false;
 }
 
-// Simplified move application (no validation here)
 bool ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     QString from = m_boardData[sr][sc];
     if (from.isEmpty()) return false;

@@ -28,6 +28,7 @@ public:
 
     Q_INVOKABLE void release(int oldRow, int oldCol, int newRow, int newCol);
     void copyFrom(const ChessPosition &other);
+    QString positionToFEN() const;
 
     bool makeMove(QString san);
 

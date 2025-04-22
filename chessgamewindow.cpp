@@ -3,6 +3,7 @@
 #include "NotationViewer.h"
 #include "streamparser.h"
 #include "chessposition.h"
+#include "enginewidget.h"
 
 #include <QDebug>
 #include <QLabel>
@@ -13,29 +14,6 @@
 #include <QQuickItem>
 #include <QQmlContext>
 #include <QPushButton>
-
-void setup(const QSharedPointer<NotationMove>& root){
-    ChessPosition *pos = new ChessPosition;
-    QSharedPointer<NotationMove> move1(new NotationMove("e4", *pos));
-    move1->FEN = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
-    QSharedPointer<NotationMove> move2(new NotationMove("e5", *pos));
-    move2->FEN = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2";
-    QSharedPointer<NotationMove> move3(new NotationMove("e6", *pos));
-    move3->FEN = "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
-    QSharedPointer<NotationMove> move4(new NotationMove("c5", *pos));
-    move4->FEN = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2";
-    QSharedPointer<NotationMove> move5(new NotationMove("Nf3", *pos));
-    move5->FEN = "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 0 2";
-    QSharedPointer<NotationMove> move6(new NotationMove("Nf3", *pos));
-    move6->FEN = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 0 2";
-
-    linkMoves(root, move1);
-    linkMoves(move1, move2);
-    linkMoves(move1, move3);
-    linkMoves(move1, move4);
-    linkMoves(move2, move5);
-    linkMoves(move3, move6);
-}
 
 ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> rootMove)
     : QMainWindow{parent}
@@ -48,10 +26,6 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
     boardView->setSource(QUrl(QStringLiteral("qrc:/chessboard.qml")));
     boardView->setMinimumSize(200, 200);
     setCentralWidget(boardView);
-
-    // QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-    // rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
-    // setup(rootMove);
 
     // Create our custom NotationViewer widget and set the notation data.
     m_notationViewer = new NotationViewer(parent);
@@ -96,6 +70,14 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
     // Install an event filter on the main window so that key presses are intercepted globally.
     installEventFilter(this);
 
+    EngineWidget *engW = new EngineWidget(this);
+    QDockWidget  *engDock = new QDockWidget(tr("Engine"), this);
+    engDock->setWidget(engW);
+    addDockWidget(Qt::RightDockWidgetArea, engDock);
+    engW->setPosition(m_notationViewer->m_selectedMove->m_position->positionToFEN());
+
+    connect(m_notationViewer, &NotationViewer::moveSelected, engW, &EngineWidget::onMoveSelected);
+
     QObject::connect(m_notationViewer, &NotationViewer::moveSelected, [=](const QSharedPointer<NotationMove>& move) {
         if (!move.isNull() && move->m_position) {
             chessPosition->copyFrom(*move->m_position);
@@ -106,7 +88,6 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
 
 void ChessGameWindow::onPasteClicked() {
     qDebug() << "Paste clicked!";
-    // Example: maybe show a QInputDialog to paste PGN
 }
 
 void ChessGameWindow::onLoadPgnClicked() {
@@ -120,7 +101,8 @@ void ChessGameWindow::onResetBoardClicked() {
 
 void ChessGameWindow::onExportPgnClicked() {
     qDebug() << "Export clicked!";
-    // You could traverse notation tree and export here
+
+    qDebug() << m_notationViewer->m_selectedMove->m_position->positionToFEN();
 }
 
 bool ChessGameWindow::eventFilter(QObject* obj, QEvent* event)

@@ -49,6 +49,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         notationviewer.h notationviewer.cpp
         variationdialogue.h variationdialogue.cpp
         chessposition.h chessposition.cpp
+        uciengine.h uciengine.cpp
+        enginewidget.h enginewidget.cpp
 
 
     )
