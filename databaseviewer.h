@@ -13,6 +13,8 @@
 #include <QTableWidget>
 #include <QHeaderView>
 
+class ChessTabHost;
+
 namespace Ui {
 class DatabaseViewer;
 }
@@ -26,8 +28,6 @@ public:
     explicit DatabaseViewer(QWidget *parent = nullptr);
     ~DatabaseViewer();
 
-signals:
-    void gameActivated(const PGNGameData& game);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -46,6 +46,8 @@ private:
     QTableView *dbView;
     DatabaseViewerModel *dbModel;
     DatabaseFilterProxyModel *proxyModel;
+
+    ChessTabHost* gameHost;
 
 };
 

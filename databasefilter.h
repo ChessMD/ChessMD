@@ -2,7 +2,6 @@
 #define DATABASEFILTER_H
 
 #include <QDialog>
-#include <tuple>
 
 namespace Ui {
 class DatabaseFilter;

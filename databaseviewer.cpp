@@ -3,9 +3,10 @@
 
 #include "pgnuploader.h"
 #include "tabledelegate.h"
-#include "pgngamedata.h"
 #include "helpers.h"
 #include "databasefilter.h"
+#include "chesstabhost.h"
+#include "chessgamewindow.h"
 
 #include <fstream>
 #include <vector>
@@ -45,6 +46,8 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->setStyleSheet(getStyle("C:/Users/guana/Stuff/ChessMD/styles/tablestyle.qss"));
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
+
+    gameHost = new ChessTabHost;
 
 
 }
@@ -122,13 +125,20 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     if (!proxyIndex.isValid())
         return;
 
-    QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
-    int row = sourceIndex.row();
-
+    // QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
+    // int row = sourceIndex.row();
     // const PGNGameData& game = dbModel->getGame(row);
 
-    const PGNGameData* game = new PGNGameData;
-    emit gameActivated(*game);
+    // PGNGameData* game = new PGNGameData;
+    // emit gameActivated(*game);
+    gameHost->addNewTab(new ChessGameWindow, QString("Game %1").arg(gameHost->rowCount()+1));
+
+    //set focus to new window
+    //source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
+    gameHost->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+    gameHost->raise();
+    gameHost->activateWindow(); // for Windows
+    gameHost->show();
 }
 
 

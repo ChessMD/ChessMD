@@ -31,7 +31,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         styles/tablestyle.qss
         tabledelegate.h tabledelegate.cpp
         pgnuploader.h pgnuploader.cpp pgnuploader.ui
-        resources.qrc
+
         databaselibrary.h databaselibrary.cpp databaselibrary.ui
         databaseuploader.h databaseuploader.cpp databaseuploader.ui
         pgngamedata.h pgngamedata.cpp
@@ -49,6 +49,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         notationviewer.h notationviewer.cpp
         variationdialogue.h variationdialogue.cpp
         chessposition.h chessposition.cpp
+        customtitlebar.ui
+        img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png
+        resource.qrc
+
 
 
     )

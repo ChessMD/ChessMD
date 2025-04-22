@@ -1,5 +1,6 @@
 #include "chesstabhost.h"
 #include "databaseviewer.h"
+#include "databaselibrary.h"
 
 #include <QApplication>
 #include <QFile>
@@ -16,6 +17,7 @@ int main(int argc, char *argv[])
     // w.show();
 
     ChessTabHost host;
+    host.addNewTab(new DatabaseLibrary, "New Tab");
     host.setWindowState(Qt::WindowMaximized);
     host.show();
 

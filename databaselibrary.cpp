@@ -26,7 +26,7 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     //examples
     for (int i = 0; i < 20; ++i) {
         QStandardItem *item = new QStandardItem;
-        item->setIcon(QIcon(":/resources/img/fileicon.png"));
+        item->setIcon(QIcon(":/resource/img/fileicon.png"));
         item->setText(QString("Database %1").arg(i));
         item->setTextAlignment(Qt::AlignCenter);
         item->setEditable(false);

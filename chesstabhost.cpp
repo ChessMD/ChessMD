@@ -1,47 +1,138 @@
 #include "chesstabhost.h"
+#include "ui_customtitlebar.h"
 #include "chessgamewindow.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
 
 #include <qDebug>
+#include <QPushButton>
+#include <QMouseEvent>
+
+
+CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
+    : QTabBar(parent)
+    , defaultWidth(defaultWidth)
+{
+    setUsesScrollButtons(false);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    setTabsClosable(true);
+    setMovable(true);
+    setExpanding(false);
+
+}
+
+QSize CustomTabBar::tabSizeHint(int index) const {
+    QSize defaultSize = QTabBar::tabSizeHint(index);
+
+    int w = width();
+    int n = count();
+
+    int tabTotal = n*defaultWidth;
+
+    int finalWidth;
+    if(tabTotal <= w) finalWidth = defaultWidth;
+    else finalWidth = w/n;
+
+    defaultSize.setWidth(finalWidth);
+
+    return defaultSize;
+}
+
+CustomTitleBar::CustomTitleBar(QWidget* parent)
+    : QWidget(parent)
+    , ui(new Ui::CustomTitleBar)
+{
+    ui->setupUi(this);
+
+    tabBar = new CustomTabBar(300, this);
+
+    addTabButton = new QToolButton(this);
+    addTabButton->setText("+");
+    addTabButton->setToolTip("New Tab");
+
+    ui->topBarLayout->addWidget(tabBar);
+    ui->topBarLayout->addWidget(addTabButton);
+
+
+    connect(ui->minimizeButton, &QPushButton::clicked, this, &CustomTitleBar::MinimizeWindow);
+    connect(ui->maximizeButton, &QPushButton::clicked, this, &CustomTitleBar::MaximizeWindow);
+    connect(ui->closeButton, &QPushButton::clicked, this, &CustomTitleBar::CloseWindow);
+    isMoving = false;
+
+}
+
+CustomTitleBar::~CustomTitleBar(){
+    delete ui;
+}
+
+void CustomTitleBar::MinimizeWindow(){
+    window()->showMinimized();
+}
+
+void CustomTitleBar::MaximizeWindow(){
+    if(!window()->isMaximized()) window()->showMaximized();
+    else window()->showNormal();
+}
+
+void CustomTitleBar::CloseWindow(){
+    window()->close();
+}
+
+void CustomTitleBar::mousePressEvent(QMouseEvent* event){
+    clickPos= event->pos();
+    isMoving= true;
+}
+
+void CustomTitleBar::mouseMoveEvent(QMouseEvent* event){
+    if(isMoving){
+        //calculate difference between the press position and the new Mouse position
+        QPoint diff = event->pos() - clickPos;
+        window()->move(window()->pos() + diff);
+    }
+}
+
+void CustomTitleBar::mouseReleaseEvent(QMouseEvent* event){
+    isMoving= false;
+}
+
+void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
+    MaximizeWindow();
+}
+
+
+
+
+
 
 ChessTabHost::ChessTabHost(QWidget* parent)
     : QWidget(parent)
 {
+    setWindowFlags(Qt::CustomizeWindowHint);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
-    QWidget* topBar = new QWidget(this);
-    QHBoxLayout* topBarLayout = new QHBoxLayout(topBar);
-    topBarLayout->setContentsMargins(0, 0, 0, 0);
-    topBarLayout->setSpacing(0);
 
-    tabBar = new QTabBar(this);
-    tabBar->setMovable(true);
-    tabBar->setTabsClosable(true);
-    tabBar->setExpanding(true);
-    tabBar->setStyleSheet("QTabBar::tab { max-width: 150px; }");
+    CustomTitleBar* titleBar = new CustomTitleBar(this);
+
+    tabBar = titleBar->tabBar;
     connect(tabBar, &QTabBar::currentChanged, this, &ChessTabHost::onTabChanged);
     connect(tabBar, &QTabBar::tabCloseRequested, this, &ChessTabHost::onTabCloseRequested);
     connect(tabBar, &QTabBar::tabMoved, this, &ChessTabHost::onTabMoved);
 
-    addTabButton = new QToolButton(topBar);
-    addTabButton->setText("+");
-    addTabButton->setToolTip("New Tab");
+    addTabButton = titleBar->addTabButton;
     connect(addTabButton, &QToolButton::clicked, this, &ChessTabHost::onAddTabClicked);
-
-    topBarLayout->addWidget(tabBar);
-    topBarLayout->addWidget(addTabButton);
-    topBarLayout->setStretch(0, 1); // let the tab bar take available space
 
     stack = new QStackedWidget(this);
 
-    mainLayout->addWidget(topBar);
+    mainLayout->addWidget(titleBar);
     mainLayout->addWidget(stack);
 
-    addNewTab(new DatabaseLibrary, "New Tab");
 
+}
+
+int ChessTabHost::rowCount(){
+    return tabBar->count();
 }
 
 void ChessTabHost::addNewTab(QWidget* embed, QString title) {
@@ -59,7 +150,6 @@ void ChessTabHost::addNewTab(QWidget* embed, QString title) {
     }
     else if (DatabaseViewer* dbViewer =  qobject_cast<DatabaseViewer*>(embed)){
         tabTitle = QString("Database %1").arg(tabBar->count() + 1);
-        connect(dbViewer, &DatabaseViewer::gameActivated, this, &ChessTabHost::onGameActivated);
     }
 
     QWidget* container = new QWidget;
@@ -85,14 +175,20 @@ void ChessTabHost::onTabCloseRequested(int index) {
     stack->removeWidget(widget);
     widget->deleteLater();
     tabBar->removeTab(index);
+
+    if(tabBar->count() == 0){
+        this->close();
+        return;
+    }
+
     // Update the current index after removal.
     int currentIndex = tabBar->currentIndex();
     stack->setCurrentIndex(currentIndex);
 }
 
 void ChessTabHost::onAddTabClicked() {
-    // addNewTab(new DatabaseLibrary, "New Tab");
-    addNewTab(new ChessGameWindow, "Board UI");
+    addNewTab(new DatabaseLibrary, "New Tab");
+    // addNewTab(new ChessGameWindow, "Board UI");
 }
 
 void ChessTabHost::onTabMoved(int from, int to) {
@@ -103,11 +199,11 @@ void ChessTabHost::onTabMoved(int from, int to) {
 
 void ChessTabHost::onTabReplaced(const QString &fileIdentifier)
 {
-    onTabCloseRequested(tabBar->currentIndex());
+    int closeIndex = tabBar->currentIndex();
     addNewTab(new DatabaseViewer, fileIdentifier);
+    onTabCloseRequested(closeIndex);
 }
 
-void ChessTabHost::onGameActivated(const PGNGameData &game) {
-    auto *gameWin = new ChessGameWindow;
-    addNewTab(gameWin, QString("Game %1").arg(tabBar->count()+1));
-}
+
+
+

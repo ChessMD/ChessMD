@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CustomTitleBar</class>
+ <widget class="QWidget" name="CustomTitleBar">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>558</width>
+    <height>50</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>50</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+        background-color: rgb(105, 146, 62); 
+}
+
+
+QTabBar::tab {
+    background: rgb(75, 72, 71);
+    color: white;
+}</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="topBarLayout"/>
+   </item>
+   <item>
+    <widget class="QPushButton" name="minimizeButton">
+     <property name="icon">
+      <iconset resource="resource.qrc">
+       <normaloff>:/resource/img/minimize.png</normaloff>:/resource/img/minimize.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="maximizeButton">
+     <property name="icon">
+      <iconset resource="resource.qrc">
+       <normaloff>:/resource/img/maximize.png</normaloff>:/resource/img/maximize.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="closeButton">
+     <property name="icon">
+      <iconset resource="resource.qrc">
+       <normaloff>:/resource/img/close.png</normaloff>:/resource/img/close.png</iconset>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
+ <connections/>
+</ui>
