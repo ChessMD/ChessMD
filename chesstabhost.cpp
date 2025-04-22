@@ -1,5 +1,6 @@
 #include "chesstabhost.h"
 #include "chessgamewindow.h"
+#include "chessposition.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
 
@@ -91,8 +92,8 @@ void ChessTabHost::onTabCloseRequested(int index) {
 }
 
 void ChessTabHost::onAddTabClicked() {
-    // addNewTab(new DatabaseLibrary, "New Tab");
-    addNewTab(new ChessGameWindow, "Board UI");
+    addNewTab(new DatabaseLibrary, "New Tab");
+    // addNewTab(new ChessGameWindow, "Board UI");
 }
 
 void ChessTabHost::onTabMoved(int from, int to) {
@@ -108,6 +109,11 @@ void ChessTabHost::onTabReplaced(const QString &fileIdentifier)
 }
 
 void ChessTabHost::onGameActivated(const PGNGameData &game) {
-    auto *gameWin = new ChessGameWindow;
+    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
+    buildNotationTree(game.getRootVariation(), rootMove);
+
+    ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
+
     addNewTab(gameWin, QString("Game %1").arg(tabBar->count()+1));
 }

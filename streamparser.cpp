@@ -1,13 +1,9 @@
-#include <iostream>
 #include <string>
-#include <vector>
-#include <utility>
 #include <regex>
 
 #include <qDebug>
 
-
-#include "StreamParser.h"
+#include "streamparser.h"
 #include "pgngamedata.h"
 
 void skipWhitespace(std::istream &streamBuffer){
@@ -17,11 +13,11 @@ void skipWhitespace(std::istream &streamBuffer){
     }
 }
 
-void dfsParse(std::istream &streamBuffer, VariationNode &curVariation){
+void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &curVariation){
     int plyCount = 0;
     char c;
-    bool terminated = false, gameTerminated = false;
-    std::string token;
+    bool terminated = false;
+    QString token;
 
     while(!terminated && streamBuffer.get(c)){
         // Create tokens separated by spaces
@@ -30,32 +26,29 @@ void dfsParse(std::istream &streamBuffer, VariationNode &curVariation){
         }
 
         if (c == '('){
-            // std::cout << "Entered Variation!\n";
-            std::unique_ptr<VariationNode> newVariation = std::make_unique<VariationNode>();
-            curVariation.variations.push_back(std::make_pair(plyCount-1, std::move(newVariation)));
-            dfsParse(streamBuffer, *curVariation.variations.back().second);
+            QSharedPointer<VariationNode> newVariation = QSharedPointer<VariationNode>::create();
+            curVariation->variations.append(qMakePair(plyCount, newVariation));
+            dfsParse(streamBuffer, curVariation->variations.back().second);
         }
 
         if (c == ')'){
-            // std::cout << "Variation Terminated!\n";
             terminated = true;
         }
 
         // Process token if current character is whitespace or EOF
-        if (!token.empty() && (std::isspace(c) || streamBuffer.peek() == EOF || c == ')')){
+        if (!token.isEmpty() && (std::isspace(c) || streamBuffer.peek() == EOF || c == ')')){
             // Check for standard game termination
             if (token == "1-0" || token == "0-1" || token == "1/2-1/2" || token == "*"){
-                // std::cout << "Game Terminated!\n";
-                terminated = gameTerminated = true;
+                terminated = true;
             }
 
             plyCount++;
-            curVariation.moves.push_back(token);
+            curVariation->moves.append(token);
             token.clear();
         }
     }
 
-    curVariation.plyCount = plyCount;
+    curVariation->plyCount = plyCount;
     return;
 }
 
@@ -107,19 +100,18 @@ std::vector<PGNGameData> StreamParser::parseDatabase(){
             tag = std::regex_replace(tag, std::regex("^ +| +$|( ) +"), "$1");
             value = std::regex_replace(value, std::regex("^ +| +$|( ) +"), "$1");
 
-            game.addHeader(tag, value);
+            game.addHeader(QString::fromStdString(tag), QString::fromStdString(value));
         }
 
         skipWhitespace(streamBuffer);
 
         // Parse body of pgn
         if (game.getRootVariation() != nullptr) {
-            dfsParse(streamBuffer, *game.getRootVariation());
+            dfsParse(streamBuffer, game.getRootVariation());
         } else {
-            std::cout << "Error: rootVariation is not initialized!\n";
+            qDebug() << "Error: rootVariation is not initialized!\n";
         }
 
-        // game.printGameTree();
         skipWhitespace(streamBuffer);
         gameNumber++;
         database.push_back(std::move(game));

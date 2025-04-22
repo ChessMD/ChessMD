@@ -92,11 +92,11 @@ void DatabaseViewer::addEntry(){
                 int row = dbModel->rowCount();
 
                 dbModel->insertRow(row);
-                // dbModel->addGame(game);
+                dbModel->addGame(game);
                 for(int h = 0; h < game.headerInfo.size(); h++){
                     if(DATA_ORDER[h] > -1){
                         QModelIndex index = dbModel->index(row, DATA_ORDER[h]);
-                        dbModel->setData(index, QString::fromStdString(game.headerInfo[h].second));
+                        dbModel->setData(index, game.headerInfo[h].second);
                     }
                 }
             } else {
@@ -125,10 +125,9 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
 
-    // const PGNGameData& game = dbModel->getGame(row);
+    const PGNGameData& game = dbModel->getGame(row);
 
-    const PGNGameData* game = new PGNGameData;
-    emit gameActivated(*game);
+    emit gameActivated(game);
 }
 
 
