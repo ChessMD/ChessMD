@@ -52,7 +52,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         customtitlebar.ui
         img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png
         resource.qrc
-
+        uciengine.h uciengine.cpp
+        enginewidget.h enginewidget.cpp
 
 
     )
