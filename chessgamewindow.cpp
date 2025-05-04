@@ -4,7 +4,7 @@ March 18, 2025: File Creation
 
 #include "chessgamewindow.h"
 #include "notation.h"
-#include "NotationViewer.h"
+#include "notationviewer.h"
 #include "streamparser.h"
 #include "chessposition.h"
 #include "enginewidget.h"
@@ -54,54 +54,18 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
     setCentralWidget(boardView);
 
     // B) Create NotationViewer dockable panel
-    m_notationViewer = new NotationViewer(parent);
+    m_notationViewer = new NotationViewer(this);
     m_notationViewer->setRootMove(rootMove);
-
-    // Create toolbar buttons
-    QPushButton* pasteGame = new QPushButton("Paste");
-    QPushButton* loadPgn = new QPushButton("Load PGN");
-    QPushButton* resetBoard = new QPushButton("Reset");
-    QPushButton* exportPgn = new QPushButton("Export");
-
-    // Horizontal layout for toolbar buttons
-    QHBoxLayout* buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(pasteGame);
-    buttonLayout->addWidget(loadPgn);
-    buttonLayout->addWidget(resetBoard);
-    buttonLayout->addWidget(exportPgn);
-
-    // Connect buttons to signals and slots
+    connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
     connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
-    connect(pasteGame, &QPushButton::clicked, this, &ChessGameWindow::onPasteClicked);
-    connect(loadPgn, &QPushButton::clicked, this, &ChessGameWindow::onLoadPgnClicked);
-    connect(resetBoard, &QPushButton::clicked, this, &ChessGameWindow::onResetBoardClicked);
-    connect(exportPgn, &QPushButton::clicked, this, &ChessGameWindow::onExportPgnClicked);
-
-    // Attach button toolbar to NotationViewer
-    QWidget* dockContent = new QWidget;
-    QVBoxLayout* dockLayout = new QVBoxLayout(dockContent);
-    dockLayout->addWidget(m_notationViewer);
-    dockLayout->addLayout(buttonLayout);
-    dockLayout->setContentsMargins(0, 0, 0, 0);
 
     // Dockable notation panel
-    QDockWidget* notationDock = new QDockWidget(tr("Notation"), this);
-    notationDock->setWidget(dockContent);
-    notationDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    notationDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    notationDock->setMinimumSize(100, 0);
-    addDockWidget(Qt::RightDockWidgetArea, notationDock);
-
-    // C) Create the engine dockable panel
-    m_engineViewer = new EngineWidget(parent);
-    QDockWidget  *engDock = new QDockWidget(tr("Engine"), this);
-    engDock->setWidget(m_engineViewer);
-    addDockWidget(Qt::RightDockWidgetArea, engDock);
-    m_engineViewer->setPosition(m_notationViewer->m_selectedMove->m_position->positionToFEN());
-
-    // Update engine and board display when position changes
-    connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
-    connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
+    m_notationDock = new QDockWidget(tr("Notation"), this);
+    m_notationDock->setWidget(m_notationViewer);
+    m_notationDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_notationDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    m_notationDock->setMinimumSize(100, 0);
+    addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
 
     // Keyboard shortcuts
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
@@ -117,9 +81,54 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
     connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
 
-void ChessGameWindow::setRoot(QSharedPointer<NotationMove> rootMove){
-    // m_notationViewer->m_selectedMove = rootMove;
+void ChessGameWindow::engineSetup(){
+    // C) Create the engine dockable panel
+    m_engineViewer = new EngineWidget(this);
+    m_engineDock = new QDockWidget(tr("Engine"), this);
+    m_engineDock->setWidget(m_engineViewer);
+    addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
+    m_engineViewer->setPosition(m_notationViewer->m_selectedMove->m_position->positionToFEN());
+
+    // Update engine and board display when position changes
+    connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
 }
+
+void ChessGameWindow::toolbarSetup(){
+    // Create toolbar buttons
+    QPushButton* pasteGame = new QPushButton("Paste");
+    QPushButton* loadPgn = new QPushButton("Load PGN");
+    QPushButton* resetBoard = new QPushButton("Reset");
+    QPushButton* exportPgn = new QPushButton("Export");
+
+    // Horizontal layout for toolbar buttons
+    QHBoxLayout* buttonLayout = new QHBoxLayout;
+    buttonLayout->addWidget(pasteGame);
+    buttonLayout->addWidget(loadPgn);
+    buttonLayout->addWidget(resetBoard);
+    buttonLayout->addWidget(exportPgn);
+
+    // Connect buttons to signals and slots
+    connect(pasteGame, &QPushButton::clicked, this, &ChessGameWindow::onPasteClicked);
+    connect(loadPgn, &QPushButton::clicked, this, &ChessGameWindow::onLoadPgnClicked);
+    connect(resetBoard, &QPushButton::clicked, this, &ChessGameWindow::onResetBoardClicked);
+    connect(exportPgn, &QPushButton::clicked, this, &ChessGameWindow::onExportPgnClicked);
+
+    // Attach button toolbar to NotationViewer
+    QWidget* dockContent = new QWidget;
+    QVBoxLayout* dockLayout = new QVBoxLayout(dockContent);
+    dockLayout->addWidget(m_notationViewer);
+    dockLayout->addLayout(buttonLayout);
+    dockLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_notationDock->setWidget(dockContent);
+}
+
+void ChessGameWindow::previewSetup(){
+    addDockWidget(Qt::BottomDockWidgetArea, m_notationDock); // Place notation dock bottom
+    m_notationDock->show();
+}
+
+
 
 void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move) {
     linkMoves(m_notationViewer->m_selectedMove, move);

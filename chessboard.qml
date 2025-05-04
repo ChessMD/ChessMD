@@ -16,7 +16,7 @@ Rectangle {
         height: width  // keep board square
 
         property real cellSize: width / 8
-        property var boardData: chessPosition.boardData
+        property var boardData: chessPosition ? chessPosition.boardData : [["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""]]
 
         Repeater {
             id: squareContainer

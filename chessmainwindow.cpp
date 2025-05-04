@@ -40,8 +40,8 @@ void ChessMainWindow::createMenus() {
 
     m_menuBar = menuBar();
 
-    QMenu *addNewGame = new QMenu("&Games");
-    QAction* addGameAct = new QAction(tr("&Add New Game"), this);
+    QMenu *addNewGame = new QMenu("&Databases");
+    QAction* addGameAct = new QAction(tr("&Add New Database"), this);
 
     addNewGame->addAction(addGameAct);
 

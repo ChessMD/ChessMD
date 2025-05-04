@@ -7,6 +7,7 @@ March 18, 2025: File Creation
 
 #include <QMainWindow>
 #include <QToolBar>
+#include <qdockwidget.h>
 #include "notationviewer.h"
 #include "enginewidget.h"
 #include "chessposition.h"
@@ -17,7 +18,10 @@ class ChessGameWindow  : public QMainWindow
     Q_OBJECT
 public:
     explicit ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> rootMove);
-    void setRoot(QSharedPointer<NotationMove> rootMove);
+    void previewSetup();
+    void engineSetup();
+    void toolbarSetup();
+
 
 protected:
     void showEvent(QShowEvent *ev) override;
@@ -27,6 +31,9 @@ private:
     EngineWidget* m_engineViewer; // UCI Engine viewer
     ChessPosition* m_positionViewer; // Chessboard viewer
     QToolBar* m_Toolbar;//Game window toolbar
+
+    QDockWidget* m_notationDock;
+    QDockWidget* m_engineDock;
 
 private slots:
     // Appends a new user move to the notation tree

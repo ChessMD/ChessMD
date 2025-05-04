@@ -8,20 +8,20 @@ ChessGameTabDialog::ChessGameTabDialog()
     mainLayout->addWidget(m_tabWidget);
 
     setLayout(mainLayout);
-
+    setWindowFlags(windowFlags() | Qt::WindowMinMaxButtonsHint | Qt::WindowSystemMenuHint);
     setWindowTitle(tr("Chess Games"));
-
+    setMinimumSize(400, 300);
     setMinimumSize(1024,768);
 }
 
 void ChessGameTabDialog::addTab(QWidget *page, const QString &label)
 {
-    int  index = m_tabWidget->addTab(page, label);
+    int index = m_tabWidget->addTab(page, label);
 
     m_tabWidget->setCurrentIndex(index);
 }
 
-bool ChessGameTabDialog::isTabExist(QString &label)
+bool ChessGameTabDialog::TabExist(QString &label)
 {
     for (int i = 0; i < m_tabWidget->count(); i++) {
         if (m_tabWidget->tabText(i) == label)

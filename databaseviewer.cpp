@@ -26,9 +26,6 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->setSelectionBehavior(QAbstractItemView::SelectRows);
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    // Signal when a row is double clicked and open a board
-    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onTableActivated);
-
     dbModel = new DatabaseViewerModel(this);
     proxyModel = new DatabaseFilterProxyModel(parent);
     proxyModel->setSourceModel(dbModel);
@@ -38,9 +35,13 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->setModel(proxyModel);
     dbView->setSortingEnabled(true);
 
-
+    // Signal when a row is double clicked and open a board
+    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onTableActivated);
+    // Signal when row is selected but not double clicked
+    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onTableSelected);
 
     ui->ContentLayout->insertWidget(0, dbView);
+    // ui->gamePreview
 
     dbView->setItemDelegate(new TableDelegate(this));
     dbView->setStyleSheet(getStyle("styles/tablestyle.qss"));
@@ -129,15 +130,52 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     buildNotationTree(game.getRootVariation(), rootMove);
 
     ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
-    gameWin->setRoot(rootMove);
-
-    gameWin->setRoot(rootMove);
+    gameWin->engineSetup();
+    gameWin->toolbarSetup();
 
     QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
 
-
     gameTabDialog->addTab(gameWin, title);
     gameTabDialog->show();
+}
+
+void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
+{
+    if (!proxyIndex.isValid())
+        return;
+
+    // Map to your source model
+    QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
+    int row = sourceIndex.row();
+    const PGNGameData& game = dbModel->getGame(row);
+
+    // Build the notation tree just like in onTableActivated:
+    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
+    buildNotationTree(game.getRootVariation(), rootMove);
+
+    // Create your ChessGameWindow
+    ChessGameWindow *embed = new ChessGameWindow(this, rootMove);
+    embed->previewSetup();
+
+    // Clear out any previous preview
+    QWidget* preview = ui->gamePreview;
+    QLayout* oldLayout = preview->layout();
+    if (oldLayout) {
+        // delete old widgets/layout
+        QLayoutItem* item;
+        while ((item = oldLayout->takeAt(0)) != nullptr) {
+            delete item->widget();
+            delete item;
+        }
+        delete oldLayout;
+    }
+
+    // Put embed inside gamePreview
+    auto* containerLayout = new QVBoxLayout(preview);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->addWidget(embed);
+    preview->setLayout(containerLayout);
 }
 
 void DatabaseViewer::setWindowTitle(QString text)

@@ -20,7 +20,7 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
 
 
     listView = new QListView(this);
-    // configure the view for an icon mode grid
+    // Configure the view for an icon mode grid
     listView->setViewMode(QListView::IconMode);
     listView->setIconSize(QSize(64, 64));
     listView->setGridSize(QSize(100, 100));
@@ -34,7 +34,7 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
 
     QStandardItem *item = new QStandardItem;
     item->setIcon(QIcon(":/resource/img/addfile.png"));
-    item->setText(QString("Add game"));
+    item->setText(QString("Add Database"));
     item->setTextAlignment(Qt::AlignCenter);
     item->setEditable(false);
     model->appendRow(item);
@@ -65,7 +65,7 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
     QString fileName = index.data(Qt::ToolTipRole).toString();
 
-    if (gameFilesTabDialog->isTabExist(fileName) == false) {
+    if (gameFilesTabDialog->TabExist(fileName) == false) {
 
         DatabaseViewer * gamesViewer = new DatabaseViewer;
 

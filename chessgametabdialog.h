@@ -12,7 +12,7 @@ class ChessGameTabDialog : public QDialog
 public:
     ChessGameTabDialog();
     void addTab(QWidget *page, const QString &label);
-    bool isTabExist(QString &label);
+    bool TabExist(QString &label);
     void ActiveTabByLabel(QString &label);
 
 private:

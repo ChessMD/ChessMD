@@ -38,6 +38,7 @@ protected:
 
 private slots:
     void onTableActivated(const QModelIndex &proxyIndex);
+    void onTableSelected(const QModelIndex &current, const QModelIndex &previous);
 
 private:
     void filter();

@@ -203,10 +203,6 @@ void ChessTabHost::onTabCloseRequested(int index) {
 
 void ChessTabHost::onAddTabClicked() {
     addNewTab(new DatabaseLibrary, "");
-    // ChessGameWindow* temp = new ChessGameWindow(this);
-    // QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-    // temp->setRoot(rootMove);
-    // addNewTab(temp, "Board UI");
 }
 
 void ChessTabHost::onTabMoved(int from, int to) {

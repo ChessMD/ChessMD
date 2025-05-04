@@ -432,7 +432,7 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
 
         if (!clonePos->tryMakeMove(token)) {
             parentMove->commentAfter += token;
-            qDebug() << "Illegal move skipped:" << token;
+            // qDebug() << "Illegal move skipped:" << token;
             delete clonePos;
             continue;
         }

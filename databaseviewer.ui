@@ -104,13 +104,7 @@
      <property name="orientation">
       <enum>Qt::Orientation::Horizontal</enum>
      </property>
-     <widget class="QListWidget" name="listWidget">
-      <item>
-       <property name="text">
-        <string>Preview</string>
-       </property>
-      </item>
-     </widget>
+     <widget class="QWidget" name="gamePreview" native="true"/>
     </widget>
    </item>
   </layout>
