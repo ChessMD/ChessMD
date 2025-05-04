@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/resource">
+        <file>img/close.png</file>
+        <file>img/fileicon.png</file>
+        <file>img/fileuploadicon.png</file>
+        <file>img/maxedmaximize.png</file>
+        <file>img/maximize.png</file>
+        <file>img/minimize.png</file>
+        <file>img/arrow-left.png</file>
+        <file>img/arrow-right.png</file>
+        <file>img/addfile.png</file>
+    </qresource>
+</RCC>
