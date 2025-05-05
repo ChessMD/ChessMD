@@ -26,15 +26,12 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget {
-        background-color: rgb(105, 146, 62); 
-}
-
-
-QTabBar::tab {
+   <string notr="true">QTabBar::tab {
     background: rgb(75, 72, 71);
     color: white;
-}</string>
+}
+
+</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>

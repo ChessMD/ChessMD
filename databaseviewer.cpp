@@ -7,6 +7,7 @@
 #include "chessgamewindow.h"
 #include "chessposition.h"
 #include "chessgametabdialog.h"
+#include "chesstabhost.h"
 
 
 #include <fstream>
@@ -48,7 +49,7 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
 
-    gameTabDialog = new ChessGameTabDialog;
+    host = new ChessTabHost;
 }
 
 DatabaseViewer::~DatabaseViewer()
@@ -120,23 +121,36 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
         return;
 
 
+
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-
     const PGNGameData& game = dbModel->getGame(row);
-
-    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-    rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
-    buildNotationTree(game.getRootVariation(), rootMove);
-
-    ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
-    gameWin->engineSetup();
-    gameWin->toolbarSetup();
-
     QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
 
-    gameTabDialog->addTab(gameWin, title);
-    gameTabDialog->show();
+
+    if(!host->tabExists(title)){
+        QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+        rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
+        buildNotationTree(game.getRootVariation(), rootMove);
+
+        ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
+        gameWin->engineSetup();
+        gameWin->toolbarSetup();
+
+
+        host->addNewTab(gameWin, title);
+    }
+    else{
+        host->activateTabByLabel(title);
+    }
+
+
+    //set focus to new window
+    //source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
+    host->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+    host->raise();
+    host->activateWindow(); // for Windows
+    host->show();
 }
 
 void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
@@ -182,5 +196,5 @@ void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModel
 
 void DatabaseViewer::setWindowTitle(QString text)
 {
-    gameTabDialog->setWindowTitle(text);
+    host->setWindowTitle(text);
 }
