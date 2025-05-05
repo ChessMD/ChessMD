@@ -160,6 +160,7 @@ void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModel
 
     // Clear out any previous preview
     QWidget* preview = ui->gamePreview;
+    preview->hide();
     QLayout* oldLayout = preview->layout();
     if (oldLayout) {
         // delete old widgets/layout
@@ -176,6 +177,7 @@ void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModel
     containerLayout->setContentsMargins(0, 0, 0, 0);
     containerLayout->addWidget(embed);
     preview->setLayout(containerLayout);
+    preview->show();
 }
 
 void DatabaseViewer::setWindowTitle(QString text)
