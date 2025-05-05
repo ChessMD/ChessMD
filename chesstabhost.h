@@ -7,6 +7,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QSqlDatabase>
 
 
 class CustomTabBar : public QTabBar {

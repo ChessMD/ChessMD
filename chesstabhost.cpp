@@ -1,13 +1,13 @@
 #include "chesstabhost.h"
 #include "ui_customtitlebar.h"
 #include "chessgamewindow.h"
-#include "chessposition.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
 
 #include <qDebug>
 #include <QPushButton>
 #include <QMouseEvent>
+#include <QSqlQuery>
 
 
 CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
@@ -141,10 +141,28 @@ void ChessTabHost::addNewTab(QWidget* embed, QString title) {
 
     QString tabTitle;
 
-
+    //Could've used derived classes... todo(?)
     if(DatabaseLibrary* dbLibrary = qobject_cast<DatabaseLibrary*>(embed)){
         connect(dbLibrary, &DatabaseLibrary::fileDoubleClicked, this, &ChessTabHost::onTabReplaced);
         tabTitle = QString("New Tab");
+        QSqlDatabase db = QSqlDatabase::database();
+
+        QSqlQuery query(db);
+        query.exec(R"(
+            CREATE TABLE IF NOT EXISTS databases (
+                id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                event TEXT,
+                site TEXT,
+                date TEXT,
+                round TEXT,
+                white TEXT,
+                black TEXT,
+                result TEXT,
+                whiteElo TEXT,
+                blackElo TEXT
+            )
+        )");
+
     }
     else if(ChessGameWindow* gameWindow = qobject_cast<ChessGameWindow*>(embed)){
         tabTitle = QString("Game %1").arg(tabBar->count() + 1);
