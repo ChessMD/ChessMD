@@ -1,51 +1,30 @@
-# First Level Heading
+# Chess Database Viewer
 
-Paragraph.
+A Qt-based chess game and database viewer. This application allows users to browse, manage, and analyze chess games stored in `.pgn` files, offering features such as search, filtering, variation tracking, and engine analysis.
 
-## Second Level Heading
+## Features
 
-Paragraph.
+- Browse and manage multiple chess databases
+- Visual game preview and board interaction
+- Add, delete, and navigate moves & variations
+- UCI engine support for real-time position analysis
+- Multi-tab navigation for parallel games and databases
 
-- bullet
-+ other bullet
-* another bullet
-    * child bullet
+## User Guide
 
-1. ordered
-2. next ordered
+For detailed instructions on how to use the software, see the [User Guide](./userguide.md).
 
-### Third Level Heading
+## Requirements
 
-Some *italic* and **bold** text and `inline code`.
+- Qt 6.5 or higher
+- C++17
 
-An empty line starts a new paragraph.
+## Building
 
-Use two spaces at the end  
-to force a line break.
+To build the project:
 
-A horizontal ruler follows:
-
----
-
-Add links inline like [this link to the Qt homepage](https://www.qt.io),
-or with a reference like [this other link to the Qt homepage][1].
-
-    Add code blocks with
-    four spaces at the front.
-
-> A blockquote
-> starts with >
->
-> and has the same paragraph rules as normal text.
-
-First Level Heading in Alternate Style
-======================================
-
-Paragraph.
-
-Second Level Heading in Alternate Style
----------------------------------------
-
-Paragraph.
-
-[1]: https://www.qt.io
+```bash
+mkdir build
+cd build
+cmake ..
+make

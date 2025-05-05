@@ -7,7 +7,7 @@ The user guide will demonstrate how the software can be used.
 The following menu will appear when the program is run:
 
 **Figure 2.1a**: Main screen display  
-![Figure 2.1a](./screenshots/Figure_2.1a.png)
+![Figure 2.1a](screenshots/Figure_2.1a.png)
 
 This is the database library, the main menu of the software which consists of a collection of chess databases, where each database is a list of chess games. When the user double-clicks a database icon, a menu will appear displaying the games in the database:
 
