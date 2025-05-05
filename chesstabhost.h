@@ -11,6 +11,7 @@ March 18, 2025: File Creation
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QSqlDatabase>
 
 class ChessMainWindow;
 

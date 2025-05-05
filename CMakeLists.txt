@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets QuickWidgets Svg)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets QuickWidgets Svg)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -49,25 +49,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         notationviewer.h notationviewer.cpp
         variationdialogue.h variationdialogue.cpp
         chessposition.h chessposition.cpp
-
+        customtitlebar.ui
         img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png
         resource.qrc
         uciengine.h uciengine.cpp
         enginewidget.h enginewidget.cpp
-        chessmainwindow.h chessmainwindow.cpp
-        chessqsettings.h chessqsettings.cpp
-        chessgametabdialog.h
-        chessgametabdialog.cpp
-        img/addfile.png
-        chessgamefilesdata.h
-        chessgamefilesdata.cpp
-        chessgamefilesdata.cpp
-        README.md
-        user-guide.md
-        screenshots/Figure_2.1.1a.png screenshots/Figure_2.1a.png screenshots/Figure_2.1b.png screenshots/Figure_2.1c.png screenshots/Figure_2.2.3a.png screenshots/Figure_2.2.4a.png screenshots/Figure_2.3.3a.png screenshots/Figure_2.3.7a.png
-
-
-
 
 
     )
@@ -89,7 +75,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg)
+target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

@@ -5,6 +5,8 @@
 
 #include "chessmainwindow.h"
 
+#include <QSqlDatabase>
+
 
 
 int main(int argc, char *argv[])
@@ -12,22 +14,12 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
 
-    // app.setStyleSheet(style);
-
-    // MainWindow w;
-    // w.show();
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("library.db");
+    db.open();
 
     ChessMainWindow w;
-
     w.show();
-
-
-    // testWidget test;
-    // test.show();
-
-    // Form form;
-    // form.show();
-
 
     return app.exec();
 }
