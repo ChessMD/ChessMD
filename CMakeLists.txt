@@ -54,6 +54,18 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         resource.qrc
         uciengine.h uciengine.cpp
         enginewidget.h enginewidget.cpp
+        chessmainwindow.h chessmainwindow.cpp
+        chessqsettings.h chessqsettings.cpp
+        chessgametabdialog.h
+        chessgametabdialog.cpp
+        img/addfile.png
+        chessgamefilesdata.h
+        chessgamefilesdata.cpp
+        chessgamefilesdata.cpp
+        README.md
+        user-guide.md
+        screenshots/Figure_2.1.1a.png screenshots/Figure_2.1a.png screenshots/Figure_2.1b.png screenshots/Figure_2.1c.png screenshots/Figure_2.2.3a.png screenshots/Figure_2.2.4a.png screenshots/Figure_2.3.3a.png screenshots/Figure_2.3.7a.png
+
 
 
     )

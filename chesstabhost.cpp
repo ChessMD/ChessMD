@@ -7,13 +7,14 @@ March 18, 2025: File Creation
 #include "chessgamewindow.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
+#include "chessmainwindow.h"
 
 
 #include <qDebug>
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QApplication>
-
+#include <QSqlQuery>
 
 
 
@@ -242,7 +243,7 @@ void ChessTabHost::onTabReplaced(const QString &fileIdentifier)
 
     dbViewer->addGame(fileIdentifier);
 
-    addNewTab(dbViewer, fileIdentifier);
+    addNewTab(dbViewer,     fileIdentifier);
     onTabCloseRequested(closeIndex);
 
     ((ChessMainWindow *) m_parent)->setStatusBarText("");
