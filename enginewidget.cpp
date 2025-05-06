@@ -7,6 +7,7 @@ April 11, 2025: File Creation
 #include "chessposition.h"
 #include "chessqsettings.h"
 
+#include "QFile"
 #include <QDebug>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -48,9 +49,15 @@ EngineWidget::EngineWidget(QWidget *parent)
 
     QString binaryPath = m_settings->getEngineFile();
 
-    m_engine->startEngine(binaryPath);
+    // No valid path
+    if (binaryPath.isEmpty() || !QFile::exists(binaryPath)) {
+        m_output->append("No engine selected! To open an engine, go to the main window and choose Settings->Select Engine File");
+    } else {
+        // To do: get engine name from UCI
+        m_engine->startEngine(binaryPath);
 
-    qDebug() << binaryPath;
+        qDebug() << binaryPath;
+    }
 }
 
 void EngineWidget::setPosition(const QString &fen) {

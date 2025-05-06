@@ -43,7 +43,7 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
 
     addToolBar(m_Toolbar);
 
-    // A) Set the chessboard as central widget of window, and link to QML
+    // Set the chessboard as central widget of window, and link to QML
     QQuickWidget* boardView = new QQuickWidget;
     m_positionViewer = new ChessPosition(this);
 
@@ -53,7 +53,7 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
     boardView->setMinimumSize(200, 200);
     setCentralWidget(boardView);
 
-    // B) Create NotationViewer dockable panel
+    // Create NotationViewer dockable panel
     m_notationViewer = new NotationViewer(this);
     m_notationViewer->setRootMove(rootMove);
     connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
@@ -82,7 +82,7 @@ ChessGameWindow::ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> 
 }
 
 void ChessGameWindow::engineSetup(){
-    // C) Create the engine dockable panel
+    // Create the engine dockable panel
     m_engineViewer = new EngineWidget(this);
     m_engineDock = new QDockWidget(tr("Engine"), this);
     m_engineDock->setWidget(m_engineViewer);

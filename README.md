@@ -3,6 +3,7 @@
 A Qt-based chess game and database viewer. This application allows users to browse, manage, and analyze chess games stored in `.pgn` files, offering features such as search, filtering, variation tracking, and engine analysis.
 
 ![Figure 2.1b](screenshots/Figure_2.1b.png)
+![Figure 2.1c](screenshots/Figure_2.1c.png)
 
 ## Features
 
@@ -30,3 +31,8 @@ mkdir build
 cd build
 cmake ..
 make
+```
+
+## Chess Piece Attribution
+
+This project uses chess piece images from [Lichess.org](https://lichess.org), available under various open licenses. The original repository can be found at [https://github.com/lichess-org/lila](https://github.com/lichess-org/lila), and the files are located under [`public/piece/`](https://github.com/lichess-org/lila/tree/master/public/piece).
