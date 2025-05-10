@@ -7,7 +7,7 @@
 #include <QListView>
 #include <QStandardItemModel>
 
-class ChessGameTabDialog;
+class ChessTabHost;
 
 namespace Ui {
 class DatabaseLibrary;
@@ -42,7 +42,7 @@ private:
 
     QWidget* m_parent;
 
-    ChessGameTabDialog  *gameFilesTabDialog;
+    ChessTabHost *host;
 
     void addDatabase();
     int getFileNameRow(QString file_name);

@@ -1,6 +1,3 @@
-/*
-March 18, 2025: File Creation
-*/
 
 #ifndef CHESSTABHOST_H
 #define CHESSTABHOST_H
@@ -13,14 +10,13 @@ March 18, 2025: File Creation
 #include <QLabel>
 #include <QSqlDatabase>
 
-class ChessMainWindow;
 
-// Custom tab bar to hold ChessGameWindow, DatabaseViewer, and DatabaseLibrary
 class CustomTabBar : public QTabBar {
     Q_OBJECT
 
 public:
     explicit CustomTabBar(int defaultWidth, QWidget* parent = nullptr);
+
 
 protected:
     QSize tabSizeHint(int index) const override;
@@ -67,7 +63,8 @@ public:
     explicit ChessTabHost(QWidget *parent = nullptr);
     void addNewTab(QWidget* embed, QString title);
     int rowCount();
-    void setActiveTab(int index);
+    bool tabExists(QString label);
+    void activateTabByLabel(QString label);
 
 private slots:
     void onTabChanged(int index);
@@ -77,17 +74,11 @@ private slots:
     void onTabReplaced(const QString &fileIdentifier);
 
 private:
-
-    bool isTabTitleExist(QString title);
-
     QTabBar* tabBar;
     QToolButton* addTabButton;
     QStackedWidget* stack;
 
-    QWidget* m_parent;
-
 signals:
-
 };
 
 #endif // CHESSTABHOST_H

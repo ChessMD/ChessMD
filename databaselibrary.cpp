@@ -8,6 +8,7 @@
 #include "chessgamefilesdata.h"
 #include "chessgametabdialog.h"
 #include "chessmainwindow.h"
+#include "chesstabhost.h"
 
 
 DatabaseLibrary::DatabaseLibrary(QWidget *parent)
@@ -49,7 +50,7 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
 
     ui->MainLayout->addWidget(listView);
 
-    gameFilesTabDialog = new ChessGameTabDialog;
+    host = new ChessTabHost;
 }
 
 DatabaseLibrary::~DatabaseLibrary()
@@ -65,7 +66,7 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
     QString fileName = index.data(Qt::ToolTipRole).toString();
 
-    if (gameFilesTabDialog->TabExist(fileName) == false) {
+    if (host->tabExists(fileName) == false) {
 
         DatabaseViewer * gamesViewer = new DatabaseViewer;
 
@@ -76,17 +77,21 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
         gamesViewer->addGame(fileName);
 
-        gameFilesTabDialog->addTab(gamesViewer, fileName);
+        host->addNewTab(gamesViewer, fileName);
 
         ((ChessMainWindow *) m_parent)->setStatusBarText("");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
     } else {
-        gameFilesTabDialog->ActiveTabByLabel(fileName);
+        host->activateTabByLabel(fileName);
     }
 
-    gameFilesTabDialog->move(50, 50);
-    gameFilesTabDialog->show();
-    gameFilesTabDialog->activateWindow();
+    host->move(50, 50);
+    //set focus to new window
+    //source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
+    host->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+    host->raise();
+    host->activateWindow(); // for Windows
+    host->show();
 
 }
 
@@ -107,7 +112,7 @@ void DatabaseLibrary::onClick(const QModelIndex &index)
     }
 
     QString fileName = index.data(Qt::ToolTipRole).toString();
-    gameFilesTabDialog->ActiveTabByLabel(fileName);
+    host->activateTabByLabel(fileName);
 
 }
 

@@ -14,7 +14,7 @@
 #include <QTableWidget>
 #include <QHeaderView>
 
-class ChessGameTabDialog;
+class ChessTabHost;
 
 namespace Ui {
 class DatabaseViewer;
@@ -50,7 +50,7 @@ private:
     DatabaseViewerModel *dbModel;
     DatabaseFilterProxyModel *proxyModel;
 
-    ChessGameTabDialog  *gameTabDialog;
+    ChessTabHost *host;
 
 };
 

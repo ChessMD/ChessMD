@@ -6,6 +6,8 @@ April 11, 2025: File Creation
 #include "chessposition.h"
 #include "chessqsettings.h"
 
+#include "QFile"
+#include <QDebug>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
