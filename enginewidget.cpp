@@ -3,54 +3,62 @@ April 11, 2025: File Creation
 */
 
 #include "enginewidget.h"
-#include "uciengine.h"
 #include "chessposition.h"
 #include "chessqsettings.h"
 
-#include <QDebug>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QTextEdit>
-#include <QSpinBox>
-#include <QPushButton>
+#include <QHeaderView>
 #include <QLabel>
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
     m_engine(new UciEngine(this)),
-    m_output(new QTextEdit(this)),
-    m_depth(new QSpinBox(this)),
-    m_button(new QPushButton(tr("Analyse"), this))
+    m_tree(new QTreeWidget(this)),
+    m_multiPv(new QSpinBox(this)),
+    m_buttonAnalyse(new QPushButton(tr("Analyse"), this)),
+    m_buttonStop(new QPushButton(tr("Stop"), this)),
+    m_console(new QTextEdit(this))
 {
-    m_output->setReadOnly(true);
+    // Tree setup
+    m_tree->setColumnCount(2);
+    m_tree->setHeaderLabels({ tr("Eval"), tr("Variation") });
+    m_tree->setRootIsDecorated(true);
+    m_tree->setUniformRowHeights(true);
+    m_tree->setIndentation(12);
 
-    m_depth->setRange(1, 50);
-    m_depth->setValue(15);
+    // Console setup
+    m_console->setReadOnly(true);
+    m_console->setFixedHeight(150);
 
-    connect(m_button, &QPushButton::clicked,
-            this,      &EngineWidget::onAnalyseClicked);
-    connect(m_engine, &UciEngine::infoReceived,
-            this,      &EngineWidget::onEngineInfo);
-    connect(m_engine, &UciEngine::bestMove,
-            this,      &EngineWidget::onBestMove);
+    // Controls
+    m_multiPv->setRange(1, 10);
+    m_multiPv->setValue(3);
+    m_buttonStop->setEnabled(false);
 
-    auto *controls = new QHBoxLayout;
-    controls->addWidget(new QLabel(tr("Depth:")));
-    controls->addWidget(m_depth);
-    controls->addWidget(m_button);
+    auto *ctrl = new QHBoxLayout;
+    ctrl->addWidget(new QLabel(tr("Lines:")));
+    ctrl->addWidget(m_multiPv);
+    ctrl->addWidget(m_buttonAnalyse);
+    ctrl->addWidget(m_buttonStop);
 
     auto *lay = new QVBoxLayout(this);
-    lay->addLayout(controls);
-    lay->addWidget(m_output);
+    lay->addLayout(ctrl);
+    lay->addWidget(m_tree);
+    lay->addWidget(new QLabel(tr("UCI Log:")));
+    lay->addWidget(m_console);
 
-    ChessQSettings * m_settings = new ChessQSettings();
-    m_settings->loadSettings();
+    // Engine start & signals
+    ChessQSettings s; s.loadSettings();
+    m_engine->startEngine(s.getEngineFile());
 
-    QString binaryPath = m_settings->getEngineFile();
+    connect(m_buttonAnalyse, &QPushButton::clicked, this, &EngineWidget::onAnalyseClicked);
+    connect(m_buttonStop, &QPushButton::clicked, this, &EngineWidget::onStopClicked);
 
-    m_engine->startEngine(binaryPath);
-
-    qDebug() << binaryPath;
+    connect(m_engine, &UciEngine::pvUpdate, this, &EngineWidget::onPvUpdate);
+    connect(m_engine, &UciEngine::bestMove, this, &EngineWidget::onBestMove);
+    connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
+    connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
 }
 
 void EngineWidget::setPosition(const QString &fen) {
@@ -58,45 +66,69 @@ void EngineWidget::setPosition(const QString &fen) {
     m_engine->setPosition(fen);
 }
 
-void EngineWidget::onAnalyseClicked() {
-    m_output->clear();
-    m_engine->setPosition(m_currentFen);
-    m_engine->goDepth(m_depth->value());
-}
-
-
-void EngineWidget::onEngineInfo(const QString &info) {
-    if (!info.startsWith("info depth"))
-        return;
-
-    // Extract cp or mate score
-    static const QRegularExpression reScore(R"(score (cp|mate) (-?\d+))");
-    auto m = reScore.match(info);
-    if (!m.hasMatch())
-        return;
-
-    QString type = m.captured(1);
-    int val      = m.captured(2).toInt();
-
-    if (type == "cp") {
-        double cp = val / 100.0;
-        m_output->setPlainText(QString("Eval: %1").arg(QString::number(cp, 'f', 2)));
-    } else {
-        m_output->setPlainText(QString("Mate in %1").arg(val));
-    }
-}
-
-
-void EngineWidget::onBestMove(const QString &move) {
-    // Append best move at top
-    m_output->append(QString("Best: %1").arg(move));
-}
-
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {
-        m_output->clear();
         QString fen = move->m_position->positionToFEN();
         setPosition(fen);
-        m_engine->goDepth(m_depth->value());
+        onAnalyseClicked();
     }
+}
+
+void EngineWidget::onAnalyseClicked() {
+    if (m_currentFen.isEmpty()) return;
+
+    m_tree->clear();
+    m_lineItems.clear();
+    m_console->clear();
+
+    int n = m_multiPv->value();
+    for (int i = 1; i <= n; ++i) {
+        auto *root = new QTreeWidgetItem(m_tree);
+        root->setText(0, tr("Line %1…").arg(i));
+        root->setText(1, tr("(waiting)"));
+        root->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        m_lineItems[i] = root;
+    }
+
+    m_buttonAnalyse->setEnabled(false);
+    m_buttonStop->setEnabled(true);
+
+    m_engine->startInfiniteSearch(n);
+}
+
+void EngineWidget::onStopClicked() {
+    m_engine->stopSearch();
+    m_buttonStop->setEnabled(false);
+}
+
+void EngineWidget::onPvUpdate(const PvInfo &info) {
+    auto it = m_lineItems.find(info.multipv);
+    if (it == m_lineItems.end()) return;
+    QTreeWidgetItem *root = it.value();
+
+    QString evalTxt = info.isMate ? tr("Mate in %1").arg((int)info.score) : QString("%1").arg(info.score, 0, 'f', 2);
+    root->setText(0, evalTxt);
+
+    const int maxLen = 40;
+    QString pv = info.pvLine;
+    QString disp = (pv.length() > maxLen) ? pv.left(maxLen) + " …" : pv;
+    root->setText(1, disp);
+
+    root->takeChildren();
+    auto *child = new QTreeWidgetItem(root);
+    child->setFirstColumnSpanned(true);
+    child->setText(0, pv);
+    root->setExpanded(true);
+}
+
+void EngineWidget::onBestMove(const QString &move) {
+    m_buttonAnalyse->setEnabled(true);
+}
+
+void EngineWidget::onInfoLine(const QString &line) {
+    m_console->append(QStringLiteral("<< %1").arg(line));
+}
+
+void EngineWidget::onCmdSent(const QString &cmd) {
+    m_console->append(QStringLiteral(">> %1").arg(cmd));
 }

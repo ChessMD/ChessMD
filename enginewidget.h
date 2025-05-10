@@ -9,16 +9,15 @@ April 11, 2025: File Creation
 #include "notation.h"
 
 #include <QWidget>
-#include <QTextEdit>
+#include <QTreeWidget>
 #include <QSpinBox>
 #include <QPushButton>
+#include <QTextEdit>
 
-// Display for UCI Engine interface
 class EngineWidget : public QWidget {
     Q_OBJECT
 public:
     explicit EngineWidget(QWidget *parent = nullptr);
-
     void setPosition(const QString &fen);
 
 public slots:
@@ -26,14 +25,21 @@ public slots:
 
 private slots:
     void onAnalyseClicked();
-    void onEngineInfo(const QString &info);
+    void onStopClicked();
+    void onPvUpdate(const PvInfo &info);
     void onBestMove(const QString &move);
+    void onInfoLine(const QString &line);
+    void onCmdSent(const QString &cmd);
 
 private:
-    UciEngine   *m_engine;
-    QTextEdit   *m_output;
-    QSpinBox    *m_depth;
-    QPushButton *m_button;
-    QString      m_currentFen;
+    UciEngine       *m_engine;
+    QTreeWidget     *m_tree;
+    QSpinBox        *m_multiPv;
+    QPushButton     *m_buttonAnalyse;
+    QPushButton     *m_buttonStop;
+    QTextEdit       *m_console;
+    QString          m_currentFen;
+    QMap<int, QTreeWidgetItem*> m_lineItems;
 };
+
 #endif // ENGINEWIDGET_H
