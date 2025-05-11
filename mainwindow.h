@@ -2,22 +2,42 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMenuBar>
+#include <QMenu>
+#include <QStatusBar>
 
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
-QT_END_NAMESPACE
+class DatabaseLibrary;
 
-class MainWindow : public QMainWindow
+
+class MainWindow  : public QMainWindow
 {
     Q_OBJECT
-
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    MainWindow();
+
+    void setStatusBarText(const QString &text);
+
+protected:
+    void showEvent(QShowEvent *ev);
 
 private:
-    Ui::MainWindow *ui;
+
+    void createMenus();
+
+    DatabaseLibrary *m_dbLibrary;
+    QMenuBar * m_menuBar;
+
+
+private slots:
+
+    void onAddGame();
+    void onSelectEngineFile();
+
+
+signals:
+
+
 };
+
+
 #endif // MAINWINDOW_H

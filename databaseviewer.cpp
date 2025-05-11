@@ -52,24 +52,20 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->setShowGrid(false);
 
 
-    // Build the notation tree just like in onTableActivated:
+    // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-
-    // Create your ChessGameWindow
     ChessGameWindow *embed = new ChessGameWindow(this, rootMove);
     embed->previewSetup();
+    embed->setFocusPolicy(Qt::StrongFocus);
 
-    // Clear out any previous preview
-    QWidget* preview = ui->gamePreview;
-    preview->hide();
-
-    // Put embed inside gamePreview
-    auto* containerLayout = new QVBoxLayout(preview);
+    // put embed inside gamePreview
+    ui->gamePreview->hide();
+    QLayout* containerLayout = new QVBoxLayout(ui->gamePreview);
     containerLayout->setContentsMargins(0, 0, 0, 0);
     containerLayout->addWidget(embed);
-    preview->setLayout(containerLayout);
-    preview->show();
+    ui->gamePreview->setLayout(containerLayout);
+    ui->gamePreview->show();
 }
 
 DatabaseViewer::~DatabaseViewer()
@@ -114,7 +110,6 @@ void DatabaseViewer::addGame(QString file_name)
 
     for(auto &game: database){
         if(game.headerInfo.size() > 0){
-            game.printHeader();
             int row = dbModel->rowCount();
 
 
@@ -180,9 +175,7 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
         buildNotationTree(game.getRootVariation(), rootMove);
 
         ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
-        gameWin->engineSetup();
-        gameWin->toolbarSetup();
-
+        gameWin->mainSetup();
 
         host->addNewTab(gameWin, title);
     }
@@ -199,45 +192,58 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
     host->show();
 }
 
+void clearPreview(QWidget* container) {
+    // Grab the existing layout on the container
+    QLayout* oldLayout = container->layout();
+    if (!oldLayout) return;
+
+    // Take widgets/items out one by one
+    QLayoutItem* item = nullptr;
+    while ((item = oldLayout->takeAt(0)) != nullptr) {
+        if (QWidget* w = item->widget()) {
+            // Remove it from the layout and schedule for deletion
+            oldLayout->removeWidget(w);
+            w->deleteLater();
+        }
+        // If for some reason there was a nested layout, clear that too
+        if (auto childLayout = item->layout()) {
+            delete childLayout;  // it should already be emptied
+        }
+        delete item;
+    }
+
+    // Finally delete the now-empty layout
+    delete oldLayout;
+}
+
 void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
 {
     if (!proxyIndex.isValid())
         return;
 
-    // Map to your source model
+    // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
     const PGNGameData& game = dbModel->getGame(row);
 
-    // Build the notation tree just like in onTableActivated:
+    // build the notation tree from the game and construct a ChessGameWindow preview
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
     buildNotationTree(game.getRootVariation(), rootMove);
-
-    // Create your ChessGameWindow
     ChessGameWindow *embed = new ChessGameWindow(this, rootMove);
     embed->previewSetup();
+    embed->setFocusPolicy(Qt::StrongFocus);
 
-    // Clear out any previous preview
-    QWidget* preview = ui->gamePreview;
-    preview->hide();
-    QLayout* oldLayout = preview->layout();
-    if (oldLayout) {
-        // delete old widgets/layout
-        QLayoutItem* item;
-        while ((item = oldLayout->takeAt(0)) != nullptr) {
-            delete item->widget();
-            delete item;
-        }
-        delete oldLayout;
+    // put embed inside gamePreview
+    ui->gamePreview->hide();
+    if (ui->gamePreview->layout()) {
+        clearPreview(ui->gamePreview); // clear old preview
     }
-
-    // Put embed inside gamePreview
-    auto* containerLayout = new QVBoxLayout(preview);
+    QLayout* containerLayout = new QVBoxLayout(ui->gamePreview);
     containerLayout->setContentsMargins(0, 0, 0, 0);
     containerLayout->addWidget(embed);
-    preview->setLayout(containerLayout);
-    preview->show();
+    ui->gamePreview->setLayout(containerLayout);
+    ui->gamePreview->show();
 }
 
 void DatabaseViewer::setWindowTitle(QString text)

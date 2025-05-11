@@ -11,7 +11,7 @@ Jan 15, 2025 - Program Creation
 #include <QObject>
 #include <QFile>
 #include <QDockWidget>
-#include "chessmainwindow.h"
+#include "mainwindow.h"
 #include <QSqlDatabase>
 
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     db.open();
 
     //render the main window
-    ChessMainWindow w;
+    MainWindow w;
     w.show();
 
     //process user and system events

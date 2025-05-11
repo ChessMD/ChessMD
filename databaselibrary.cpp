@@ -7,7 +7,7 @@
 #include "ui_databaselibrary.h"
 #include "chessgamefilesdata.h"
 #include "chessgametabdialog.h"
-#include "chessmainwindow.h"
+#include "mainwindow.h"
 #include "chesstabhost.h"
 
 
@@ -72,14 +72,14 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
         gamesViewer->setWindowTitle(fileName);
 
-        ((ChessMainWindow *) m_parent)->setStatusBarText("Loading ...");
+        ((MainWindow *) m_parent)->setStatusBarText("Loading ...");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
 
         gamesViewer->addGame(fileName);
 
         host->addNewTab(gamesViewer, fileName);
 
-        ((ChessMainWindow *) m_parent)->setStatusBarText("");
+        ((MainWindow *) m_parent)->setStatusBarText("");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
     } else {
         host->activateTabByLabel(fileName);

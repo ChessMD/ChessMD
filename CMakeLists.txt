@@ -54,7 +54,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         resource.qrc
         uciengine.h uciengine.cpp
         enginewidget.h enginewidget.cpp
-        chessmainwindow.h chessmainwindow.cpp
+        mainwindow.h mainwindow.cpp
         chessqsettings.h chessqsettings.cpp
         chessgametabdialog.h
         chessgametabdialog.cpp

@@ -18,25 +18,28 @@ class ChessGameWindow  : public QMainWindow
     Q_OBJECT
 public:
     explicit ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> rootMove);
-    void previewSetup();
+    void notationSetup();
     void engineSetup();
+    void notationToolbarSetup();
     void toolbarSetup();
+
+    void mainSetup();
+    void previewSetup();
 
 
 protected:
     void showEvent(QShowEvent *ev) override;
 
 private:
-    NotationViewer* m_notationViewer; // Notation tree viewer
-    EngineWidget* m_engineViewer; // UCI Engine viewer
-    ChessPosition* m_positionViewer; // Chessboard viewer
-    QToolBar* m_Toolbar;//Game window toolbar
+    NotationViewer* m_notationViewer;
+    EngineWidget* m_engineViewer;
+    ChessPosition* m_positionViewer;
+    QToolBar* m_Toolbar;
 
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
 
 private slots:
-    // Appends a new user move to the notation tree
     void onMoveMade(QSharedPointer<NotationMove> move);
     void onMoveSelected(QSharedPointer<NotationMove> move);
 
@@ -50,7 +53,6 @@ private slots:
     void onLoadPgnClicked();
     void onResetBoardClicked();
     void onExportPgnClicked();
-
 
 signals:
 };
