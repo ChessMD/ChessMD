@@ -6,6 +6,8 @@
 #include "chesstabhost.h"
 #include "chessmainwindow.h"
 
+#include <QSqlDatabase>
+#include <QSqlQuery>
 
 
 ChessMainWindow::ChessMainWindow()
@@ -33,6 +35,27 @@ ChessMainWindow::ChessMainWindow()
     createMenus();
 
     setMinimumSize(800,600);
+
+    QSqlDatabase db = QSqlDatabase::database();
+
+    QSqlQuery query(db);
+    query.exec(R"(
+            CREATE TABLE IF NOT EXISTS databases (
+                id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                Event TEXT,
+                Site TEXT,
+                Date TEXT,
+                Round TEXT,
+                White TEXT,
+                Black TEXT,
+                Result TEXT,
+                WhiteElo TEXT,
+                BlackElo TEXT,
+                ECO TEXT,
+                PlyCount TEXT,
+                SourceVersionDate TEXT
+            )
+        )");
 }
 
 

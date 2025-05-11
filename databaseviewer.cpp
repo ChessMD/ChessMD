@@ -6,14 +6,14 @@
 #include "databasefilter.h"
 #include "chessgamewindow.h"
 #include "chessposition.h"
-#include "chessgametabdialog.h"
 #include "chesstabhost.h"
 
 
 #include <fstream>
 #include <vector>
 #include <QResizeEvent>
-
+#include <QSqlQuery>
+#include <QSqlError>
 
 DatabaseViewer::DatabaseViewer(QWidget *parent)
     : QWidget(parent)
@@ -42,7 +42,6 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onTableSelected);
 
     ui->ContentLayout->insertWidget(0, dbView);
-    // ui->gamePreview
 
     dbView->setItemDelegate(new TableDelegate(this));
     dbView->setStyleSheet(getStyle("styles/tablestyle.qss"));
@@ -86,18 +85,44 @@ void DatabaseViewer::addGame(QString file_name)
     StreamParser parser(file);
     std::vector<PGNGameData> database = parser.parseDatabase();
 
+    QSqlDatabase db = QSqlDatabase::database();
+    db.open();
+    QSqlQuery q(db);
+
+    const QSet<QString> requiredKeys = {"Event","Site","Date","Round","White","Black","Result", "WhiteElo", "BlackElo", "ECO"};
+
     for(auto &game: database){
         if(game.headerInfo.size() > 0){
+            game.printHeader();
             int row = dbModel->rowCount();
+
+
+
 
             dbModel->insertRow(row);
             dbModel->addGame(game);
+
+            QStringList cols, params;
             for(int h = 0; h < game.headerInfo.size(); h++){
+                if(requiredKeys.contains(game.headerInfo[h].first)){
+                    cols << game.headerInfo[h].first;
+                    QString tS = game.headerInfo[h].second;
+                    tS.replace("'", "''");
+                    params << QString("'%1'").arg(tS);
+                }
                 if(DATA_ORDER[h] > -1){
                     QModelIndex index = dbModel->index(row, DATA_ORDER[h]);
                     dbModel->setData(index, game.headerInfo[h].second);
                 }
             }
+
+            QString sql = QStringLiteral("INSERT INTO databases(%1) VALUES(%2)").arg(cols.join(", ")).arg(params.join(", "));
+            if (!q.exec(sql)) {
+                qWarning() << "Insert failed:" << q.lastError().text();
+                return;
+            }
+
+
         } else {
             qDebug() << "Error: no game found!";
         }

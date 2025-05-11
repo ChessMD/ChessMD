@@ -1,3 +1,10 @@
+/*
+Chess Tab Host
+Reusable widget that allows for embeds within a custom tab and user event bar.
+History:
+March 18, 2025 - Program Creation
+*/
+
 #include "chesstabhost.h"
 #include "ui_customtitlebar.h"
 #include "chessgamewindow.h"
@@ -9,7 +16,7 @@
 #include <QMouseEvent>
 #include <QSqlQuery>
 
-
+//initializes custom tab bar
 CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     : QTabBar(parent)
     , defaultWidth(defaultWidth)
@@ -22,6 +29,7 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
 
 }
 
+//changes tab bar sizing
 QSize CustomTabBar::tabSizeHint(int index) const {
     QSize defaultSize = QTabBar::tabSizeHint(index);
 
@@ -39,6 +47,7 @@ QSize CustomTabBar::tabSizeHint(int index) const {
     return defaultSize;
 }
 
+//initalizes container for custom tab bar
 CustomTitleBar::CustomTitleBar(QWidget* parent)
     : QWidget(parent)
     , ui(new Ui::CustomTitleBar)
@@ -66,6 +75,7 @@ CustomTitleBar::~CustomTitleBar(){
     delete ui;
 }
 
+//handle minimize, maxmimize, and close buttons
 void CustomTitleBar::MinimizeWindow(){
     window()->showMinimized();
 }
@@ -79,6 +89,7 @@ void CustomTitleBar::CloseWindow(){
     window()->close();
 }
 
+//handles window adjustment
 void CustomTitleBar::mousePressEvent(QMouseEvent* event){
     clickPos= event->pos();
     isMoving= true;
@@ -93,7 +104,7 @@ void CustomTitleBar::mouseMoveEvent(QMouseEvent* event){
 }
 
 void CustomTitleBar::mouseReleaseEvent(QMouseEvent* event){
-    isMoving= false;
+    isMoving = false;
 }
 
 void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
@@ -104,7 +115,7 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
 
 
 
-
+//initializes tab host window
 ChessTabHost::ChessTabHost(QWidget* parent)
     : QWidget(parent)
 {
@@ -136,6 +147,7 @@ int ChessTabHost::rowCount(){
     return tabBar->count();
 }
 
+//handles new tab depending on embed type
 void ChessTabHost::addNewTab(QWidget* embed, QString title) {
 
 
@@ -145,23 +157,23 @@ void ChessTabHost::addNewTab(QWidget* embed, QString title) {
     if(DatabaseLibrary* dbLibrary = qobject_cast<DatabaseLibrary*>(embed)){
         connect(dbLibrary, &DatabaseLibrary::fileDoubleClicked, this, &ChessTabHost::onTabReplaced);
         tabTitle = QString("New Tab");
-        QSqlDatabase db = QSqlDatabase::database();
+        // QSqlDatabase db = QSqlDatabase::database();
 
-        QSqlQuery query(db);
-        query.exec(R"(
-            CREATE TABLE IF NOT EXISTS databases (
-                id    INTEGER PRIMARY KEY AUTOINCREMENT,
-                event TEXT,
-                site TEXT,
-                date TEXT,
-                round TEXT,
-                white TEXT,
-                black TEXT,
-                result TEXT,
-                whiteElo TEXT,
-                blackElo TEXT
-            )
-        )");
+        // QSqlQuery query(db);
+        // query.exec(R"(
+        //     CREATE TABLE IF NOT EXISTS databases (
+        //         id    INTEGER PRIMARY KEY AUTOINCREMENT,
+        //         Event TEXT,
+        //         Site TEXT,
+        //         Date TEXT,
+        //         Round TEXT,
+        //         White TEXT,
+        //         Black TEXT,
+        //         Result TEXT,
+        //         WhiteElo TEXT,
+        //         BlackElo TEXT
+        //     )
+        // )");
 
     }
     else if(ChessGameWindow* gameWindow = qobject_cast<ChessGameWindow*>(embed)){
@@ -185,6 +197,8 @@ void ChessTabHost::addNewTab(QWidget* embed, QString title) {
     tabBar->setCurrentIndex(index);
 }
 
+
+//Tab Event Handling
 void ChessTabHost::onTabChanged(int index) {
     stack->setCurrentIndex(index);
 }
