@@ -16,7 +16,7 @@ DatabaseFilter::~DatabaseFilter()
 
 
 DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
-
+    // handle name filter values
     _filter.blackFirst = ui->BlackFirst->text();
     _filter.whiteFirst = ui->WhiteFirst->text();
     _filter.blackLast = ui->BlackLast->text();

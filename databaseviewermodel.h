@@ -5,6 +5,7 @@
 
 #include <QAbstractItemModel>
 
+// DatabaseViewerModel class is a model to store game headers
 class DatabaseViewerModel : public QAbstractItemModel
 {
 public:

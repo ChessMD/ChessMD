@@ -6,22 +6,23 @@
 #include "databaselibrary.h"
 #include "ui_databaselibrary.h"
 #include "chessgamefilesdata.h"
-#include "chessgametabdialog.h"
 #include "chessmainwindow.h"
 #include "chesstabhost.h"
 
-
+// DatabaseLibrary Constructor
 DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::DatabaseLibrary)
 {
-    m_parent = parent;
+
+
+    //
+    // setup ui
+    //
 
     ui->setupUi(this);
-
-
     listView = new QListView(this);
-    // Configure the view for an icon mode grid
+    // configure the view for an icon mode grid
     listView->setViewMode(QListView::IconMode);
     listView->setIconSize(QSize(64, 64));
     listView->setGridSize(QSize(100, 100));
@@ -31,6 +32,8 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     listView->setWrapping(true);
     listView->setContextMenuPolicy(Qt::CustomContextMenu);
 
+
+    // setup model
     model = new QStandardItemModel(this);
 
     QStandardItem *item = new QStandardItem;
@@ -42,13 +45,17 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
 
     LoadGamesList();
 
+    // setup listView
     listView->setModel(model);
+    ui->MainLayout->addWidget(listView);
 
+
+    //signals and slots
     connect(listView, &QListView::doubleClicked, this, &DatabaseLibrary::onDoubleClick);
     connect(listView, &QListView::clicked, this, &DatabaseLibrary::onClick);
     connect(listView, &QListView::customContextMenuRequested, this, &DatabaseLibrary::showContextMenu);
 
-    ui->MainLayout->addWidget(listView);
+
 
     host = new ChessTabHost;
 }
@@ -58,6 +65,7 @@ DatabaseLibrary::~DatabaseLibrary()
     delete ui;
 }
 
+// Handle opening databases
 void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 {
     if (index.row() == 0 && index.column() == 0) {
@@ -66,28 +74,31 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
     QString fileName = index.data(Qt::ToolTipRole).toString();
 
-    if (host->tabExists(fileName) == false) {
 
+    if (host->tabExists(fileName) == false) {
+        // Open new window if not previously opened
         DatabaseViewer * gamesViewer = new DatabaseViewer;
 
         gamesViewer->setWindowTitle(fileName);
 
-        ((ChessMainWindow *) m_parent)->setStatusBarText("Loading ...");
+        ((ChessMainWindow *) parent())->setStatusBarText("Loading ...");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
 
         gamesViewer->addGame(fileName);
 
         host->addNewTab(gamesViewer, fileName);
 
-        ((ChessMainWindow *) m_parent)->setStatusBarText("");
+        ((ChessMainWindow *) parent())->setStatusBarText("");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
     } else {
+        // Direct to previously opened window
         host->activateTabByLabel(fileName);
     }
 
     host->move(50, 50);
-    //set focus to new window
-    //source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
+
+    // set focus to new window
+    // source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
     host->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
     host->raise();
     host->activateWindow(); // for Windows
@@ -95,9 +106,12 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
 }
 
+
+// Handle adding new database
 void DatabaseLibrary::onClick(const QModelIndex &index)
 {
     if (index.row() == 0 && index.column() == 0) {
+
         QString file_name = QFileDialog::getOpenFileName(this, "Select a chess PGN file", "", "PGN files (*.pgn)");
 
         int row = getFileNameRow(file_name);
@@ -116,6 +130,7 @@ void DatabaseLibrary::onClick(const QModelIndex &index)
 
 }
 
+// Add game to library model
 void DatabaseLibrary::AddNewGame(QString file_name)
 {
     if (file_name.isEmpty())
@@ -123,6 +138,7 @@ void DatabaseLibrary::AddNewGame(QString file_name)
 
     QString name = file_name.mid(file_name.lastIndexOf("/") + 1);
 
+    // init item for listView
     QStandardItem *item = new QStandardItem;
     item->setIcon(QIcon(":/resource/img/fileicon.png"));
     item->setText(name);
@@ -135,7 +151,7 @@ void DatabaseLibrary::AddNewGame(QString file_name)
     gamesData.addNewGame(file_name);
 }
 
-
+// Load games from database
 void DatabaseLibrary::LoadGamesList()
 {
     ChessGameFilesData gamesData;
@@ -158,6 +174,7 @@ void DatabaseLibrary::LoadGamesList()
     }
 }
 
+// Handle right-click menu
 void DatabaseLibrary::showContextMenu(const QPoint& pos)
 {
     QModelIndex index = listView->currentIndex();
@@ -187,6 +204,7 @@ void DatabaseLibrary::showContextMenu(const QPoint& pos)
     }
 }
 
+// Get row by file name
 int DatabaseLibrary::getFileNameRow(QString file_name)
 {
     for (int i = 0; i < model->rowCount(); i++) {

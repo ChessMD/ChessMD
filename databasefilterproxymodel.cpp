@@ -1,14 +1,8 @@
 #include "databasefilterproxymodel.h"
 
-DatabaseFilterProxyModel::DatabaseFilterProxyModel(QObject *parent)
-    : QSortFilterProxyModel{parent}
-{
+DatabaseFilterProxyModel::DatabaseFilterProxyModel(QObject *parent) : QSortFilterProxyModel{parent}{}
 
-
-
-
-}
-
+// Filter by text
 void DatabaseFilterProxyModel::setTextFilter(QString header, const QString &pattern){
     if (pattern.isEmpty()){
         textFilters.remove(header);
@@ -20,6 +14,7 @@ void DatabaseFilterProxyModel::setTextFilter(QString header, const QString &patt
     invalidateFilter();
 }
 
+// Filter by range
 void DatabaseFilterProxyModel::setRangeFilter(QString header, int lower, int higher){
 
     rangeFilters[header] = {lower, higher};
@@ -28,10 +23,11 @@ void DatabaseFilterProxyModel::setRangeFilter(QString header, int lower, int hig
 
 }
 
+// Translate filters to display
 bool DatabaseFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const{
 
     for(auto [key, value]: textFilters.asKeyValueRange()){
-
+        // iterate through rows and apply text filter
         int col = -1;
         for(int i = 0; i < sourceModel()->columnCount(); i++){
             QVariant headerData = sourceModel()->headerData(i, Qt::Horizontal);
@@ -48,6 +44,7 @@ bool DatabaseFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
     }
 
     for(auto [key, value]: rangeFilters.asKeyValueRange()){
+        // iterate through rows and apply range filter
         int col = -1;
         for(int i = 0; i < sourceModel()->columnCount(); i++){
             QVariant headerData = sourceModel()->headerData(i, Qt::Horizontal);
@@ -68,6 +65,7 @@ bool DatabaseFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
     return true;
 }
 
+// Custom comparator for integer sorting
 bool DatabaseFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const{
     QString headerName = sourceModel()->headerData(left.column(), Qt::Horizontal).toString();
     if(headerName == "Elo" || headerName == "Moves"){

@@ -7,6 +7,7 @@ namespace Ui {
 class DatabaseFilter;
 }
 
+// Widget for applying database filters
 class DatabaseFilter : public QDialog
 {
     Q_OBJECT

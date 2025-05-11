@@ -7,6 +7,7 @@ namespace Ui {
 class PGNUploader;
 }
 
+// PGNUploader is a widget that lets the user select a PGN file locally
 class PGNUploader : public QDialog
 {
     Q_OBJECT

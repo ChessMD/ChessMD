@@ -4,16 +4,18 @@ DatabaseViewerModel::DatabaseViewerModel(QObject *parent): QAbstractItemModel{pa
 
 }
 
+// Returns the number of rows
 int DatabaseViewerModel::rowCount(const QModelIndex &parent) const {
     return static_cast<int>(m_data.size());
 }
 
+// Returns the number of columns
 int DatabaseViewerModel::columnCount(const QModelIndex &parent) const {
     return m_data.empty() ? 10 : static_cast<int>(m_data[0].size());
 }
 
 
-
+// Returns the values in the model
 QVariant DatabaseViewerModel::data(const QModelIndex &index, int role) const {
     if (!index.isValid())
         return QVariant();
@@ -32,6 +34,7 @@ QVariant DatabaseViewerModel::data(const QModelIndex &index, int role) const {
     return QVariant();
 }
 
+// Returns the index given a row and column
 QModelIndex DatabaseViewerModel::index(int row, int column, const QModelIndex &parent) const {
 
     if (row < 0 || row >= rowCount() || column < 0 || column >= columnCount())
@@ -45,6 +48,7 @@ QModelIndex DatabaseViewerModel::parent(const QModelIndex &child) const{
     return QModelIndex();
 }
 
+// Inserts rows given an index and a row count
 bool DatabaseViewerModel::insertRows(int row, int count, const QModelIndex &parent) {
     if (row < 0 || row > static_cast<int>(m_data.size()))
         return false;
@@ -64,6 +68,7 @@ bool DatabaseViewerModel::insertRows(int row, int count, const QModelIndex &pare
     return true;
 }
 
+// Changes the model data
 bool DatabaseViewerModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (!index.isValid() || role != Qt::EditRole)
@@ -82,6 +87,7 @@ bool DatabaseViewerModel::setData(const QModelIndex &index, const QVariant &valu
     return true;
 }
 
+// Returns the header data
 QVariant DatabaseViewerModel::headerData(int section, Qt::Orientation orientation, int role) const{
 
     if (role == Qt::TextAlignmentRole && orientation == Qt::Horizontal) {
@@ -97,6 +103,7 @@ QVariant DatabaseViewerModel::headerData(int section, Qt::Orientation orientatio
 
     return QVariant();
 }
+
 
 void DatabaseViewerModel::addGame(const PGNGameData& game) {
     m_gameData.append(game);
