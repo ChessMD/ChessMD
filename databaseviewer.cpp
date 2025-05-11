@@ -6,7 +6,6 @@
 #include "databasefilter.h"
 #include "chessgamewindow.h"
 #include "chessposition.h"
-#include "chessgametabdialog.h"
 #include "chesstabhost.h"
 
 
@@ -19,6 +18,7 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     : QWidget(parent)
     , dbView(new QTableView(this))
     , ui(new Ui::DatabaseViewer)
+    , host(new ChessTabHost)
 {
     ui->setupUi(this);
     connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
@@ -42,14 +42,33 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onTableSelected);
 
     ui->ContentLayout->insertWidget(0, dbView);
-    // ui->gamePreview
+
+    ui->gamePreview->setMaximumWidth(800);
 
     dbView->setItemDelegate(new TableDelegate(this));
     dbView->setStyleSheet(getStyle("styles/tablestyle.qss"));
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
 
-    host = new ChessTabHost;
+
+    // Build the notation tree just like in onTableActivated:
+    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
+
+    // Create your ChessGameWindow
+    ChessGameWindow *embed = new ChessGameWindow(this, rootMove);
+    embed->previewSetup();
+
+    // Clear out any previous preview
+    QWidget* preview = ui->gamePreview;
+    preview->hide();
+
+    // Put embed inside gamePreview
+    auto* containerLayout = new QVBoxLayout(preview);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->addWidget(embed);
+    preview->setLayout(containerLayout);
+    preview->show();
 }
 
 DatabaseViewer::~DatabaseViewer()
