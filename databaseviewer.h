@@ -20,6 +20,7 @@ namespace Ui {
 class DatabaseViewer;
 }
 
+// DatabaseViewer class creates and handles a chess database table.
 class DatabaseViewer : public QWidget
 {
     Q_OBJECT

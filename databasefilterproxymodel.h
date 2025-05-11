@@ -3,6 +3,7 @@
 
 #include <QSortFilterProxyModel>
 
+// Model for efficient search and sort of a table
 class DatabaseFilterProxyModel : public QSortFilterProxyModel
 {
 public:

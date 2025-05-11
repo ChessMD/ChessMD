@@ -7,6 +7,7 @@ namespace Ui {
 class DatabaseUploader;
 }
 
+// Simple widget for database upload
 class DatabaseUploader : public QDialog
 {
     Q_OBJECT

@@ -6,20 +6,25 @@
 #include <QFileDialog>
 #include <QPushButton>
 
-
+// Construct the widget
 PGNUploader::PGNUploader(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::PGNUploader)
 {
-    ui->setupUi(this);
 
+    // connect ui and init
+    ui->setupUi(this);
+    this->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    // makes it so you must complete the action before interacting elsewhere
+    this->setWindowModality(Qt::ApplicationModal);
+
+    // signals and slots
     connect(ui->uploadButton, &QPushButton::released, this, &PGNUploader::getFile);
 
-    this->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-    // this->setWindowModality(Qt::ApplicationModal);
+
 }
 
-
+// Lets users pick a file from their local computer
 void PGNUploader::getFile(){
 
 

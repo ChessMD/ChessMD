@@ -13,6 +13,7 @@ namespace Ui {
 class DatabaseLibrary;
 }
 
+// DatabaseLibrary features an interactable view of database files
 class DatabaseLibrary : public QWidget
 {
     Q_OBJECT
@@ -39,8 +40,6 @@ private:
 
     QListView *listView;
     QStandardItemModel *model;
-
-    QWidget* m_parent;
 
     ChessTabHost *host;
 

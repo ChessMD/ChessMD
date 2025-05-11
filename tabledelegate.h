@@ -3,6 +3,7 @@
 
 #include <QStyledItemDelegate>
 
+// Custom class to for styling a table
 class TableDelegate : public QStyledItemDelegate
 {
 

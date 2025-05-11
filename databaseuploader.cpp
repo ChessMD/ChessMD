@@ -5,6 +5,8 @@ DatabaseUploader::DatabaseUploader(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::DatabaseUploader)
 {
+
+    //initialize xml
     ui->setupUi(this);
 }
 
