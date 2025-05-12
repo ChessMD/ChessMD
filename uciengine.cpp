@@ -4,24 +4,31 @@ April 11, 2025: File Creation
 
 #include "uciengine.h"
 #include <QTextStream>
+#include <qregularexpression.h>
 
 UciEngine::UciEngine(QObject *parent)
     : QObject(parent)
     , m_proc(new QProcess(this))
-    , m_rePv(R"(^info\s+depth\s+(\d+).*?multipv\s+(\d+).*?score\s+(cp|mate)\s+(-?\d+).*?pv\s+(.+)$)")
 {
     m_proc->setProcessChannelMode(QProcess::MergedChannels);
-    connect(m_proc, &QProcess::readyReadStandardOutput,
-            this,   &UciEngine::handleReadyRead);
+    connect(m_proc, &QProcess::readyReadStandardOutput, this, &UciEngine::handleReadyRead);
 }
 
 UciEngine::~UciEngine() {
-    UciEngine();
+    if (m_proc->state() != QProcess::NotRunning) {
+        sendCommand("quit\n");
+        m_proc->waitForFinished(500);
+    }
 }
 
 void UciEngine::startEngine(const QString &binaryPath) {
     m_proc->start(binaryPath);
     sendCommand("uci\n");
+    sendCommand("isready\n");
+}
+
+
+void UciEngine::requestReady() {
     sendCommand("isready\n");
 }
 
@@ -41,8 +48,10 @@ void UciEngine::setPosition(const QString &fen) {
 }
 
 void UciEngine::startInfiniteSearch(int maxMultiPV) {
+    if (!m_ready) return;
     setOption("MultiPV", QString::number(maxMultiPV));
     sendCommand("go infinite\n");
+    m_ready = false;
 }
 
 void UciEngine::stopSearch() {
@@ -54,23 +63,64 @@ void UciEngine::handleReadyRead() {
         QString line = QString::fromUtf8(m_proc->readLine()).trimmed();
         emit infoReceived(line);
 
-        if (line.startsWith("bestmove ")) {
-            auto parts = line.split(' ');
-            if (parts.size() >= 2)
-                emit bestMove(parts[1]);
+        if (line == QLatin1String("readyok")){
+            m_ready = true;
+            continue;
         }
 
-        auto m = m_rePv.match(line);
-        if (m.hasMatch()) {
+        // bestmove
+        if (line.startsWith("bestmove ")) {
+            auto parts = line.split(' ', Qt::SkipEmptyParts);
+            if (parts.size() >= 2)
+                emit bestMove(parts[1]);
+            continue;
+        }
+
+        // tokenize by whitespace
+        QStringList toks = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+
+        int depth = -1, multipv = 1;
+        bool isMate = false;
+        double score = 0.0;
+        QString pvLine;
+        for (int i = 0; i < toks.size(); ++i) {
+            const QString &tk = toks[i];
+            if (tk == "depth" && i+1 < toks.size()) {
+                depth = toks[i+1].toInt();
+                ++i;
+            }
+            else if (tk == "multipv" && i+1 < toks.size()) {
+                multipv = toks[i+1].toInt();
+                ++i;
+            }
+            else if (tk == "score" && i+2 < toks.size()) {
+                const QString &typ = toks[i+1];
+                const QString &num = toks[i+2];
+                if (typ == "cp") {
+                    isMate = false;
+                    score = num.toInt() / 100.0;
+                } else if (typ == "mate") {
+                    isMate = true;
+                    score = num.toInt();
+                }
+                i += 2;
+            }
+            else if (tk == "pv" && i+1 < toks.size()) {
+                // rest of tokens form the PV
+                pvLine = toks.mid(i+1).join(' ');
+                break;
+            }
+        }
+
+        // emit an update if we found both PV and depth
+        if (depth >= 0 && multipv >= 1 && !pvLine.isEmpty()) {
             PvInfo info;
-            info.depth   = m.captured(1).toInt();
-            info.multipv = m.captured(2).toInt();
-            info.isMate  = (m.captured(3) == "mate");
-            int raw      = m.captured(4).toInt();
-            info.score   = info.isMate ? raw : raw / 100.0;
-            info.pvLine  = m.captured(5);
+            info.depth   = depth;
+            info.multipv = multipv;
+            info.isMate  = isMate;
+            info.score   = score;
+            info.pvLine  = pvLine;
             emit pvUpdate(info);
         }
     }
 }
-

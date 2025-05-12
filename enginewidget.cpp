@@ -18,8 +18,6 @@ EngineWidget::EngineWidget(QWidget *parent)
     m_engine(new UciEngine(this)),
     m_tree(new QTreeWidget(this)),
     m_multiPv(new QSpinBox(this)),
-    m_buttonAnalyse(new QPushButton(tr("Analyse"), this)),
-    m_buttonStop(new QPushButton(tr("Stop"), this)),
     m_console(new QTextEdit(this))
 {
     // Tree setup
@@ -36,48 +34,51 @@ EngineWidget::EngineWidget(QWidget *parent)
     // Controls
     m_multiPv->setRange(1, 10);
     m_multiPv->setValue(3);
-    m_buttonStop->setEnabled(false);
 
     auto *ctrl = new QHBoxLayout;
     ctrl->addWidget(new QLabel(tr("Lines:")));
     ctrl->addWidget(m_multiPv);
-    ctrl->addWidget(m_buttonAnalyse);
-    ctrl->addWidget(m_buttonStop);
 
     auto *lay = new QVBoxLayout(this);
     lay->addLayout(ctrl);
     lay->addWidget(m_tree);
-    lay->addWidget(new QLabel(tr("UCI Log:")));
     lay->addWidget(m_console);
+
+    // m_console->hide();
+
+    m_debounceTimer = new QTimer(this);
+    m_debounceTimer->setSingleShot(true);
+    m_debounceTimer->setInterval(200); // 200 ms debounce
+    connect(m_debounceTimer, &QTimer::timeout, this, &EngineWidget::doPendingAnalysis);
 
     // Engine start & signals
     ChessQSettings s; s.loadSettings();
     m_engine->startEngine(s.getEngineFile());
 
-    connect(m_buttonAnalyse, &QPushButton::clicked, this, &EngineWidget::onAnalyseClicked);
-    connect(m_buttonStop, &QPushButton::clicked, this, &EngineWidget::onStopClicked);
-
     connect(m_engine, &UciEngine::pvUpdate, this, &EngineWidget::onPvUpdate);
-    connect(m_engine, &UciEngine::bestMove, this, &EngineWidget::onBestMove);
     connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
-    connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
-}
-
-void EngineWidget::setPosition(const QString &fen) {
-    m_currentFen = fen;
-    m_engine->setPosition(fen);
+    connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);   
 }
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {
-        QString fen = move->m_position->positionToFEN();
-        setPosition(fen);
-        onAnalyseClicked();
+        m_sideToMove = (move->m_position->plyCount % 2 == 0 ? 'w' : 'b');
+        m_currentFen = move->m_position->positionToFEN();
+        m_debounceTimer->start();
     }
 }
 
-void EngineWidget::onAnalyseClicked() {
+void EngineWidget::doPendingAnalysis() {
+    qDebug() << m_currentFen;
+    m_engine->setPosition(m_currentFen);
+    analysePosition();
+}
+
+void EngineWidget::analysePosition() {
     if (m_currentFen.isEmpty()) return;
+
+    m_engine->stopSearch();
+    m_engine->requestReady();
 
     m_tree->clear();
     m_lineItems.clear();
@@ -92,15 +93,7 @@ void EngineWidget::onAnalyseClicked() {
         m_lineItems[i] = root;
     }
 
-    m_buttonAnalyse->setEnabled(false);
-    m_buttonStop->setEnabled(true);
-
     m_engine->startInfiniteSearch(n);
-}
-
-void EngineWidget::onStopClicked() {
-    m_engine->stopSearch();
-    m_buttonStop->setEnabled(false);
 }
 
 void EngineWidget::onPvUpdate(const PvInfo &info) {
@@ -108,7 +101,7 @@ void EngineWidget::onPvUpdate(const PvInfo &info) {
     if (it == m_lineItems.end()) return;
     QTreeWidgetItem *root = it.value();
 
-    QString evalTxt = info.isMate ? tr("Mate in %1").arg((int)info.score) : QString("%1").arg(info.score, 0, 'f', 2);
+    QString evalTxt = info.isMate ? tr("Mate in %1").arg((int)info.score) : QString("%1").arg((m_sideToMove == 'w' ? info.score : -info.score), 0, 'f', 2);
     root->setText(0, evalTxt);
 
     const int maxLen = 40;
@@ -121,10 +114,6 @@ void EngineWidget::onPvUpdate(const PvInfo &info) {
     child->setFirstColumnSpanned(true);
     child->setText(0, pv);
     root->setExpanded(true);
-}
-
-void EngineWidget::onBestMove(const QString &move) {
-    m_buttonAnalyse->setEnabled(true);
 }
 
 void EngineWidget::onInfoLine(const QString &line) {

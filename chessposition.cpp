@@ -19,7 +19,7 @@ ChessPosition::ChessPosition(QObject *parent)
     m_castling.blackKing = true;
     m_castling.blackQueen = true;
 
-    m_enPassantTarget.clear();
+    m_enPassantTarget = '-';
     m_halfmoveClock = 0;
     m_fullmoveNumber = 1;
 }
@@ -167,7 +167,7 @@ bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol)
 bool ChessPosition::squareAttacked(int row, int col, QChar attacker) const
 {
     // Pawn attacks
-    int dir = (attacker == 'w' ? -1 : 1);
+    int dir = (attacker == 'w' ? 1 : -1);
     for (int dc : {-1, 1}) {
         int r = row + dir;
         int c = col + dc;
@@ -336,7 +336,7 @@ void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
         int epRow = (sr+dr)/2;
         m_enPassantTarget = QString(QChar('a'+sc)) + QString::number(8-epRow);
     } else {
-        m_enPassantTarget.clear();
+        m_enPassantTarget = '-';
     }
     // Promotion
     if (promotion!=QChar('\0') && from[1]=='P' && (dr==0||dr==7)) {

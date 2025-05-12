@@ -29,6 +29,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, QSharedPointer<NotationMove> r
 {
     setMinimumSize(1024,768);
     setGeometry(100, 100, 0, 0);
+    setWindowFlags(Qt::Widget);
 
     // set the chessboard as central widget of window, and link to QML
     QQuickWidget* boardView = new QQuickWidget;
@@ -100,7 +101,6 @@ void ChessGameWindow::engineSetup()
     m_engineDock = new QDockWidget(tr("Engine"), this);
     m_engineDock->setWidget(m_engineViewer);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
-    m_engineViewer->setPosition(m_notationViewer->m_selectedMove->m_position->positionToFEN());
 
     // update engine and board display when position changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
@@ -217,7 +217,6 @@ void ChessGameWindow::onLoadPgnClicked()
 
 void ChessGameWindow::onResetBoardClicked()
 {
-
 }
 
 QString buildMoveText(const QSharedPointer<NotationMove>& move)

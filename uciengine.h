@@ -7,7 +7,6 @@ April 11, 2025: File Creation
 
 #include <QObject>
 #include <QProcess>
-#include <QRegularExpression>
 
 struct PvInfo {
     int    depth;
@@ -25,6 +24,7 @@ public:
 
     void startEngine(const QString &binaryPath = QStringLiteral("/usr/bin/stockfish"));
     void quitEngine();
+    void requestReady();
 
     void setOption(const QString &name, const QString &value);
     void setPosition(const QString &fen);
@@ -42,8 +42,8 @@ private slots:
     void handleReadyRead();
 
 private:
-    QProcess          *m_proc;
-    QRegularExpression m_rePv;
+    QProcess *m_proc;
+    bool m_ready = false;
 
     // helper to write+emit
     void sendCommand(const QString &cmd) {
