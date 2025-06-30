@@ -16,49 +16,107 @@ April 11, 2025: File Creation
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
     m_engine(new UciEngine(this)),
-    m_tree(new QTreeWidget(this)),
-    m_multiPv(new QSpinBox(this)),
+    m_multiPv(3),
     m_console(new QTextEdit(this))
 {
-    // Tree setup
-    m_tree->setColumnCount(2);
-    m_tree->setHeaderLabels({ tr("Eval"), tr("Variation") });
-    m_tree->setRootIsDecorated(true);
-    m_tree->setUniformRowHeights(true);
-    m_tree->setIndentation(12);
+    auto* leftBtn1 = new QPushButton("", this);
+    auto* leftBtn2 = new QPushButton("", this);
 
-    // Console setup
+    m_evalButton = new QPushButton("0.00", this);
+    m_evalButton->setEnabled(false);
+    m_evalButton->setFlat(true);
+    m_evalButton->setStyleSheet(R"(
+        QPushButton {
+            font-size: 24px;
+            font-weight: bold;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 8px 16px;
+        }
+    )");
+
+    // Right placeholder buttons
+    auto* debugBtn = new QPushButton("🐛", this);
+    debugBtn->setToolTip("Show/Hide UCI debug console");
+    connect(debugBtn, &QPushButton::clicked, [this](){
+        m_console->setVisible(!m_console->isVisible());
+    });
+
+
+    auto* topBar = new QHBoxLayout;
+    topBar->addWidget(leftBtn1);
+    topBar->addWidget(leftBtn2);
+    topBar->addStretch();
+    topBar->addWidget(m_evalButton, 1);
+    topBar->addStretch();
+    topBar->addWidget(debugBtn);
+
+    auto* linesTitle = new QLabel(tr("Engine Lines"), this);
+    linesTitle->setStyleSheet("font-weight: bold;");
+    auto* btnDec = new QPushButton("−", this);
+    auto* btnInc = new QPushButton("+", this);
+    btnDec->setFixedSize(20, 20);
+    btnInc->setFixedSize(20, 20);
+    connect(btnDec, &QPushButton::clicked, [this](){
+        m_multiPv--;
+        m_multiPv = qMax(1, m_multiPv);
+        analysePosition();
+    });
+    connect(btnInc, &QPushButton::clicked, [this](){
+        m_multiPv++;
+        analysePosition();
+    });
+
+    auto* linesHeader = new QHBoxLayout;
+    linesHeader->addStretch();
+    linesHeader->addWidget(linesTitle);
+    linesHeader->addStretch();
+    linesHeader->addWidget(btnDec);
+    linesHeader->addWidget(btnInc);
+
+    btnDec->setFixedSize(20, 20);
+    btnInc->setFixedSize(20, 20);
+
+    auto* engineFrame = new QFrame(this);
+    engineFrame->setFrameShape(QFrame::StyledPanel);
+    auto* engineLayout = new QVBoxLayout(engineFrame);
+    engineLayout->setContentsMargins(4,4,4,4);
+    engineLayout->addLayout(linesHeader);
+
+    m_container = new QWidget(this);
+    m_containerLay = new QVBoxLayout(m_container);
+    m_containerLay->setContentsMargins(0,0,0,0);
+    m_containerLay->setSpacing(4);
+
+    m_scroll = new QScrollArea(this);
+    m_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scroll->setWidgetResizable(true);
+    m_scroll->setFrameShape(QFrame::NoFrame);
+    m_scroll->setWidget(m_container);
+    engineLayout->addWidget(m_scroll, 1);
+
     m_console->setReadOnly(true);
     m_console->setFixedHeight(150);
+    m_console->hide();
 
-    // Controls
-    m_multiPv->setRange(1, 10);
-    m_multiPv->setValue(3);
-
-    auto *ctrl = new QHBoxLayout;
-    ctrl->addWidget(new QLabel(tr("Lines:")));
-    ctrl->addWidget(m_multiPv);
-
-    auto *lay = new QVBoxLayout(this);
-    lay->addLayout(ctrl);
-    lay->addWidget(m_tree);
-    lay->addWidget(m_console);
-
-    // m_console->hide();
+    auto* mainLay = new QVBoxLayout(this);
+    mainLay->addLayout(topBar);
+    mainLay->addWidget(engineFrame, 1);
+    mainLay->addWidget(m_console);
 
     m_debounceTimer = new QTimer(this);
     m_debounceTimer->setSingleShot(true);
-    m_debounceTimer->setInterval(200); // 200 ms debounce
+    m_debounceTimer->setInterval(200);
     connect(m_debounceTimer, &QTimer::timeout, this, &EngineWidget::doPendingAnalysis);
 
-    // Engine start & signals
     ChessQSettings s; s.loadSettings();
     m_engine->startEngine(s.getEngineFile());
 
     connect(m_engine, &UciEngine::pvUpdate, this, &EngineWidget::onPvUpdate);
     connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
-    connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);   
+    connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
 }
+
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {
@@ -79,41 +137,58 @@ void EngineWidget::analysePosition() {
 
     m_engine->stopSearch();
     m_engine->requestReady();
-
-    m_tree->clear();
-    m_lineItems.clear();
     m_console->clear();
-
-    int n = m_multiPv->value();
-    for (int i = 1; i <= n; ++i) {
-        auto *root = new QTreeWidgetItem(m_tree);
-        root->setText(0, tr("Line %1…").arg(i));
-        root->setText(1, tr("(waiting)"));
-        root->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-        m_lineItems[i] = root;
+    QLayoutItem *child;
+    while ((child = m_containerLay->takeAt(0)) != nullptr) {
+        if (auto *w = child->widget()) {
+            w->deleteLater();
+        }
+        delete child;
     }
+    m_lineWidgets.clear();
 
-    m_engine->startInfiniteSearch(n);
+    for (int i = 1; i <= m_multiPv; ++i) {
+        auto *lineW = new EngineLineWidget("...", "", this);
+        m_containerLay->addWidget(lineW);
+        m_lineWidgets[i] = lineW;
+    }
+    m_containerLay->addStretch();
+    m_engine->startInfiniteSearch(m_multiPv);
 }
 
 void EngineWidget::onPvUpdate(const PvInfo &info) {
-    auto it = m_lineItems.find(info.multipv);
-    if (it == m_lineItems.end()) return;
-    QTreeWidgetItem *root = it.value();
+    auto it = m_lineWidgets.find(info.multipv);
+    if (it == m_lineWidgets.end()) return;
+    EngineLineWidget *lineW = it.value();
 
     QString evalTxt = info.isMate ? tr("Mate in %1").arg((int)info.score) : QString("%1").arg((m_sideToMove == 'w' ? info.score : -info.score), 0, 'f', 2);
-    root->setText(0, evalTxt);
+    EngineLineWidget *newW = new EngineLineWidget(evalTxt, info.pvLine, this);
 
-    const int maxLen = 40;
-    QString pv = info.pvLine;
-    QString disp = (pv.length() > maxLen) ? pv.left(maxLen) + " …" : pv;
-    root->setText(1, disp);
+    int index = m_containerLay->indexOf(lineW);
+    m_containerLay->insertWidget(index, newW);
+    m_containerLay->removeWidget(lineW);
+    lineW->deleteLater();
+    m_lineWidgets[info.multipv] = newW;
 
-    root->takeChildren();
-    auto *child = new QTreeWidgetItem(root);
-    child->setFirstColumnSpanned(true);
-    child->setText(0, pv);
-    root->setExpanded(true);
+    if (info.multipv == 1) {
+        QString bigEval = evalTxt;
+        m_evalButton->setText(bigEval);
+
+        bool positive = !bigEval.startsWith(u'-');
+        QString bg   = positive ? QStringLiteral("white") : QStringLiteral("#333");
+        QString fg   = positive ? QStringLiteral("black") : QStringLiteral("white");
+        m_evalButton->setStyleSheet(QStringLiteral(R"(
+            QPushButton {
+                font-size: 24px;
+                font-weight: bold;
+                border: 1px solid #888;
+                border-radius: 4px;
+                padding: 8px 16px;
+                background: %1;
+                color: %2;
+            }
+        )").arg(bg, fg));
+    }
 }
 
 void EngineWidget::onInfoLine(const QString &line) {

@@ -7,6 +7,7 @@ April 11, 2025: File Creation
 
 #include "uciengine.h"
 #include "notation.h"
+#include "enginelinewidget.h"
 
 #include <QWidget>
 #include <QTreeWidget>
@@ -14,6 +15,8 @@ April 11, 2025: File Creation
 #include <QPushButton>
 #include <QTextEdit>
 #include <QTimer>
+#include <QVBoxLayout>
+#include <QScrollArea>
 
 class EngineWidget : public QWidget {
     Q_OBJECT
@@ -34,14 +37,19 @@ private:
 
     QTimer *m_debounceTimer;
     UciEngine *m_engine;
-    QTreeWidget *m_tree;
-    QSpinBox *m_multiPv;
+    QScrollArea *m_scroll;
+    QWidget *m_container;
+    QVBoxLayout *m_containerLay;
     QPushButton *m_buttonAnalyse;
     QPushButton *m_buttonStop;
+    QPushButton *m_evalButton;
     QTextEdit *m_console;
     QString m_currentFen;
     QString m_sideToMove;
-    QMap<int, QTreeWidgetItem*> m_lineItems;
+
+    QMap<int, EngineLineWidget*> m_lineWidgets;
+
+    int m_multiPv;
 };
 
 #endif // ENGINEWIDGET_H
