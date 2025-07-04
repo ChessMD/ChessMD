@@ -26,9 +26,11 @@ public:
     void mainSetup();
     void previewSetup();
 
-
 protected:
     void showEvent(QShowEvent *ev) override;
+
+public slots:
+    void onMoveHovered(QSharedPointer<NotationMove> move);
 
 private:
     NotationViewer* m_notationViewer;

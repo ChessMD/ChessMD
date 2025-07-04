@@ -22,6 +22,14 @@ class EngineWidget : public QWidget {
     Q_OBJECT
 public:
     explicit EngineWidget(QWidget *parent = nullptr);
+    ~EngineWidget();
+
+signals:
+    void engineMoveClicked(QSharedPointer<NotationMove>& move);
+    void moveHovered(QSharedPointer<NotationMove> move);
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 public slots:
     void onMoveSelected(const QSharedPointer<NotationMove>& move);
@@ -34,6 +42,10 @@ private slots:
 
 private:
     void analysePosition();
+    void flushBufferedInfo();
+
+    bool m_isHovering;
+    QMap<int, PvInfo> m_bufferedInfo;
 
     QTimer *m_debounceTimer;
     UciEngine *m_engine;
@@ -46,6 +58,7 @@ private:
     QTextEdit *m_console;
     QString m_currentFen;
     QString m_sideToMove;
+    QSharedPointer<NotationMove> m_currentMove;
 
     QMap<int, EngineLineWidget*> m_lineWidgets;
 

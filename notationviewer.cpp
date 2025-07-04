@@ -13,6 +13,8 @@ March 18, 2025: File Creation
 
 NotationViewer::NotationViewer(QWidget* parent) : QAbstractScrollArea(parent)
 {
+    setMouseTracking(true);
+    viewport()->setMouseTracking(true);
     m_indentStep = 20;
     m_lineSpacing = 4;
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -218,3 +220,49 @@ void NotationViewer::refresh()
     layoutNotation();
     viewport()->update();
 }
+
+void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
+    QSharedPointer<NotationMove> tempMove = move;
+    while(tempMove->m_previousMove){
+        tempMove = tempMove->m_previousMove;
+    }
+    linkMoves(m_selectedMove, tempMove);
+    move->m_nextMoves.clear();
+    m_selectedMove = move;
+    emit moveSelected(m_selectedMove);
+    refresh();
+}
+
+void NotationViewer::mouseMoveEvent(QMouseEvent* event)
+{
+    // Adjust for scroll offset
+    QPoint pos = event->pos();
+    pos.setY(pos.y() + verticalScrollBar()->value());
+
+    // Find which segment (if any) we're over
+    for (const MoveSegment &seg : m_moveSegments) {
+        if (seg.rect.contains(pos)) {
+            if (seg.move != m_lastHoveredMove) {
+                m_lastHoveredMove = seg.move;
+                emit moveHovered(seg.move);
+            }
+            return; // we found it, no need to keep scanning
+        }
+    }
+
+    // If we get here, we're not over any segment
+    if (!m_lastHoveredMove.isNull()) {
+        m_lastHoveredMove.clear();
+        emit moveHovered(nullptr);   // signal “no hover”
+    }
+}
+
+void NotationViewer::leaveEvent(QEvent* ev)
+{
+    QAbstractScrollArea::leaveEvent(ev);
+    if (!m_lastHoveredMove.isNull()) {
+        m_lastHoveredMove.clear();
+        emit moveHovered(nullptr);
+    }
+}
+

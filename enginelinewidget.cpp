@@ -3,16 +3,25 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFontMetrics>
+#include <QPainter>
 #include <QTimer>
 #include <QShowEvent>
 
-EngineLineWidget::EngineLineWidget(const QString &eval, const QString &pv, QWidget *parent)
+EngineLineWidget::EngineLineWidget(const QString &eval, const QString &pv, const QSharedPointer<NotationMove> &rootMove, QWidget *parent)
     : QWidget(parent)
     , m_fullText(pv)
     , m_evalBtn(new QPushButton(this))
     , m_truncLabel(new QLabel(this))
     , m_arrow(new QToolButton(this))
 {
+    setMouseTracking(true);
+    setAttribute(Qt::WA_Hover, true);
+    m_evalBtn->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_truncLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+
+    m_rootMove = rootMove;
+
     m_evalBtn->setFlat(true);
     m_evalBtn->setEnabled(false);
     m_evalBtn->setFocusPolicy(Qt::NoFocus);
@@ -43,48 +52,83 @@ EngineLineWidget::EngineLineWidget(const QString &eval, const QString &pv, QWidg
     updateEval(eval);
 }
 
-void EngineLineWidget::showEvent(QShowEvent *event) {
-    QWidget::showEvent(event);
-    QTimer::singleShot(0, this, &EngineLineWidget::doElide);
-}
-
-void EngineLineWidget::resizeEvent(QResizeEvent* event) {
-    QWidget::resizeEvent(event);
-    if (!m_expanded) {
-        QTimer::singleShot(0, this, &EngineLineWidget::doElide);
-    }
-}
-
-void EngineLineWidget::doElide() {
-    if (!m_expanded) updateElided();
-}
-
 void EngineLineWidget::updateEval(const QString &newEval) {
+    m_evalTxt = newEval;
     m_evalBtn->setText(newEval);
     restyleEval(newEval);
+    update();
 }
 
 void EngineLineWidget::toggleExpanded() {
     m_expanded = !m_expanded;
-    if (m_expanded) {
-        m_truncLabel->setWordWrap(true);
-        m_truncLabel->setText(m_fullText);
-        m_arrow->setText("v");
-    } else {
-        m_truncLabel->setWordWrap(false);
-        updateElided();
-        m_arrow->setText(">");
+    m_arrow->setText(m_expanded ? "v" : ">");
+    update();
+}
+
+void EngineLineWidget::paintEvent(QPaintEvent *event) {
+    QPainter p(this);
+    p.setFont(font());
+    QFontMetrics fm(font());
+    int lineH = fm.height() + 4;
+    int x = 4, y = 4;
+
+    // 1) draw eval box
+    int btnW = m_evalBtn->width();
+    int btnH = m_evalBtn->height();
+    // Position it at (4,4)
+    m_evalBtn->move(4, 4);
+    m_evalBtn->show();
+    // Advance x by its width + spacing
+    x += btnW + 8;
+
+    // 2) draw arrow
+    m_arrow->move(width()-m_arrow->width()-4, y);
+    m_arrow->show();
+
+    // 3) paint moves
+    QVector<QSharedPointer<NotationMove>> moves;
+    auto cur = m_rootMove;
+    moves.append(cur);
+    while (cur && !cur->m_nextMoves.isEmpty()) {
+        cur = cur->m_nextMoves.first();
+        moves.append(cur);
+    }
+    m_moveSegments.clear();
+    int availW = width() - x - m_arrow->width() - 8;
+    for (int i = 0; i < moves.size(); ++i) {
+        QString tok = moves[i]->moveText + " ";
+        int w = fm.horizontalAdvance(tok);
+        if (!m_expanded && x + w - 4 > m_evalBtn->width()+availW) break;
+        if (m_expanded && x + w > width()-4) {
+            x = m_evalBtn->geometry().right()+8;
+            y += lineH;
+        }
+        p.setPen(Qt::black);
+        p.drawText(x, y + fm.ascent(), tok);
+        MoveSegment seg;
+        seg.rect = QRect(x, y, w, lineH);
+        seg.move = moves[i];
+        m_moveSegments.append(seg);
+        x += w;
+    }
+
+    int totalHeight = y + lineH + 4;    // 4px bottom margin
+    if (minimumHeight() != totalHeight) {
+        setMinimumHeight(totalHeight);
+        updateGeometry();             // tell the layout to re‑calc
     }
 }
 
-void EngineLineWidget::updateElided() {
-    int avail = m_truncLabel->width();
-    if (avail < 10) avail = 10;
-    QFontMetrics fm(m_truncLabel->font());
-    m_truncLabel->setText(
-        fm.elidedText(m_fullText, Qt::ElideRight, avail)
-        );
+void EngineLineWidget::mousePressEvent(QMouseEvent *ev) {
+    for (MoveSegment &seg : m_moveSegments) {
+        if (seg.rect.contains(ev->pos())) {
+            emit moveClicked(seg.move);
+            return;
+        }
+    }
+    QWidget::mousePressEvent(ev);
 }
+
 
 void EngineLineWidget::restyleEval(const QString &text) {
     bool positive = !text.startsWith(u'-');
@@ -105,3 +149,22 @@ void EngineLineWidget::restyleEval(const QString &text) {
 
     m_evalBtn->setStyleSheet(sheet);
 }
+
+void EngineLineWidget::mouseMoveEvent(QMouseEvent* ev) {
+    qDebug() << "hello";
+
+    for (auto &seg : m_moveSegments) {
+        if (seg.rect.contains(ev->pos())) {
+            qDebug() << "dasd\n";
+            emit moveHovered(seg.move);
+            return;
+        }
+    }
+    QWidget::mouseMoveEvent(ev);
+}
+
+void EngineLineWidget::leaveEvent(QEvent* ev) {
+    emit moveHovered(nullptr);
+    QWidget::leaveEvent(ev);
+}
+

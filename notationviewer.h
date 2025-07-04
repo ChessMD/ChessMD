@@ -34,14 +34,18 @@ public:
 public slots:
     void selectPreviousMove();
     void selectNextMove();
+    void onEngineMoveClicked(QSharedPointer<NotationMove> &move);
 
 signals:
     void moveSelected(const QSharedPointer<NotationMove>& move);
+    void moveHovered(QSharedPointer<NotationMove> move);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void leaveEvent(QEvent* event) override;
 
 private:
     // DFS traverse notation tree
@@ -61,6 +65,9 @@ private:
     // Parameters for drawing
     int m_indentStep;
     int m_lineSpacing;
+
+    QSharedPointer<NotationMove> m_lastHoveredMove;
+
 };
 
 #endif // NOTATIONVIEWER_H

@@ -12,13 +12,18 @@ April 11, 2025: File Creation
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QEvent>
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
     m_engine(new UciEngine(this)),
     m_multiPv(3),
-    m_console(new QTextEdit(this))
+    m_console(new QTextEdit(this)),
+    m_isHovering(false)
 {
+    setAttribute(Qt::WA_Hover, true);
+    setMouseTracking(true);
+
     auto* leftBtn1 = new QPushButton("", this);
     auto* leftBtn2 = new QPushButton("", this);
 
@@ -115,19 +120,26 @@ EngineWidget::EngineWidget(QWidget *parent)
     connect(m_engine, &UciEngine::pvUpdate, this, &EngineWidget::onPvUpdate);
     connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
     connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
+
 }
 
+EngineWidget::~EngineWidget() {
+    m_engine->quitEngine();
+    m_engine->disconnect(this);
+    delete m_engine;
+}
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {
-        m_sideToMove = (move->m_position->plyCount % 2 == 0 ? 'w' : 'b');
+        m_sideToMove = move->m_position->m_sideToMove;
         m_currentFen = move->m_position->positionToFEN();
+        qDebug() << m_currentFen;
+        m_currentMove = move;
         m_debounceTimer->start();
     }
 }
 
 void EngineWidget::doPendingAnalysis() {
-    qDebug() << m_currentFen;
     m_engine->setPosition(m_currentFen);
     analysePosition();
 }
@@ -147,8 +159,9 @@ void EngineWidget::analysePosition() {
     }
     m_lineWidgets.clear();
 
-    for (int i = 1; i <= m_multiPv; ++i) {
-        auto *lineW = new EngineLineWidget("...", "", this);
+    for (int i = 1; i <= m_multiPv; i++) {
+        auto *lineW = new EngineLineWidget("...", "", m_currentMove, this);
+        lineW->installEventFilter(this);
         m_containerLay->addWidget(lineW);
         m_lineWidgets[i] = lineW;
     }
@@ -157,12 +170,26 @@ void EngineWidget::analysePosition() {
 }
 
 void EngineWidget::onPvUpdate(const PvInfo &info) {
+    // store the latest info for this line
+    m_bufferedInfo[info.multipv] = info;
+
+    // if hovering, bail out and let the engine run
+    if (m_isHovering) {
+        return;
+    }
+
     auto it = m_lineWidgets.find(info.multipv);
     if (it == m_lineWidgets.end()) return;
     EngineLineWidget *lineW = it.value();
 
     QString evalTxt = info.isMate ? tr("Mate in %1").arg((int)info.score) : QString("%1").arg((m_sideToMove == 'w' ? info.score : -info.score), 0, 'f', 2);
-    EngineLineWidget *newW = new EngineLineWidget(evalTxt, info.pvLine, this);
+    QSharedPointer<NotationMove> rootMove = parseEngineLine(info.pvLine, m_currentMove); // parse LAN into a notation tree
+    EngineLineWidget *newW = new EngineLineWidget(evalTxt, info.pvLine, rootMove, this);
+    // qDebug() << rootMove->moveText;
+    newW->installEventFilter(this);
+    connect(newW, &EngineLineWidget::moveClicked, this, &EngineWidget::engineMoveClicked);
+    connect(newW, &EngineLineWidget::moveHovered, this, &EngineWidget::moveHovered);
+
 
     int index = m_containerLay->indexOf(lineW);
     m_containerLay->insertWidget(index, newW);
@@ -191,6 +218,30 @@ void EngineWidget::onPvUpdate(const PvInfo &info) {
     }
 }
 
+void EngineWidget::flushBufferedInfo() {
+    // Apply the newest info for each multipv, in order
+    for (auto it = m_bufferedInfo.begin(); it != m_bufferedInfo.end(); ++it) {
+        onPvUpdate(it.value());
+    }
+    m_bufferedInfo.clear();
+}
+
+bool EngineWidget::eventFilter(QObject *watched, QEvent *event) {
+    if (auto *line = qobject_cast<EngineLineWidget*>(watched)) {
+        if (event->type() == QEvent::Enter) {
+            m_isHovering = true;
+            return false; // let EngineLineWidget also get the event
+        }
+        if (event->type() == QEvent::Leave) {
+            m_isHovering = false;
+            // now that we’ve left, flush the deepest info:
+            flushBufferedInfo();
+            return false;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
 void EngineWidget::onInfoLine(const QString &line) {
     m_console->append(QStringLiteral("<< %1").arg(line));
 }
@@ -198,3 +249,5 @@ void EngineWidget::onInfoLine(const QString &line) {
 void EngineWidget::onCmdSent(const QString &cmd) {
     m_console->append(QStringLiteral(">> %1").arg(cmd));
 }
+
+

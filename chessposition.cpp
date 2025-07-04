@@ -291,6 +291,13 @@ bool ChessPosition::tryMakeMove(QString san) {
 
 void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     QString from = m_boardData[sr][sc];
+    // qDebug() << "applyMove() called with" << "sr,sc =" << sr<<sc << "dr,dc =" << dr<<dc  << "   from =" << QString("'%1'").arg(from)  << "   length =" << from.size();
+    if (from.size() < 2) {
+        qDebug() << "applyMove() called with" << "sr,sc =" << sr<<sc << "dr,dc =" << dr<<dc  << "   from =" << QString("'%1'").arg(from)  << "   length =" << from.size();
+
+        qWarning() << "  ✗ Invalid ‘from’ string, aborting move.";
+        return;
+    }
     // Update castling rights if king or rook moves
     if (from[1]=='K') {
         if (from[0]=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
@@ -492,7 +499,6 @@ QVector<QVector<QString>> convertFenToBoardData(const QString &fen)
     return boardData;
 }
 
-
 QString ChessPosition::positionToFEN() const {
     QStringList rowStr;
     for (auto &row : m_boardData) {
@@ -521,4 +527,36 @@ QString ChessPosition::positionToFEN() const {
     QString hm = QString::number(m_halfmoveClock);
     QString fm = QString::number(m_fullmoveNumber);
     return QString("%1 %2 %3 %4 %5 %6").arg(boardPart, sidePart, cr, ep, hm, fm);
+}
+
+QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove)
+{
+    QSharedPointer<NotationMove> newMove, tempMove = startMove, rootMove;
+    QString token;
+    int root = 1;
+    for (int i = 0; i < line.length(); i++){
+        if (line[i] != ' '){
+            token += line[i];
+        }
+        if (line[i] == ' ' || i+1 == line.length()){
+            if (token.size() < 4 || token.size() > 5)
+                continue;
+            int sc = token.at(0).toLatin1() - 'a', sr = 8 - token.at(1).digitValue();
+            int dc = token.at(2).toLatin1() - 'a', dr = 8 - token.at(3).digitValue();
+            QChar promo = (token.length() == 5 ? token.at(4).toLower() : QChar('\0'));
+            ChessPosition* clonePos = new ChessPosition;
+            clonePos->copyFrom(*tempMove->m_position);
+            clonePos->applyMove(sr, sc, dr, dc, promo);
+            newMove = QSharedPointer<NotationMove>::create(token, *clonePos);
+            if (!root){
+                linkMoves(tempMove, newMove);
+            } else {
+                rootMove = newMove;
+            }
+            root = 0;
+            token = "";
+            tempMove = newMove;
+        }
+    }
+    return rootMove;
 }

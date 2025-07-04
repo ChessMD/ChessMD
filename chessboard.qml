@@ -18,6 +18,13 @@ Rectangle {
         property real cellSize: width / 8
         property var boardData: chessPosition ? chessPosition.boardData : [["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""]]
 
+        Rectangle {
+            anchors.fill: board
+            color: "#44000000"    // e.g. black at 50% opacity
+            visible: chessPosition.isPreview
+            z: 10
+        }
+
         Repeater {
             id: squareContainer
             model: 64

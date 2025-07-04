@@ -24,6 +24,7 @@ class ChessPosition: public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QVector<QVector<QString>> boardData READ boardData WRITE setBoardData NOTIFY boardDataChanged)
+    Q_PROPERTY(bool isPreview READ isPreview WRITE setIsPreview NOTIFY isPreviewChanged)
 
 public:
     explicit ChessPosition(QObject *parent = nullptr);
@@ -34,6 +35,15 @@ public:
     // Called from Qml when the user tries to make a new move
     Q_INVOKABLE void release(int oldRow, int oldCol, int newRow, int newCol);
 
+    bool isPreview() const { return m_isPreview; }
+    void setIsPreview(bool p) {
+        if (m_isPreview == p) return;
+        m_isPreview = p;
+        emit isPreviewChanged(p);
+    }
+
+
+
     // Copies all internal state from another ChessPosition
     void copyFrom(const ChessPosition &other);
     QString positionToFEN() const;
@@ -42,13 +52,16 @@ public:
     bool tryMakeMove(QString san);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
 
-    int plyCount;
+
+    char m_sideToMove;
 
 signals:
     // Signals QML to update board display
     void boardDataChanged();
     // Signals ChessGameWindow to append new move to current selected move
     void moveMade(QSharedPointer<NotationMove> move);
+    void isPreviewChanged(bool);
+
 
 private:
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
@@ -66,9 +79,12 @@ private:
     QString m_enPassantTarget;
     int m_halfmoveClock;
     int m_fullmoveNumber;
-    char m_sideToMove;
+    int plyCount;
+
+    bool m_isPreview = false;
 };
 
+QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove);
 QVector<QVector<QString>> convertFenToBoardData(const QString &fen);
 // Recursively builds a Notation tree from PgnGameData
 void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove);

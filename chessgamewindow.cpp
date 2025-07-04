@@ -72,6 +72,7 @@ void ChessGameWindow::notationSetup()
 
     // connect moveSelected signal when user clicks on a move in the notation
     connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
+    connect(m_notationViewer, &NotationViewer::moveHovered, this, &ChessGameWindow::onMoveHovered);
 
     addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
 }
@@ -102,8 +103,12 @@ void ChessGameWindow::engineSetup()
     m_engineDock->setWidget(m_engineViewer);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
 
+
     // update engine and board display when position changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
+
+    connect(m_engineViewer, &EngineWidget::engineMoveClicked, m_notationViewer, &NotationViewer::onEngineMoveClicked);
+    connect(m_engineViewer, &EngineWidget::moveHovered, this, &ChessGameWindow::onMoveHovered);
 }
 
 // Builds the notation toolbar with notation controls
@@ -137,6 +142,33 @@ void ChessGameWindow::notationToolbarSetup()
     dockLayout->setContentsMargins(0, 0, 0, 0);
 
     m_notationDock->setWidget(dockContent);
+}
+
+void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)
+{
+    if (!move.isNull() && move->m_position) {
+        // preview that position
+        m_positionViewer->copyFrom(*move->m_position);
+        emit m_positionViewer->boardDataChanged();
+    } else {
+        // no hover → revert to the currently selected move’s position
+        if (!m_notationViewer->getSelectedMove().isNull()) {
+            m_positionViewer->copyFrom(*m_notationViewer->getSelectedMove()->m_position);
+            emit m_positionViewer->boardDataChanged();
+        }
+    }
+
+    bool preview = !move.isNull();
+    m_positionViewer->setIsPreview(preview);
+
+    if (preview) {
+        m_positionViewer->copyFrom(*move->m_position);
+    } else {
+        auto sel = m_notationViewer->getSelectedMove();
+        if (!sel.isNull())
+            m_positionViewer->copyFrom(*sel->m_position);
+    }
+    emit m_positionViewer->boardDataChanged();
 }
 
 // Configures ChessGameWindow for complete analysis
