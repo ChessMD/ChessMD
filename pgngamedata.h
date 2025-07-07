@@ -7,6 +7,8 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 #ifndef PGNGAMEDATA_H
 #define PGNGAMEDATA_H
 
+#include "notation.h"
+
 #include <QVector>
 #include <QString>
 #include <QSharedPointer>
@@ -31,6 +33,15 @@ public:
     QVector<QPair<QString,QString>> headerInfo;
 private:
     QSharedPointer<VariationNode> rootVariation;
+};
+
+class PGNGame
+{
+public:
+    PGNGame();
+    QSharedPointer<NotationMove> rootMove;
+    QVector<QPair<QString,QString>> headerInfo;
+    QString result;
 };
 
 #endif // PGNGAMEDATA_H

@@ -37,7 +37,6 @@ QSharedPointer<NotationMove> deleteVariation(const QSharedPointer<NotationMove>&
     while(temp->m_previousMove != nullptr && !temp->isVarRoot){
         temp = temp->m_previousMove;
     }
-    qDebug() << temp->moveText;
     if (temp->m_previousMove != nullptr){
         // Find the required variation and remove it
         for (int i = 0; i < temp->m_previousMove->m_nextMoves.size(); i++){
@@ -58,7 +57,6 @@ void promoteVariation(const QSharedPointer<NotationMove>& move)
     while(temp->m_previousMove != nullptr && !temp->isVarRoot){
         temp = temp->m_previousMove;
     }
-    qDebug() << temp->moveText;
     if (temp->m_previousMove != nullptr){
         // Find the required variation and remove it
         for (int i = 0; i < temp->m_previousMove->m_nextMoves.size(); i++){

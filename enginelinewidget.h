@@ -32,6 +32,7 @@ private slots:
 private:
     QSharedPointer<NotationMove> m_rootMove;
     QList<MoveSegment> m_moveSegments;
+    MoveSegment* m_hoveredSegment = nullptr;
 
     QString m_fullText;
     QString m_evalTxt;
@@ -41,7 +42,6 @@ private:
     QLabel *m_truncLabel;
     QToolButton *m_arrow;
 
-    void updateElided();
     void restyleEval(const QString &text);
 };
 #endif // ENGINELINEWIDGET_H

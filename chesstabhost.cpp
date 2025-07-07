@@ -15,6 +15,7 @@ March 18, 2025 - Program Creation
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QSqlQuery>
+#include <QCloseEvent>
 
 //initializes custom tab bar
 CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
@@ -46,6 +47,19 @@ QSize CustomTabBar::tabSizeHint(int index) const {
 
     return defaultSize;
 }
+
+// removes all tabs when a window is closed
+void ChessTabHost::closeEvent(QCloseEvent *event)
+{
+    while (tabBar->count() > 0) {
+        onTabCloseRequested(0);
+        if (!isVisible()) {
+            return;
+        }
+    }
+    QWidget::closeEvent(event);
+}
+
 
 //initalizes container for custom tab bar
 CustomTitleBar::CustomTitleBar(QWidget* parent)

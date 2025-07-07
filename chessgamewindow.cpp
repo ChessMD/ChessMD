@@ -24,12 +24,13 @@ March 18, 2025: File Creation
 #include <QKeySequence>
 
 // Constructs a ChessGameWindow inside a parent widget
-ChessGameWindow::ChessGameWindow(QWidget *parent, QSharedPointer<NotationMove> rootMove)
+ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     : QMainWindow{parent}
 {
     setMinimumSize(1024,768);
     setGeometry(100, 100, 0, 0);
     setWindowFlags(Qt::Widget);
+    setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AnimatedDocks);
 
     // set the chessboard as central widget of window, and link to QML
     QQuickWidget* boardView = new QQuickWidget;
@@ -41,7 +42,8 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, QSharedPointer<NotationMove> r
     setCentralWidget(boardView);
 
     // link to the rootmove containing the entire game tree
-    m_notationViewer = new NotationViewer(this);
+    m_notationViewer = new NotationViewer(game, this);
+    QSharedPointer<NotationMove> rootMove = game.rootMove;
     m_notationViewer->setRootMove(rootMove);
 
     // connect moveMade signal when user manually makes a move
@@ -72,7 +74,6 @@ void ChessGameWindow::notationSetup()
 
     // connect moveSelected signal when user clicks on a move in the notation
     connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
-    connect(m_notationViewer, &NotationViewer::moveHovered, this, &ChessGameWindow::onMoveHovered);
 
     addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
 }
@@ -101,8 +102,8 @@ void ChessGameWindow::engineSetup()
     m_engineViewer = new EngineWidget(this);
     m_engineDock = new QDockWidget(tr("Engine"), this);
     m_engineDock->setWidget(m_engineViewer);
+    m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
-
 
     // update engine and board display when position changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
@@ -177,6 +178,7 @@ void ChessGameWindow::mainSetup(){
     notationToolbarSetup();
     toolbarSetup();
     engineSetup();
+    resizeDocks({m_notationDock}, {int(width())}, Qt::Horizontal);
 }
 
 // Configures ChessGameWindow for previewing
@@ -186,6 +188,42 @@ void ChessGameWindow::previewSetup()
     toolbarSetup();
     addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
     m_notationDock->show();
+}
+
+QString buildMoveText(const QSharedPointer<NotationMove>& move)
+{
+    QString fullMoveText;
+    if (!move->commentBefore.isEmpty()) {
+        fullMoveText += QString("{%1} ").arg(move->commentBefore.trimmed());
+    }
+
+    fullMoveText += move->moveText;
+    fullMoveText += move->annotation1;
+    fullMoveText += move->annotation2;
+    if (!move->commentAfter.isEmpty()) {
+        fullMoveText += QString(" {%1}").arg(move->commentAfter.trimmed());
+    }
+    fullMoveText += " ";
+    return fullMoveText;
+}
+
+void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount)
+{
+    auto children = move->m_nextMoves;
+    if (children.isEmpty()) return;
+
+    auto principal = children.first();
+    out << (plyCount % 2 == 0 ? QString::number(plyCount/2 + 1) + ". " : "") << buildMoveText(principal);
+
+    for (int i = 1; i < children.size(); ++i) {
+        out << "(";
+        out << plyCount/2 + 1 << (plyCount % 2 == 0 ? ". " : "... ") << buildMoveText(children[i]);
+        writeMoves(children[i], out, plyCount+1);
+        out << ") ";
+    }
+
+    ++plyCount;
+    writeMoves(principal, out, plyCount);
 }
 
 // Slot for when a new move is made on the board
@@ -202,7 +240,9 @@ void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove> move)
 {
     if (!move.isNull() && move->m_position) {
         m_positionViewer->copyFrom(*move->m_position);
+        // qDebug() << m_positionViewer->lastMove();
         emit m_positionViewer->boardDataChanged();
+        emit m_positionViewer->lastMoveChanged();
     }
 }
 
@@ -251,42 +291,6 @@ void ChessGameWindow::onResetBoardClicked()
 {
 }
 
-QString buildMoveText(const QSharedPointer<NotationMove>& move)
-{
-    QString fullMoveText;
-    if (!move->commentBefore.isEmpty()) {
-        fullMoveText += QString("{%1} ").arg(move->commentBefore.trimmed());
-    }
-
-    fullMoveText += move->moveText;
-    fullMoveText += move->annotation1;
-    fullMoveText += move->annotation2;
-    if (!move->commentAfter.isEmpty()) {
-        fullMoveText += QString(" {%1}").arg(move->commentAfter.trimmed());
-    }
-    fullMoveText += " ";
-    return fullMoveText;
-}
-
-void writeMovesRecursive(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount)
-{
-    auto children = move->m_nextMoves;
-    if (children.isEmpty()) return;
-
-    auto principal = children.first();
-    out << (plyCount % 2 == 0 ? QString::number(plyCount/2 + 1) + ". " : "") << buildMoveText(principal);
-
-    for (int i = 1; i < children.size(); ++i) {
-        out << "(";
-        out << plyCount/2 + 1 << (plyCount % 2 == 0 ? ". " : "... ") << buildMoveText(children[i]);
-        writeMovesRecursive(children[i], out, plyCount+1);
-        out << ") ";
-    }
-
-    ++plyCount;
-    writeMovesRecursive(principal, out, plyCount);
-}
-
 void ChessGameWindow::onExportPgnClicked()
 {
     QString result;
@@ -294,7 +298,7 @@ void ChessGameWindow::onExportPgnClicked()
     int plyCount = 0;
 
     // write moves recursively
-    writeMovesRecursive(m_notationViewer->getRootMove(), out, plyCount);
+    writeMoves(m_notationViewer->getRootMove(), out, plyCount);
     qDebug() << result.trimmed();
 }
 

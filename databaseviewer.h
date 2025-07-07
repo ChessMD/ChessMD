@@ -38,8 +38,8 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private slots:
-    void onTableActivated(const QModelIndex &proxyIndex);
-    void onTableSelected(const QModelIndex &current, const QModelIndex &previous);
+    void onDoubleSelected(const QModelIndex &proxyIndex);
+    void onSingleSelected(const QModelIndex &current, const QModelIndex &previous);
 
 private:
     void filter();

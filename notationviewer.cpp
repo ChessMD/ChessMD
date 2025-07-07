@@ -11,8 +11,15 @@ March 18, 2025: File Creation
 #include <QScrollBar>
 #include <QDebug>
 
-NotationViewer::NotationViewer(QWidget* parent) : QAbstractScrollArea(parent)
+NotationViewer::NotationViewer(PGNGame game, QWidget* parent)
+    : QAbstractScrollArea(parent)
+    , m_game(game)
 {
+    QFont f = font();
+    f.setPointSize(f.pointSize() + 2);
+    setFont(f);
+    viewport()->setFont(f);
+
     setMouseTracking(true);
     viewport()->setMouseTracking(true);
     m_indentStep = 20;
@@ -57,6 +64,43 @@ void NotationViewer::layoutNotation()
     // Set the viewport's height based on total text height
     verticalScrollBar()->setRange(0, qMax(0, y - viewport()->height()));
     verticalScrollBar()->setPageStep(viewport()->height());
+}
+
+void NotationViewer::paintEvent(QPaintEvent* /*event*/)
+{
+    QPainter painter(viewport());
+    QFontMetrics fm(painter.font());
+    painter.setFont(font());
+
+    // Translate painter by scroll offset.
+    painter.translate(0, -verticalScrollBar()->value());
+
+    // Clear background.
+    painter.fillRect(viewport()->rect().translated(0, verticalScrollBar()->value()), Qt::white);
+
+    // Clear and recalc layout (in a more optimized version, do this only when data changes).
+    clearLayout();
+    int x = 0, y = 0, lineHeight = fm.height() + m_lineSpacing;
+    if (m_rootMove)
+        drawNotation(painter, m_rootMove, 0, x, y);
+
+    // Highlight the selected move if any.
+    if (!m_selectedMove.isNull()) {
+        for (const MoveSegment &seg : m_moveSegments) {
+            if (seg.move == m_selectedMove) {
+                painter.setBrush(QColor(200, 200, 255, 128));
+                painter.setPen(Qt::NoPen);
+                painter.drawRect(seg.rect);
+            }
+        }
+    }
+    y += lineHeight + fm.ascent();
+    QFont boldFont = painter.font();
+    boldFont.setBold(true);
+    painter.setFont(boldFont);
+    painter.setPen(Qt::black);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawText(0, y, m_game.result);
 }
 
 void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y)
@@ -132,33 +176,23 @@ void NotationViewer::drawNotation(QPainter &painter, const QSharedPointer<Notati
     }
 }
 
-void NotationViewer::paintEvent(QPaintEvent* /*event*/)
-{
-    QPainter painter(viewport());
-    painter.setFont(font());
+void NotationViewer::mouseMoveEvent(QMouseEvent* event) {
+    bool overSegment = false;
+    QPoint pos = event->pos();
+    pos.setY(pos.y() + verticalScrollBar()->value());
 
-    // Translate painter by scroll offset.
-    painter.translate(0, -verticalScrollBar()->value());
-
-    // Clear background.
-    painter.fillRect(viewport()->rect().translated(0, verticalScrollBar()->value()), Qt::white);
-
-    // Clear and recalc layout (in a more optimized version, do this only when data changes).
-    clearLayout();
-    int x = 0, y = 0;
-    if (m_rootMove)
-        drawNotation(painter, m_rootMove, 0, x, y);
-
-    // Highlight the selected move if any.
-    if (!m_selectedMove.isNull()) {
-        for (const MoveSegment &seg : m_moveSegments) {
-            if (seg.move == m_selectedMove) {
-                painter.setBrush(QColor(200, 200, 255, 128));
-                painter.setPen(Qt::NoPen);
-                painter.drawRect(seg.rect);
-            }
+    for (auto &seg : m_moveSegments) {
+        if (seg.rect.contains(pos)) {
+            overSegment = true;
+            break;
         }
     }
+    if (overSegment) {
+        setCursor(Qt::PointingHandCursor);
+    } else {
+        setCursor(Qt::ArrowCursor);
+    }
+    QWidget::mouseMoveEvent(event);
 }
 
 void NotationViewer::mousePressEvent(QMouseEvent *event)
@@ -221,6 +255,7 @@ void NotationViewer::refresh()
     viewport()->update();
 }
 
+
 void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
     QSharedPointer<NotationMove> tempMove = move;
     while(tempMove->m_previousMove){
@@ -232,37 +267,3 @@ void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
     emit moveSelected(m_selectedMove);
     refresh();
 }
-
-void NotationViewer::mouseMoveEvent(QMouseEvent* event)
-{
-    // Adjust for scroll offset
-    QPoint pos = event->pos();
-    pos.setY(pos.y() + verticalScrollBar()->value());
-
-    // Find which segment (if any) we're over
-    for (const MoveSegment &seg : m_moveSegments) {
-        if (seg.rect.contains(pos)) {
-            if (seg.move != m_lastHoveredMove) {
-                m_lastHoveredMove = seg.move;
-                emit moveHovered(seg.move);
-            }
-            return; // we found it, no need to keep scanning
-        }
-    }
-
-    // If we get here, we're not over any segment
-    if (!m_lastHoveredMove.isNull()) {
-        m_lastHoveredMove.clear();
-        emit moveHovered(nullptr);   // signal “no hover”
-    }
-}
-
-void NotationViewer::leaveEvent(QEvent* ev)
-{
-    QAbstractScrollArea::leaveEvent(ev);
-    if (!m_lastHoveredMove.isNull()) {
-        m_lastHoveredMove.clear();
-        emit moveHovered(nullptr);
-    }
-}
-

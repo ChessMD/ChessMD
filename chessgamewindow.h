@@ -11,13 +11,14 @@ March 18, 2025: File Creation
 #include "notationviewer.h"
 #include "enginewidget.h"
 #include "chessposition.h"
+#include "pgngamedata.h"
 
 // Main window that displays a chessboard, an engine, a notation viewer, and an opening viewer
 class ChessGameWindow  : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit ChessGameWindow (QWidget *parent, QSharedPointer<NotationMove> rootMove);
+    explicit ChessGameWindow (QWidget *parent, PGNGame game);
     void notationSetup();
     void engineSetup();
     void notationToolbarSetup();

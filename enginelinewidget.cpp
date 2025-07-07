@@ -112,6 +112,14 @@ void EngineLineWidget::paintEvent(QPaintEvent *event) {
         x += w;
     }
 
+    if (m_hoveredSegment) {
+        QPen pen(Qt::blue, 2);
+        p.setPen(pen);
+        p.setBrush(Qt::NoBrush);
+        QRect r = m_hoveredSegment->rect.adjusted(-1,0,1,0);
+        p.drawRect(r);
+    }
+
     int totalHeight = y + lineH + 4;    // 4px bottom margin
     if (minimumHeight() != totalHeight) {
         setMinimumHeight(totalHeight);
@@ -150,21 +158,37 @@ void EngineLineWidget::restyleEval(const QString &text) {
     m_evalBtn->setStyleSheet(sheet);
 }
 
-void EngineLineWidget::mouseMoveEvent(QMouseEvent* ev) {
-    qDebug() << "hello";
+void EngineLineWidget::mouseMoveEvent(QMouseEvent* event) {
+    MoveSegment* newHover = nullptr;
 
     for (auto &seg : m_moveSegments) {
-        if (seg.rect.contains(ev->pos())) {
-            qDebug() << "dasd\n";
+        if (seg.rect.contains(event->pos())) {
             emit moveHovered(seg.move);
-            return;
+            newHover = &seg;
+            break;
         }
     }
-    QWidget::mouseMoveEvent(ev);
+    if (!newHover) {
+        emit moveHovered(nullptr);
+        setCursor(Qt::ArrowCursor);
+    } else {
+        setCursor(Qt::PointingHandCursor);
+    }
+
+    if (m_hoveredSegment != newHover) {
+        m_hoveredSegment = newHover;
+        update();
+    }
+
+    QWidget::mouseMoveEvent(event);
 }
 
-void EngineLineWidget::leaveEvent(QEvent* ev) {
+void EngineLineWidget::leaveEvent(QEvent* event) {
+    if (m_hoveredSegment) {
+        m_hoveredSegment = nullptr;
+        update();
+    }
     emit moveHovered(nullptr);
-    QWidget::leaveEvent(ev);
+    QWidget::leaveEvent(event);
 }
 

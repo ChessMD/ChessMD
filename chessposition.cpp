@@ -41,6 +41,7 @@ void ChessPosition::copyFrom(const ChessPosition &other)
     m_halfmoveClock = other.m_halfmoveClock;
     m_fullmoveNumber = other.m_fullmoveNumber;
     plyCount = other.plyCount;
+    m_lastMove = other.m_lastMove;
 }
 
 bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol) const
@@ -291,13 +292,11 @@ bool ChessPosition::tryMakeMove(QString san) {
 
 void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     QString from = m_boardData[sr][sc];
-    // qDebug() << "applyMove() called with" << "sr,sc =" << sr<<sc << "dr,dc =" << dr<<dc  << "   from =" << QString("'%1'").arg(from)  << "   length =" << from.size();
     if (from.size() < 2) {
-        qDebug() << "applyMove() called with" << "sr,sc =" << sr<<sc << "dr,dc =" << dr<<dc  << "   from =" << QString("'%1'").arg(from)  << "   length =" << from.size();
-
-        qWarning() << "  ✗ Invalid ‘from’ string, aborting move.";
+        qWarning() << "Invalid ‘from’ string, aborting move.";
         return;
     }
+
     // Update castling rights if king or rook moves
     if (from[1]=='K') {
         if (from[0]=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
@@ -350,6 +349,7 @@ void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
         m_boardData[dr][dc] = QString(from[0]) + promotion;
     }
     m_sideToMove = (m_sideToMove=='w'?'b':'w');
+    m_lastMove  = ((sr * 8 + sc) << 8) | (dr * 8 + dc);
 }
 
 bool ChessPosition::inCheck(QChar side) const
@@ -419,7 +419,7 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
                 token.chop(1);
                 comment += token;
             }
-            qDebug() << comment;
+            // qDebug() << comment;
             if (!comment.isEmpty()) {
                 parentMove->commentAfter = comment;
                 comment.clear();
@@ -529,6 +529,78 @@ QString ChessPosition::positionToFEN() const {
     return QString("%1 %2 %3 %4 %5 %6").arg(boardPart, sidePart, cr, ep, hm, fm);
 }
 
+QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) const
+{
+    // 1) Piece identity
+    const QString fromSq = m_boardData[sr][sc];
+    if (fromSq.size() < 2) {
+        qWarning() << "Invalid ‘from’ string, aborting move.";
+        return "";
+    }
+    QChar piece = fromSq[1];  // 'P','N','B','R','Q','K'
+    bool isPawn = (piece == 'P');
+
+    // 2) Castling?
+    if (piece == 'K' && qAbs(dc - sc) == 2) {
+        return (dc > sc ? "O-O" : "O-O-O");
+    }
+
+    // 3) Detect capture (including en passant)
+    bool isCapture = !m_boardData[dr][dc].isEmpty() || (isPawn && qAbs(dc - sc)==1 && m_enPassantTarget == QString(QChar('a'+dc)) + QString::number(8-dr));
+
+    // 4) Find all same‐type pieces that *could* move to (dr,dc)
+    QVector<QPair<int,int>> candidates;
+    QChar mySide = m_sideToMove;
+    for (int r = 0; r < 8; ++r) {
+        for (int c = 0; c < 8; ++c) {
+            const QString &sq = m_boardData[r][c];
+            if (sq.size()==2 && sq[0]==mySide && sq[1]==piece) {
+                if (!(r==sr && c==sc) && validateMove(r,c,dr,dc)) {
+                    candidates.append({r,c});
+                }
+            }
+        }
+    }
+    // always include the actual mover
+    candidates.append({sr,sc});
+
+    // 5) Disambiguator if more than one candidate (and not pawn)
+    QString disamb;
+    if (!isPawn && candidates.size() > 1) {
+        bool needFile=false, needRank=false;
+        for (auto &o : candidates) {
+            if (o.second != sc) needFile = true;
+            if (o.first  != sr) needRank = true;
+        }
+        if (needFile) disamb += QChar('a' + sc);
+        if (needRank) disamb += QChar('1' + (7 - sr));
+    }
+
+    // 6) Build SAN prefix
+    QString san;
+    if (!isPawn) {
+        san += piece;    // N/B/R/Q
+        san += disamb;
+    } else if (isCapture) {
+        // pawn captures include file
+        san += QChar('a' + sc);
+    }
+
+    // 7) Capture marker and destination
+    if (isCapture) san += 'x';
+    san += QChar('a' + dc);
+    san += QString::number(8 - dr);
+
+    // 8) Promotion?
+    if (promo != QChar('\0')) {
+        san += '=';
+        san += promo.toUpper();
+    }
+
+    return san;
+}
+
+
 QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove)
 {
     QSharedPointer<NotationMove> newMove, tempMove = startMove, rootMove;
@@ -548,6 +620,7 @@ QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer
             clonePos->copyFrom(*tempMove->m_position);
             clonePos->applyMove(sr, sc, dr, dc, promo);
             newMove = QSharedPointer<NotationMove>::create(token, *clonePos);
+            newMove->moveText = tempMove->m_position->lanToSan(sr, sc, dr, dc, promo);
             if (!root){
                 linkMoves(tempMove, newMove);
             } else {

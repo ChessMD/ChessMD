@@ -7,10 +7,17 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 #include <qDebug>
 
 #include "pgngamedata.h"
+#include "chessposition.h"
 
-PGNGameData::PGNGameData() : rootVariation(QSharedPointer<VariationNode>::create())
+PGNGame::PGNGame()
 {
+    result = "*";
+    rootMove = QSharedPointer<NotationMove>::create("", *new ChessPosition);
+}
 
+PGNGameData::PGNGameData()
+{
+    rootVariation = QSharedPointer<VariationNode>::create();
 }
 
 

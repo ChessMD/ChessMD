@@ -14,7 +14,7 @@ March 18, 2025 - Program Creation
 #include "chessgamewindow.h"
 #include "chessposition.h"
 #include "chesstabhost.h"
-
+#include "pgngamedata.h"
 
 #include <fstream>
 #include <vector>
@@ -57,14 +57,15 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     // signals and slots
     connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
     connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
-    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onTableActivated);
-    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onTableSelected);
+    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
+    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
 
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-    ChessGameWindow *embed = new ChessGameWindow(this, rootMove);
+    PGNGame game;
+    ChessGameWindow *embed = new ChessGameWindow(this, game);
     embed->previewSetup();
     embed->setFocusPolicy(Qt::StrongFocus);
 
@@ -181,35 +182,38 @@ void DatabaseViewer::filter(){
 }
 
 // Handle game opened in table
-void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
-
+void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     if (!proxyIndex.isValid())
         return;
-
 
     // init game window requirements
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    const PGNGameData& game = dbModel->getGame(row);
-    QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
-
+    const PGNGameData& PGN = dbModel->getGame(row);
+    QString title = QString("%1,  \"%2\" vs \"%3\"").arg(PGN.headerInfo[6].second, PGN.headerInfo[4].second, PGN.headerInfo[5].second);
 
     if(!host->tabExists(title)){
         // create new tab for game
         QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-        rootMove->m_position->setBoardData( convertFenToBoardData(rootMove->FEN));
-        buildNotationTree(game.getRootVariation(), rootMove);
+        rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
+        buildNotationTree(PGN.getRootVariation(), rootMove);
+        PGNGame game;
+        game.headerInfo = PGN.headerInfo;
+        game.rootMove = rootMove;
+        for (auto &kv : PGN.headerInfo) {
+            if (kv.first == "Result") {
+                game.result = kv.second;
+                break;
+            }
+        }
+        ChessGameWindow *gameWindow = new ChessGameWindow(this, game);
+        gameWindow->mainSetup();
 
-        ChessGameWindow *gameWin = new ChessGameWindow(this, rootMove);
-        gameWin->mainSetup();
-
-        host->addNewTab(gameWin, title);
-    }
-    else{
+        host->addNewTab(gameWindow, title);
+    } else {
         // open existing tab
         host->activateTabByLabel(title);
     }
-
 
     // set focus to new window
     // source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
@@ -221,31 +225,26 @@ void DatabaseViewer::onTableActivated(const QModelIndex &proxyIndex) {
 
 // Clear existing layouts inside preview
 void clearPreview(QWidget* container) {
-    // Grab the existing layout on the container
     QLayout* oldLayout = container->layout();
     if (!oldLayout) return;
 
-    // Take widgets/items out one by one
     QLayoutItem* item = nullptr;
     while ((item = oldLayout->takeAt(0)) != nullptr) {
         if (QWidget* w = item->widget()) {
-            // Remove it from the layout and schedule for deletion
             oldLayout->removeWidget(w);
             w->deleteLater();
         }
-        // If for some reason there was a nested layout, clear that too
+        // if there was a nested layout, clear that too
         if (auto childLayout = item->layout()) {
-            delete childLayout;  // it should already be emptied
+            delete childLayout;
         }
         delete item;
     }
-
-    // Finally delete the now-empty layout
     delete oldLayout;
 }
 
 // Handles game preview
-void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
+void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
 {
     if (!proxyIndex.isValid())
         return;
@@ -253,13 +252,22 @@ void DatabaseViewer::onTableSelected(const QModelIndex &proxyIndex, const QModel
     // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    const PGNGameData& game = dbModel->getGame(row);
+    const PGNGameData& PGN = dbModel->getGame(row);
 
     // build the notation tree from the game and construct a ChessGameWindow preview
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-    buildNotationTree(game.getRootVariation(), rootMove);
-    ChessGameWindow *embed = new ChessGameWindow(this, rootMove);
+    buildNotationTree(PGN.getRootVariation(), rootMove);
+    PGNGame game;
+    game.headerInfo = PGN.headerInfo;
+    game.rootMove = rootMove;
+    for (auto &kv : PGN.headerInfo) {
+        if (kv.first == "Result") {
+            game.result = kv.second;
+            break;
+        }
+    }
+    ChessGameWindow *embed = new ChessGameWindow(this, game);
     embed->previewSetup();
     embed->setFocusPolicy(Qt::StrongFocus);
 

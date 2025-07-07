@@ -25,6 +25,7 @@ class ChessPosition: public QObject
     Q_OBJECT
     Q_PROPERTY(QVector<QVector<QString>> boardData READ boardData WRITE setBoardData NOTIFY boardDataChanged)
     Q_PROPERTY(bool isPreview READ isPreview WRITE setIsPreview NOTIFY isPreviewChanged)
+    Q_PROPERTY(int lastMove   READ lastMove   NOTIFY lastMoveChanged)
 
 public:
     explicit ChessPosition(QObject *parent = nullptr);
@@ -41,8 +42,7 @@ public:
         m_isPreview = p;
         emit isPreviewChanged(p);
     }
-
-
+    int lastMove() const { return m_lastMove; }
 
     // Copies all internal state from another ChessPosition
     void copyFrom(const ChessPosition &other);
@@ -52,6 +52,7 @@ public:
     bool tryMakeMove(QString san);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
 
+    QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
     char m_sideToMove;
 
@@ -61,7 +62,7 @@ signals:
     // Signals ChessGameWindow to append new move to current selected move
     void moveMade(QSharedPointer<NotationMove> move);
     void isPreviewChanged(bool);
-
+    void lastMoveChanged();
 
 private:
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
@@ -81,6 +82,7 @@ private:
     int m_fullmoveNumber;
     int plyCount;
 
+    int m_lastMove = -1;
     bool m_isPreview = false;
 };
 

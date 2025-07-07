@@ -20,7 +20,7 @@ Rectangle {
 
         Rectangle {
             anchors.fill: board
-            color: "#44000000"    // e.g. black at 50% opacity
+            color: "#11000000"
             visible: chessPosition.isPreview
             z: 10
         }
@@ -41,6 +41,23 @@ Rectangle {
                 color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#EEE" : "#999999"
                 x: col * board.cellSize
                 y: row * board.cellSize
+
+                Rectangle {  // highlight
+                    anchors.fill: parent
+                    color: "yellow"
+                    opacity: 0.2
+
+                    // decode the one property:
+                    visible: {
+                        var lm = chessPosition.lastMove;
+                        if (lm < 0) return false;
+                        var fromIdx = lm >> 8;
+                        var toIdx   = lm & 0xFF;
+                        var thisIdx = row*8 + col;
+                        return thisIdx === fromIdx || thisIdx === toIdx;
+                    }
+                    z: 5
+                }
             }
         }
 

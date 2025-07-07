@@ -133,7 +133,6 @@ void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {
         m_sideToMove = move->m_position->m_sideToMove;
         m_currentFen = move->m_position->positionToFEN();
-        qDebug() << m_currentFen;
         m_currentMove = move;
         m_debounceTimer->start();
     }

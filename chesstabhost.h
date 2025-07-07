@@ -66,6 +66,9 @@ public:
     bool tabExists(QString label);
     void activateTabByLabel(QString label);
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private slots:
     void onTabChanged(int index);
     void onTabCloseRequested(int index);

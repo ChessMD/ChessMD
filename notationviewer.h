@@ -9,7 +9,9 @@ March 18, 2025: File Creation
 #include <QList>
 #include <QSharedPointer>
 #include <QRect>
+
 #include "notation.h"
+#include "pgngamedata.h"
 
 // Holds layout info for each clickable move segment
 struct MoveSegment {
@@ -21,7 +23,7 @@ class NotationViewer : public QAbstractScrollArea
 {
     Q_OBJECT
 public:
-    explicit NotationViewer(QWidget* parent = nullptr);
+    explicit NotationViewer(PGNGame game, QWidget* parent = nullptr);
 
     void setRootMove(const QSharedPointer<NotationMove>& notation);
     QSharedPointer<NotationMove> getRootMove();
@@ -43,9 +45,8 @@ signals:
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
-    void resizeEvent(QResizeEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
-    void leaveEvent(QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     // DFS traverse notation tree
@@ -59,8 +60,9 @@ private:
 
     void drawTextSegment(QPainter &painter, const QString &text, int x, int &y, int indent, int availableWidth, QRect &outRect);
 
+    PGNGame m_game;
     QSharedPointer<NotationMove> m_rootMove;
-    QList<MoveSegment> m_moveSegments;   // Clickable segments
+    QList<MoveSegment> m_moveSegments;   // Clickable segments    
 
     // Parameters for drawing
     int m_indentStep;

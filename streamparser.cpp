@@ -11,17 +11,17 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 #include "streamparser.h"
 #include "pgngamedata.h"
 
+// Ignore extra whitespace
 void skipWhitespace(std::istream &streamBuffer){
-    // Ignore extra whitespace
+
     while (streamBuffer.peek() == '\n'){
         streamBuffer.ignore();
     }
 }
 
 void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &curVariation){
-    int plyCount = 0;
+    int plyCount = 0, terminated = 0;
     char c;
-    bool terminated = false;
     QString token;
 
     while(!terminated && streamBuffer.get(c)){
@@ -37,18 +37,18 @@ void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &c
         }
 
         if (c == ')'){
-            terminated = true;
+            terminated = 1;
         }
 
         // Process token if current character is whitespace or EOF
         if (!token.isEmpty() && (std::isspace(c) || streamBuffer.peek() == EOF || c == ')')){
             // Check for standard game termination
             if (token == "1-0" || token == "0-1" || token == "1/2-1/2" || token == "*"){
-                terminated = true;
+                terminated = 1;
+            } else {
+                curVariation->moves.append(token); // Don't append result text
+                plyCount++;
             }
-
-            plyCount++;
-            curVariation->moves.append(token);
             token.clear();
         }
     }
