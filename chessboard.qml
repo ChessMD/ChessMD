@@ -16,6 +16,7 @@ Rectangle {
         height: width  // keep board square
 
         property real cellSize: width / 8
+        property int dragOrigin: -1
         property var boardData: chessPosition ? chessPosition.boardData : [["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""]]
 
         Rectangle {
@@ -77,6 +78,7 @@ Rectangle {
 
                 x: col * board.cellSize
                 y: row * board.cellSize
+                z: pieceTouch.pressed ? 100 : 1
 
                 Image {
                     // Svg Rasterisation
@@ -86,9 +88,7 @@ Rectangle {
                     width: parent.width * 0.95
                     height: parent.height * 0.95
 
-                    source: board.boardData[piece.row][piece.col] !== ""
-                            ? "img/piece/alpha/" + board.boardData[piece.row][piece.col] + ".svg"
-                            : ""
+                    source: board.boardData[piece.row][piece.col] !== "" ? "img/piece/alpha/" + board.boardData[piece.row][piece.col] + ".svg" : ""
 
                     fillMode: Image.PreserveAspectFit
 
@@ -104,11 +104,15 @@ Rectangle {
                     property int hoverCol: Math.floor((piece.x + mouseX) / board.cellSize)
                     property int hoverRow: Math.floor((piece.y + mouseY) / board.cellSize)
 
-                    // onClicked: {
-                    //     console.log("Board data:", chessPosition.boardData);
-                    // }
+                    cursorShape: board.dragOrigin >= 0 ? Qt.ClosedHandCursor : (board.boardData[row][col] !== ""  ? Qt.PointingHandCursor : Qt.ArrowCursor)
+
+                    onPressed: {
+                        board.dragOrigin = index;
+                        console.log(index);
+                    }
 
                     onReleased: {
+                        board.dragOrigin = -1;
                         chessPosition.release(piece.row, piece.col, hoverRow, hoverCol);
                     }
 

@@ -14,6 +14,10 @@ EngineLineWidget::EngineLineWidget(const QString &eval, const QString &pv, const
     , m_truncLabel(new QLabel(this))
     , m_arrow(new QToolButton(this))
 {
+    QFont f = font();
+    f.setPointSize(f.pointSize() + 2);
+    setFont(f);
+
     setMouseTracking(true);
     setAttribute(Qt::WA_Hover, true);
     m_evalBtn->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -72,20 +76,18 @@ void EngineLineWidget::paintEvent(QPaintEvent *event) {
     int lineH = fm.height() + 4;
     int x = 4, y = 4;
 
-    // 1) draw eval box
+    // draw eval box
     int btnW = m_evalBtn->width();
     int btnH = m_evalBtn->height();
-    // Position it at (4,4)
     m_evalBtn->move(4, 4);
     m_evalBtn->show();
-    // Advance x by its width + spacing
     x += btnW + 8;
 
-    // 2) draw arrow
+    // draw arrow
     m_arrow->move(width()-m_arrow->width()-4, y);
     m_arrow->show();
 
-    // 3) paint moves
+    // paint moves
     QVector<QSharedPointer<NotationMove>> moves;
     auto cur = m_rootMove;
     moves.append(cur);

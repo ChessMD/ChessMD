@@ -63,7 +63,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
 
-// Builds a dockable notation panel
+// Builds a dockable notation panelw
 void ChessGameWindow::notationSetup()
 {
     m_notationDock = new QDockWidget(tr("Notation"), this);
@@ -151,11 +151,13 @@ void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)
         // preview that position
         m_positionViewer->copyFrom(*move->m_position);
         emit m_positionViewer->boardDataChanged();
+        emit m_positionViewer->lastMoveChanged();
     } else {
-        // no hover → revert to the currently selected move’s position
+        // no hover, revert to the currently selected move’s position
         if (!m_notationViewer->getSelectedMove().isNull()) {
             m_positionViewer->copyFrom(*m_notationViewer->getSelectedMove()->m_position);
             emit m_positionViewer->boardDataChanged();
+            emit m_positionViewer->lastMoveChanged();
         }
     }
 
