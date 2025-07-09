@@ -15,7 +15,7 @@ class PGNUploader : public QDialog
 public:
     explicit PGNUploader(QWidget *parent = nullptr);
     QString getFileName();
-    ~PGNUploader();
+    ~PGNUploader() override;
 
 private:
     void getFile();

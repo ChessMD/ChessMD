@@ -22,6 +22,7 @@ March 18, 2025: File Creation
 #include <QPushButton>
 #include <QShortcut>
 #include <QKeySequence>
+#include <QQmlEngine>
 
 // Constructs a ChessGameWindow inside a parent widget
 ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
@@ -33,7 +34,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AnimatedDocks);
 
     // set the chessboard as central widget of window, and link to QML
-    QQuickWidget* boardView = new QQuickWidget;
+    QQuickWidget *boardView = new QQuickWidget;
     m_positionViewer = new ChessPosition(this);
     boardView->setResizeMode(QQuickWidget::SizeRootObjectToView);
     boardView->rootContext()->setContextProperty("chessPosition", m_positionViewer);
@@ -43,8 +44,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
 
     // link to the rootmove containing the entire game tree
     m_notationViewer = new NotationViewer(game, this);
-    QSharedPointer<NotationMove> rootMove = game.rootMove;
-    m_notationViewer->setRootMove(rootMove);
+    m_notationViewer->setRootMove(m_notationViewer->getRootMove());
 
     // connect moveMade signal when user manually makes a move
     connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
@@ -62,6 +62,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     connect(delVariation, &QShortcut::activated, this, &ChessGameWindow::onDeleteVariationShortcut);
     connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
+
 
 // Builds a dockable notation panelw
 void ChessGameWindow::notationSetup()
@@ -107,9 +108,11 @@ void ChessGameWindow::engineSetup()
 
     // update engine and board display when position changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
+    emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
 
     connect(m_engineViewer, &EngineWidget::engineMoveClicked, m_notationViewer, &NotationViewer::onEngineMoveClicked);
     connect(m_engineViewer, &EngineWidget::moveHovered, this, &ChessGameWindow::onMoveHovered);
+    connect(m_engineViewer, &EngineWidget::engineEvalScoreChanged, this, &ChessGameWindow::onEvalScoreChanged);
 }
 
 // Builds the notation toolbar with notation controls
@@ -143,6 +146,10 @@ void ChessGameWindow::notationToolbarSetup()
     dockLayout->setContentsMargins(0, 0, 0, 0);
 
     m_notationDock->setWidget(dockContent);
+}
+
+void ChessGameWindow::onEvalScoreChanged(double evalScore){
+    m_positionViewer->setEvalScore(evalScore);
 }
 
 void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)

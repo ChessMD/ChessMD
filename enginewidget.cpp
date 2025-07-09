@@ -13,6 +13,7 @@ April 11, 2025: File Creation
 #include <QHeaderView>
 #include <QLabel>
 #include <QEvent>
+#include <QFileDialog>
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
@@ -24,8 +25,9 @@ EngineWidget::EngineWidget(QWidget *parent)
     setAttribute(Qt::WA_Hover, true);
     setMouseTracking(true);
 
-    auto* leftBtn1 = new QPushButton("", this);
-    auto* leftBtn2 = new QPushButton("", this);
+    auto* leftBtn1 = new QPushButton("⚙", this);
+    leftBtn1->setToolTip("Configure engine");
+    connect(leftBtn1, &QPushButton::clicked, this, &EngineWidget::onConfigEngineClicked);
 
     m_evalButton = new QPushButton("0.00", this);
     m_evalButton->setEnabled(false);
@@ -50,7 +52,6 @@ EngineWidget::EngineWidget(QWidget *parent)
 
     auto* topBar = new QHBoxLayout;
     topBar->addWidget(leftBtn1);
-    topBar->addWidget(leftBtn2);
     topBar->addStretch();
     topBar->addWidget(m_evalButton, 1);
     topBar->addStretch();
@@ -100,6 +101,11 @@ EngineWidget::EngineWidget(QWidget *parent)
     m_scroll->setWidget(m_container);
     engineLayout->addWidget(m_scroll, 1);
 
+    m_engineLabel = new QLabel(tr("No engine selected!"), this);
+    m_engineLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_engineLabel->setStyleSheet("padding:4px; font-style:italic;");
+    engineLayout->addWidget(m_engineLabel);
+
     m_console->setReadOnly(true);
     m_console->setFixedHeight(150);
     m_console->hide();
@@ -121,13 +127,27 @@ EngineWidget::EngineWidget(QWidget *parent)
     connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
     connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
 
+    // doPendingAnalysis();
 }
 
-EngineWidget::~EngineWidget() {
+void EngineWidget::onConfigEngineClicked()
+{
+    QString binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
+    if (binary.isEmpty()) return;
+
+    ChessQSettings s;
+    s.loadSettings();
+    s.setEngineFile(binary);
+    s.saveSettings();
+
     m_engine->quitEngine();
-    m_engine->disconnect(this);
-    delete m_engine;
+    m_engine->startEngine(binary);
+
+    m_engineLabel->setText(tr("No engine selected!"));
+
+    doPendingAnalysis();
 }
+
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {
@@ -159,7 +179,9 @@ void EngineWidget::analysePosition() {
     m_lineWidgets.clear();
 
     for (int i = 1; i <= m_multiPv; i++) {
-        auto *lineW = new EngineLineWidget("...", "", m_currentMove, this);
+        ChessPosition* dummyPos = new ChessPosition;
+        auto temp = QSharedPointer<NotationMove>::create(QString(), *dummyPos);
+        auto *lineW = new EngineLineWidget("...", "", temp, this);
         lineW->installEventFilter(this);
         m_containerLay->addWidget(lineW);
         m_lineWidgets[i] = lineW;
@@ -168,8 +190,9 @@ void EngineWidget::analysePosition() {
     m_engine->startInfiniteSearch(m_multiPv);
 }
 
-void EngineWidget::onPvUpdate(const PvInfo &info) {
+void EngineWidget::onPvUpdate(PvInfo &info) {
     // store the latest info for this line
+    info.score = (m_sideToMove == 'w' ? info.score : -info.score);
     m_bufferedInfo[info.multipv] = info;
 
     // if hovering, bail out and let the engine run
@@ -181,8 +204,11 @@ void EngineWidget::onPvUpdate(const PvInfo &info) {
     if (it == m_lineWidgets.end()) return;
     EngineLineWidget *lineW = it.value();
 
-    QString evalTxt = info.isMate ? tr("Mate in %1").arg((int)info.score) : QString("%1").arg((m_sideToMove == 'w' ? info.score : -info.score), 0, 'f', 2);
+    QString evalTxt = info.isMate ? tr("Mate in %1").arg(info.score) : QString("%1").arg(info.score, 0, 'f', 2);
     QSharedPointer<NotationMove> rootMove = parseEngineLine(info.pvLine, m_currentMove); // parse LAN into a notation tree
+    if (!rootMove){
+        return; // failed parsing
+    }
     EngineLineWidget *newW = new EngineLineWidget(evalTxt, info.pvLine, rootMove, this);
     // qDebug() << rootMove->moveText;
     newW->installEventFilter(this);
@@ -199,6 +225,13 @@ void EngineWidget::onPvUpdate(const PvInfo &info) {
     if (info.multipv == 1) {
         QString bigEval = evalTxt;
         m_evalButton->setText(bigEval);
+        double evalScore = 0.0;
+        if (!info.isMate) evalScore = bigEval.toDouble();
+        else evalScore = (info.score > 0 ? 4.0 : -4.0);
+        if (evalScore > 4.0) evalScore = 4.0;
+        if (evalScore < -4.0) evalScore = -4.0;
+        m_currentMove->m_position->setEvalScore(evalScore);
+        emit engineEvalScoreChanged(evalScore);
 
         bool positive = !bigEval.startsWith(u'-');
         QString bg   = positive ? QStringLiteral("white") : QStringLiteral("#333");
@@ -243,6 +276,11 @@ bool EngineWidget::eventFilter(QObject *watched, QEvent *event) {
 
 void EngineWidget::onInfoLine(const QString &line) {
     m_console->append(QStringLiteral("<< %1").arg(line));
+    if (line.startsWith("id name ")) {
+        // everything after "id name " is the engine's name
+        QString name = line.mid(QStringLiteral("id name ").length());
+        m_engineLabel->setText(tr("Engine: %1").arg(name));
+    }
 }
 
 void EngineWidget::onCmdSent(const QString &cmd) {

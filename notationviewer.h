@@ -50,10 +50,10 @@ protected:
 
 private:
     // DFS traverse notation tree
-    void drawNotation(QPainter& painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool shouldDrawMove = true);
+    void drawNotation(QPainter& painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain, bool shouldDrawMove = true);
 
     // Draw individual move
-    void drawMove(QPainter& painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y);
+    void drawMove(QPainter& painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain);
 
     void clearLayout();
     void layoutNotation();

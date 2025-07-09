@@ -17,16 +17,17 @@ April 11, 2025: File Creation
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <QLabel>
 
 class EngineWidget : public QWidget {
     Q_OBJECT
 public:
     explicit EngineWidget(QWidget *parent = nullptr);
-    ~EngineWidget();
 
 signals:
     void engineMoveClicked(QSharedPointer<NotationMove>& move);
     void moveHovered(QSharedPointer<NotationMove> move);
+    void engineEvalScoreChanged(double evalScore);
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
@@ -35,8 +36,9 @@ public slots:
     void onMoveSelected(const QSharedPointer<NotationMove>& move);
 
 private slots:
+    void onConfigEngineClicked();
     void doPendingAnalysis();
-    void onPvUpdate(const PvInfo &info);
+    void onPvUpdate(PvInfo &info);
     void onInfoLine(const QString &line);
     void onCmdSent(const QString &cmd);
 
@@ -55,6 +57,7 @@ private:
     QPushButton *m_buttonAnalyse;
     QPushButton *m_buttonStop;
     QPushButton *m_evalButton;
+    QLabel      *m_engineLabel;
     QTextEdit *m_console;
     QString m_currentFen;
     QString m_sideToMove;

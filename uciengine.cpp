@@ -15,6 +15,7 @@ UciEngine::UciEngine(QObject *parent)
 }
 
 UciEngine::~UciEngine() {
+    blockSignals(true);
     if (m_proc->state() != QProcess::NotRunning) {
         sendCommand("quit\n");
         m_proc->waitForFinished(500);
@@ -60,6 +61,8 @@ void UciEngine::stopSearch() {
 
 void UciEngine::handleReadyRead() {
     while (m_proc->canReadLine()) {
+
+
         QString line = QString::fromUtf8(m_proc->readLine()).trimmed();
         emit infoReceived(line);
 

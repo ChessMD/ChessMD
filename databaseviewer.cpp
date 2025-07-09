@@ -183,6 +183,7 @@ void DatabaseViewer::filter(){
 
 // Handle game opened in table
 void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
+    dbView->setFocus();
     if (!proxyIndex.isValid())
         return;
 
@@ -221,6 +222,7 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     host->raise();
     host->activateWindow(); // for Windows
     host->show();
+
 }
 
 // Clear existing layouts inside preview

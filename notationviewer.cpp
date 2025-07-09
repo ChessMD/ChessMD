@@ -4,6 +4,7 @@ March 18, 2025: File Creation
 
 #include "notationviewer.h"
 #include "variationdialogue.h"
+#include "chessposition.h"
 
 #include <QPainter>
 #include <QFontMetrics>
@@ -14,6 +15,7 @@ March 18, 2025: File Creation
 NotationViewer::NotationViewer(PGNGame game, QWidget* parent)
     : QAbstractScrollArea(parent)
     , m_game(game)
+    , m_rootMove(game.rootMove)
 {
     QFont f = font();
     f.setPointSize(f.pointSize() + 2);
@@ -34,6 +36,7 @@ void NotationViewer::setRootMove(const QSharedPointer<NotationMove>& notation)
     m_selectedMove = m_rootMove;
     clearLayout();
     layoutNotation();
+    emit moveSelected(m_selectedMove);
     viewport()->update();
 }
 
@@ -59,8 +62,9 @@ void NotationViewer::layoutNotation()
     QPainter painter(&dummy);
     painter.setFont(font());
     int x = 0, y = 0;
-    if (m_rootMove)
-        drawNotation(painter, m_rootMove, 0, x, y);
+    if (m_rootMove){
+        drawNotation(painter, m_rootMove, 0, x, y, true, false);
+    }
     // Set the viewport's height based on total text height
     verticalScrollBar()->setRange(0, qMax(0, y - viewport()->height()));
     verticalScrollBar()->setPageStep(viewport()->height());
@@ -81,8 +85,9 @@ void NotationViewer::paintEvent(QPaintEvent* /*event*/)
     // Clear and recalc layout (in a more optimized version, do this only when data changes).
     clearLayout();
     int x = 0, y = 0, lineHeight = fm.height() + m_lineSpacing;
-    if (m_rootMove)
-        drawNotation(painter, m_rootMove, 0, x, y);
+    if (m_rootMove) {
+        drawNotation(painter, m_rootMove, 0, x, y, true, false);
+    }
 
     // Highlight the selected move if any.
     if (!m_selectedMove.isNull()) {
@@ -103,14 +108,32 @@ void NotationViewer::paintEvent(QPaintEvent* /*event*/)
     painter.drawText(0, y, m_game.result);
 }
 
-void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y)
+void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain)
 {
+    if (isMain){
+        QFont boldFont = painter.font();
+        boldFont.setBold(true);
+        painter.setFont(boldFont);
+    }
+
     QFontMetrics fm(painter.font());
     int availableWidth = viewport()->width() - indent - 10; // some padding
     int lineHeight = fm.height() + m_lineSpacing;
 
+    QString numPrefix;
+    if (currentMove->m_position) {
+        int moveNum = currentMove->m_position->getPlyCount()/2 + 1;
+        if (currentMove->m_position->m_sideToMove == 'b') {
+            // white to move → number + ". "
+            numPrefix = QString::number(moveNum) + ". ";
+        } else if (currentMove->isVarRoot) {
+            // first move in variation on black → number + "... "
+            numPrefix = QString::number(moveNum) + "... ";
+        }
+    }
+
     QString preComment = currentMove->commentBefore.isEmpty() ? "" : currentMove->commentBefore + " ";
-    QString moveStr = currentMove->moveText;
+    QString moveStr = numPrefix + currentMove->moveText;
     QString annotations = currentMove->annotation1 + currentMove->annotation2;
     QString postComment = currentMove->commentAfter;
     QString fullMove = preComment + moveStr + annotations + postComment + " ";
@@ -134,9 +157,15 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
     seg.rect = moveRect;
     seg.move = currentMove;
     m_moveSegments.append(seg);
+
+    if (isMain){
+        QFont unboldFont = painter.font();
+        unboldFont.setBold(false);
+        painter.setFont(unboldFont);
+    }
 }
 
-void NotationViewer::drawNotation(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool shouldDrawMove)
+void NotationViewer::drawNotation(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain, bool shouldDrawMove)
 {
     QFontMetrics fm(painter.font());
     int lineHeight = fm.height() + m_lineSpacing;
@@ -149,23 +178,23 @@ void NotationViewer::drawNotation(QPainter &painter, const QSharedPointer<Notati
     }
 
     if (shouldDrawMove){
-        drawMove(painter, currentMove, indent, x, y);
+        drawMove(painter, currentMove, indent, x, y, isMain);
     }
 
     if (currentMove->m_nextMoves.size() == 1){
         // Continue down current variation
-        drawNotation(painter, currentMove->m_nextMoves.front(), indent, x, y);
+        drawNotation(painter, currentMove->m_nextMoves.front(), indent, x, y, isMain);
     } else if (currentMove->m_nextMoves.size() > 1){
-        drawMove(painter, currentMove->m_nextMoves.front(), indent, x, y);
+        drawMove(painter, currentMove->m_nextMoves.front(), indent, x, y, isMain);
         // Go through variations
         y += lineHeight;
         for (int i = 1; i < currentMove->m_nextMoves.size(); i++) {
             // Use DFS search to explore all moves in the game tree
             x = indent + m_indentStep;
-            drawNotation(painter, currentMove->m_nextMoves[i], indent + m_indentStep, x, y);
+            drawNotation(painter, currentMove->m_nextMoves[i], indent + m_indentStep, x, y, false);
             x = indent;
         }
-        drawNotation(painter, currentMove->m_nextMoves.front(), indent, x, y, false);
+        drawNotation(painter, currentMove->m_nextMoves.front(), indent, x, y, isMain, false);
     }
 
     if (indent && !currentMove->m_nextMoves.size()) {

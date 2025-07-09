@@ -9,6 +9,48 @@ Rectangle {
 
     property int padding: 16
 
+    property real evalRatio: {
+        if (!chessPosition) return 0.5;
+        return Math.min( Math.max(chessPosition.evalScore * ((0.95 - 0.05) / 8.0) + 0.5, 0.05), 0.95)
+    }
+
+    // dark background track
+    Rectangle {
+        id: evalBarBg
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            left: parent.left
+            margins: 4
+        }
+        width: 20
+        color: "#000000"
+        radius: width / 2
+    }
+
+    // white fill bar
+    Rectangle {
+        id: evalBarFill
+        anchors {
+            bottom: evalBarBg.bottom
+        }
+        width: evalBarBg.width - 4
+        x: evalBarBg.x + 2
+        color: "#ffffff"
+        radius: width / 2
+
+        // height = evalRatio * total height of track
+        height: {
+            if (!chessPosition) return 0.5;
+            var ratio = Math.min(Math.max(chessPosition.evalScore * 0.1125 + 0.5, 0.05), 0.95);
+            return evalBarBg.height * ratio;
+        }
+
+        Behavior on height {
+            NumberAnimation { duration: 300 }
+        }
+    }
+
     Item {
         id: board
         anchors.centerIn: parent
@@ -18,13 +60,6 @@ Rectangle {
         property real cellSize: width / 8
         property int dragOrigin: -1
         property var boardData: chessPosition ? chessPosition.boardData : [["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""],["", "", "", "", "", "", "", ""]]
-
-        Rectangle {
-            anchors.fill: board
-            color: "#11000000"
-            visible: chessPosition.isPreview
-            z: 10
-        }
 
         Repeater {
             id: squareContainer
@@ -45,11 +80,15 @@ Rectangle {
 
                 Rectangle {  // highlight
                     anchors.fill: parent
-                    color: "yellow"
+                    color: {
+                        if (!chessPosition) return "00000000";
+                        return chessPosition.isPreview ? "blue" : "yellow"
+                    }
                     opacity: 0.2
 
                     // decode the one property:
                     visible: {
+                        if (!chessPosition) return false;
                         var lm = chessPosition.lastMove;
                         if (lm < 0) return false;
                         var fromIdx = lm >> 8;
@@ -108,12 +147,12 @@ Rectangle {
 
                     onPressed: {
                         board.dragOrigin = index;
-                        console.log(index);
                     }
 
                     onReleased: {
                         board.dragOrigin = -1;
-                        chessPosition.release(piece.row, piece.col, hoverRow, hoverCol);
+                        if (chessPosition)
+                            chessPosition.release(piece.row, piece.col, hoverRow, hoverCol);
                     }
 
                     onPositionChanged: {

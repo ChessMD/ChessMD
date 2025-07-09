@@ -8,6 +8,7 @@ March 20, 2025: File Creation
 #include <QString>
 #include <QVector>
 #include <QObject>
+#include <QDebug>
 
 #include "notation.h"
 #include "pgngamedata.h"
@@ -24,6 +25,7 @@ class ChessPosition: public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QVector<QVector<QString>> boardData READ boardData WRITE setBoardData NOTIFY boardDataChanged)
+    Q_PROPERTY(double evalScore READ evalScore WRITE setEvalScore NOTIFY evalScoreChanged)
     Q_PROPERTY(bool isPreview READ isPreview WRITE setIsPreview NOTIFY isPreviewChanged)
     Q_PROPERTY(int lastMove   READ lastMove   NOTIFY lastMoveChanged)
 
@@ -44,6 +46,14 @@ public:
     }
     int lastMove() const { return m_lastMove; }
 
+    double evalScore() const { return m_evalScore; }
+    void setEvalScore(double v) {
+        m_evalScore = v;
+        emit evalScoreChanged();
+    }
+
+    int getPlyCount() const {return m_plyCount;}
+
     // Copies all internal state from another ChessPosition
     void copyFrom(const ChessPosition &other);
     QString positionToFEN() const;
@@ -51,6 +61,7 @@ public:
     // Tries to make a new move from the current position given a SAN string
     bool tryMakeMove(QString san);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
+    bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
@@ -63,9 +74,9 @@ signals:
     void moveMade(QSharedPointer<NotationMove> move);
     void isPreviewChanged(bool);
     void lastMoveChanged();
+    void evalScoreChanged();
 
 private:
-    bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
     bool squareAttacked(int row, int col, QChar attacker) const;
 
     bool inCheck(QChar side) const;
@@ -80,10 +91,11 @@ private:
     QString m_enPassantTarget;
     int m_halfmoveClock;
     int m_fullmoveNumber;
-    int plyCount;
+    int m_plyCount;
 
     int m_lastMove = -1;
     bool m_isPreview = false;
+    double m_evalScore = 0;
 };
 
 QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove);

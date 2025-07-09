@@ -11,7 +11,7 @@ ChessPosition::ChessPosition(QObject *parent)
     : QObject(parent)
 {
     m_boardData = convertFenToBoardData("");
-    plyCount = 0;
+    m_plyCount = 0;
     m_sideToMove = 'w';
 
     m_castling.whiteKing = true;
@@ -40,8 +40,9 @@ void ChessPosition::copyFrom(const ChessPosition &other)
     m_enPassantTarget = other.m_enPassantTarget;
     m_halfmoveClock = other.m_halfmoveClock;
     m_fullmoveNumber = other.m_fullmoveNumber;
-    plyCount = other.plyCount;
+    m_plyCount = other.m_plyCount;
     m_lastMove = other.m_lastMove;
+    m_evalScore = other.m_evalScore;
 }
 
 bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol) const
@@ -216,15 +217,13 @@ void ChessPosition::release(int oldRow, int oldCol, int newRow, int newCol)
 
     ChessPosition* newPos = new ChessPosition;
     newPos->copyFrom(*this);
-    newPos->plyCount = plyCount+1;
     newPos->applyMove(oldRow, oldCol, newRow, newCol, '\0');
 
-    QString moveText = (plyCount % 2 == 0 ? QString::number(1+(plyCount/2)) + "." : "");
+    QString moveText;
     if (newPos->m_boardData[newRow][newCol][1] != 'P'){
-        moveText += QString("%3%1%2").arg(QChar('a' + newCol)).arg(8 - newRow).arg(newPos->m_boardData[newRow][newCol][1]);
-    } else {
-        moveText += QString("%1%2").arg(QChar('a' + newCol)).arg(8 - newRow);
+        moveText = QString("%1").arg(newPos->m_boardData[newRow][newCol][1]);
     }
+    moveText += QString("%1%2").arg(QChar('a' + newCol)).arg(8 - newRow);
 
     QSharedPointer<NotationMove> newMove(new NotationMove(moveText, *newPos));
 
@@ -259,7 +258,6 @@ bool ChessPosition::tryMakeMove(QString san) {
         else { m_castling.blackKing=m_castling.blackQueen=false; }
         m_halfmoveClock++;
         if (m_sideToMove=='b') m_fullmoveNumber++;
-        plyCount++;
         return true;
     }
     QRegularExpression re(R"(^([NBRQK]?)([a-h]?)([1-8]?)(x?)([a-h][1-8])(=?[QNRB]?)([+#]?)$)");
@@ -282,7 +280,6 @@ bool ChessPosition::tryMakeMove(QString san) {
             applyMove(sr, sc, dr, dc, promo);
             m_halfmoveClock = (piece=='P' || capture)?0:m_halfmoveClock+1;
             if (m_sideToMove == 'b') m_fullmoveNumber++;
-            plyCount++;
             auto moveObj = QSharedPointer<NotationMove>::create(san, *this);
             return true;
         }
@@ -349,6 +346,7 @@ void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
         m_boardData[dr][dc] = QString(from[0]) + promotion;
     }
     m_sideToMove = (m_sideToMove=='w'?'b':'w');
+    m_plyCount++;
     m_lastMove  = ((sr * 8 + sc) << 8) | (dr * 8 + dc);
 }
 
@@ -618,6 +616,7 @@ QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer
             QChar promo = (token.length() == 5 ? token.at(4).toLower() : QChar('\0'));
             ChessPosition* clonePos = new ChessPosition;
             clonePos->copyFrom(*tempMove->m_position);
+            if (!clonePos->validateMove(sr, sc, dr, dc)) break; // error parsing
             clonePos->applyMove(sr, sc, dr, dc, promo);
             newMove = QSharedPointer<NotationMove>::create(token, *clonePos);
             newMove->moveText = tempMove->m_position->lanToSan(sr, sc, dr, dc, promo);

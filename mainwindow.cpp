@@ -99,7 +99,7 @@ void MainWindow::onAddGame()
 
 void MainWindow::onSelectEngineFile()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "Select a chess engine file");
+    QString file_name =  QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
 
     ChessQSettings * m_settings = new ChessQSettings();
 

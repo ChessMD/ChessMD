@@ -36,7 +36,7 @@ signals:
     void commandSent(const QString &cmd);
     void infoReceived(const QString &rawInfo);
     void bestMove(const QString &move);
-    void pvUpdate(const PvInfo &info);
+    void pvUpdate(PvInfo &info);
 
 private slots:
     void handleReadyRead();

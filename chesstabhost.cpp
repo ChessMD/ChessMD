@@ -73,6 +73,7 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     addTabButton = new QToolButton(this);
     addTabButton->setText("+");
     addTabButton->setToolTip("New Tab");
+    addTabButton->hide();
 
     ui->topBarLayout->addWidget(tabBar);
     ui->topBarLayout->addWidget(addTabButton);
