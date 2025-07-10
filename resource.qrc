@@ -9,5 +9,8 @@
         <file>img/arrow-left.png</file>
         <file>img/arrow-right.png</file>
         <file>img/addfile.png</file>
+        <file>img/enginedebug.png</file>
+        <file>img/engineupload.png</file>
+        <file>img/logo.png</file>
     </qresource>
 </RCC>

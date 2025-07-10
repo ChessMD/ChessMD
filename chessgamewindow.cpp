@@ -187,7 +187,7 @@ void ChessGameWindow::mainSetup(){
     notationToolbarSetup();
     toolbarSetup();
     engineSetup();
-    resizeDocks({m_notationDock}, {int(width())}, Qt::Horizontal);
+    resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
 }
 
 // Configures ChessGameWindow for previewing
@@ -248,10 +248,12 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move)
 void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove> move)
 {
     if (!move.isNull() && move->m_position) {
+
         m_positionViewer->copyFrom(*move->m_position);
-        // qDebug() << m_positionViewer->lastMove();
+        m_positionViewer->setIsPreview(false);
         emit m_positionViewer->boardDataChanged();
         emit m_positionViewer->lastMoveChanged();
+
     }
 }
 

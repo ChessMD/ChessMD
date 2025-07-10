@@ -36,7 +36,8 @@ public:
     void setBoardData(const QVector<QVector<QString>> &data);
 
     // Called from Qml when the user tries to make a new move
-    Q_INVOKABLE void release(int oldRow, int oldCol, int newRow, int newCol);
+    Q_INVOKABLE void release(int sr, int sc, int dr, int dc);
+    Q_INVOKABLE void promote(int sr, int sc, int dr, int dc, QChar promo);
 
     bool isPreview() const { return m_isPreview; }
     void setIsPreview(bool p) {
@@ -70,6 +71,7 @@ public:
 signals:
     // Signals QML to update board display
     void boardDataChanged();
+    void requestPromotion(int sr, int sc, int dr, int dc);
     // Signals ChessGameWindow to append new move to current selected move
     void moveMade(QSharedPointer<NotationMove> move);
     void isPreviewChanged(bool);
@@ -77,6 +79,8 @@ signals:
     void evalScoreChanged();
 
 private:
+    void buildUserMove(int sr, int sc, int dr, int dc, QChar promo);
+
     bool squareAttacked(int row, int col, QChar attacker) const;
 
     bool inCheck(QChar side) const;

@@ -3,6 +3,7 @@
 
 #include "notation.h"
 #include "notationviewer.h"
+#include "uciengine.h"
 
 #include <QWidget>
 #include <QPushButton>
@@ -33,10 +34,13 @@ private:
     QSharedPointer<NotationMove> m_rootMove;
     QList<MoveSegment> m_moveSegments;
     MoveSegment* m_hoveredSegment = nullptr;
+    PvInfo m_info;
 
     QString m_fullText;
     QString m_evalTxt;
     bool m_expanded = false;
+
+
 
     QPushButton *m_evalBtn;
     QLabel *m_truncLabel;

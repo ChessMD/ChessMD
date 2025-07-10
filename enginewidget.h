@@ -47,6 +47,7 @@ private:
     void flushBufferedInfo();
 
     bool m_isHovering;
+    bool m_ignoreHover;
     QMap<int, PvInfo> m_bufferedInfo;
 
     QTimer *m_debounceTimer;

@@ -1,0 +1,386 @@
+/*
+March 18, 2025: File Creation
+*/
+
+#include "notationviewer.h"
+#include "variationdialogue.h"
+#include "chessposition.h"
+
+#include <QPainter>
+#include <QFontMetrics>
+#include <QMouseEvent>
+#include <QScrollBar>
+#include <QDebug>
+#include <QMenu>
+
+NotationViewer::NotationViewer(PGNGame game, QWidget* parent)
+    : QAbstractScrollArea(parent)
+    , m_game(game)
+    , m_rootMove(game.rootMove)
+{
+    QFont f = font();
+    f.setPointSize(f.pointSize() + 2);
+    setFont(f);
+    viewport()->setFont(f);
+
+    setMouseTracking(true);
+    viewport()->setMouseTracking(true);
+    m_indentStep = 20;
+    m_lineSpacing = 4;
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+}
+
+void NotationViewer::setRootMove(const QSharedPointer<NotationMove>& notation)
+{
+    m_rootMove = notation;
+    m_selectedMove = m_rootMove;
+    clearLayout();
+    layoutNotation();
+    emit moveSelected(m_selectedMove);
+    viewport()->update();
+}
+
+QSharedPointer<NotationMove> NotationViewer::getRootMove()
+{
+    return m_rootMove;
+}
+
+QSharedPointer<NotationMove> NotationViewer::getSelectedMove()
+{
+    return m_selectedMove;
+}
+
+void NotationViewer::clearLayout()
+{
+    m_moveSegments.clear();
+}
+
+void NotationViewer::layoutNotation()
+{
+    // Temporary painter to compute text layout
+    QPixmap dummy(viewport()->size());
+    QPainter painter(&dummy);
+    painter.setFont(font());
+    int x = 0, y = 0;
+    if (m_rootMove){
+        drawNotation(painter, m_rootMove, 0, x, y, true, false);
+    }
+    // Set the viewport's height based on total text height
+    verticalScrollBar()->setRange(0, qMax(0, y - viewport()->height()));
+    verticalScrollBar()->setPageStep(viewport()->height());
+}
+
+void NotationViewer::paintEvent(QPaintEvent* /*event*/)
+{
+    QPainter painter(viewport());
+    QFontMetrics fm(painter.font());
+    painter.setFont(font());
+    painter.translate(0, -verticalScrollBar()->value());
+    painter.fillRect(viewport()->rect().translated(0, verticalScrollBar()->value()), Qt::white);
+    clearLayout();
+    int x = 0, y = 0, lineHeight = fm.height() + m_lineSpacing;
+    if (m_rootMove) {
+        drawNotation(painter, m_rootMove, 0, x, y, true, false);
+    }
+
+    // Highlight the selected move if any.
+    if (!m_selectedMove.isNull()) {
+        for (const MoveSegment &seg : m_moveSegments) {
+            if (seg.move == m_selectedMove) {
+                painter.setBrush(QColor(200, 200, 255, 128));
+                painter.setPen(Qt::NoPen);
+                painter.drawRect(seg.rect);
+            }
+        }
+    }
+    y += lineHeight + fm.ascent();
+    QFont boldFont = painter.font();
+    boldFont.setBold(true);
+    painter.setFont(boldFont);
+    painter.setPen(Qt::black);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawText(0, y, m_game.result);
+}
+
+void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain)
+{
+    if (isMain){
+        QFont boldFont = painter.font();
+        boldFont.setBold(true);
+        painter.setFont(boldFont);
+    }
+
+    QFontMetrics fm(painter.font());
+    int availableWidth = viewport()->width() - indent - 10; // some padding
+    int lineHeight = fm.height() + m_lineSpacing;
+
+    QString numPrefix;
+    int moveNum = currentMove->m_position->getPlyCount()/2 + 1;
+    if (currentMove->m_position->m_sideToMove == 'b') {
+        // white to move → number + ". "
+        numPrefix = QString::number(moveNum) + ". ";
+    } else if (currentMove->isVarRoot) {
+        // first move in variation on black → number + "... "
+        numPrefix = QString::number(moveNum) + "... ";
+    }
+
+
+    QString preComment = currentMove->commentBefore.isEmpty() ? "" : currentMove->commentBefore + " ";
+    QString moveStr = numPrefix + currentMove->moveText;
+    QString annotations = currentMove->annotation1 + currentMove->annotation2;
+    QString postComment = currentMove->commentAfter;
+    QString fullMove = preComment + moveStr + annotations + postComment + " ";
+
+    // Line wrap
+    if (x + fm.horizontalAdvance(fullMove) > viewport()->width() - 10) {
+        x = indent;
+        y += lineHeight;
+    }
+
+    painter.drawText(x, y + fm.ascent(), fullMove);
+
+    // Record the bounding rectangle for the move text portion (we want the move text clickable).
+    int moveTextStart = x + fm.horizontalAdvance(preComment);
+    int moveTextWidth = fm.horizontalAdvance(fullMove);
+    QRect moveRect(moveTextStart, y, moveTextWidth, lineHeight);
+    x += fm.horizontalAdvance(fullMove); // Update x for next move.
+
+    // Store all segments to use when highlighting moves
+    MoveSegment seg;
+    seg.rect = moveRect;
+    seg.move = currentMove;
+    m_moveSegments.append(seg);
+
+    if (isMain){
+        QFont unboldFont = painter.font();
+        unboldFont.setBold(false);
+        painter.setFont(unboldFont);
+    }
+}
+
+void NotationViewer::drawNotation(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain, bool shouldDrawMove)
+{
+    QFontMetrics fm(painter.font());
+    int lineHeight = fm.height() + m_lineSpacing;
+
+    // Draw brackets around the variation if it is not a root
+    if (currentMove->isVarRoot) {
+        // Draw opening bracket before the first move
+        painter.drawText(x, y + fm.ascent(), "( ");
+        x += fm.horizontalAdvance("( "); // Adjust x after drawing bracket
+    }
+
+    if (shouldDrawMove){
+        drawMove(painter, currentMove, indent, x, y, isMain);
+    }
+
+    if (currentMove->m_nextMoves.size() == 1){
+        // Continue down current variation
+        drawNotation(painter, currentMove->m_nextMoves.front(), indent, x, y, isMain);
+    } else if (currentMove->m_nextMoves.size() > 1){
+        drawMove(painter, currentMove->m_nextMoves.front(), indent, x, y, isMain);
+        // Go through variations
+        y += lineHeight;
+        for (int i = 1; i < currentMove->m_nextMoves.size(); i++) {
+            // Use DFS search to explore all moves in the game tree
+            x = indent + m_indentStep;
+            drawNotation(painter, currentMove->m_nextMoves[i], indent + m_indentStep, x, y, false);
+            x = indent;
+        }
+        drawNotation(painter, currentMove->m_nextMoves.front(), indent, x, y, isMain, false);
+    }
+
+    if (indent && !currentMove->m_nextMoves.size()) {
+        // Variation ended, draw the closing bracket and add a new line.
+        painter.drawText(x, y + fm.ascent(), ")");
+        x += fm.horizontalAdvance(")");
+        y += lineHeight;
+    }
+}
+
+void NotationViewer::mouseMoveEvent(QMouseEvent* event) {
+    bool overSegment = false;
+    QPoint pos = event->pos();
+    pos.setY(pos.y() + verticalScrollBar()->value());
+
+    for (auto &seg : m_moveSegments) {
+        if (seg.rect.contains(pos)) {
+            overSegment = true;
+            break;
+        }
+    }
+    if (overSegment) {
+        setCursor(Qt::PointingHandCursor);
+    } else {
+        setCursor(Qt::ArrowCursor);
+    }
+    QWidget::mouseMoveEvent(event);
+}
+
+void NotationViewer::mousePressEvent(QMouseEvent *event)
+{
+    // Adjust for scroll offset
+    QPoint pos = event->pos();
+    pos.setY(pos.y() + verticalScrollBar()->value());
+
+    // Check for clicked move segment
+    for (const MoveSegment &seg : m_moveSegments) {
+        if (seg.rect.contains(pos)) {
+            m_selectedMove = seg.move;
+            emit moveSelected(m_selectedMove);
+            viewport()->update();
+            return;
+        }
+    }
+    QAbstractScrollArea::mousePressEvent(event);
+}
+
+void NotationViewer::selectPreviousMove()
+{
+    if (m_selectedMove != nullptr && m_selectedMove->m_previousMove != nullptr){
+        m_selectedMove = m_selectedMove->m_previousMove;
+        emit moveSelected(m_selectedMove);
+        viewport()->update();
+    }
+}
+
+void NotationViewer::selectNextMove()
+{
+    if (m_selectedMove != nullptr && !m_selectedMove->m_nextMoves.isEmpty()){
+        if (m_selectedMove->m_nextMoves.size() == 1){
+            m_selectedMove = m_selectedMove->m_nextMoves.front();
+        } else {
+            VariationDialogue dialog(this);
+            dialog.setVariations(m_selectedMove);
+            if (dialog.exec() == QDialog::Accepted) {
+                auto selected = dialog.selectedMove();
+                if (selected) {
+                    m_selectedMove = selected;
+                }
+            }
+        }
+        emit moveSelected(m_selectedMove);
+        viewport()->update();
+    }
+}
+
+void NotationViewer::resizeEvent(QResizeEvent* event)
+{
+    QAbstractScrollArea::resizeEvent(event);
+    layoutNotation();
+    viewport()->update();
+}
+
+void NotationViewer::refresh()
+{
+    layoutNotation();
+    viewport()->update();
+}
+
+
+void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
+    QSharedPointer<NotationMove> tempMove = move;
+    while(tempMove->m_previousMove){
+        tempMove = tempMove->m_previousMove;
+    }
+    linkMoves(m_selectedMove, tempMove);
+    move->m_nextMoves.clear();
+    m_selectedMove = move;
+    emit moveSelected(m_selectedMove);
+    refresh();
+}
+
+void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
+    // Adjust for scroll offset
+    QPoint pos = event->pos();
+    pos.setY(pos.y() + verticalScrollBar()->value());
+
+    // Find which segment (if any) was clicked
+    QSharedPointer<NotationMove> clickedMove;
+    for (const MoveSegment &seg : m_moveSegments) {
+        if (seg.rect.contains(pos)) {
+            clickedMove = seg.move;
+            break;
+        }
+    }
+
+    if (!clickedMove) {
+        // Nothing under the click → default behavior
+        return QAbstractScrollArea::contextMenuEvent(event);
+    }
+
+    // Remember the move for the slot handlers
+    m_contextMenuMove = clickedMove;
+    m_selectedMove = clickedMove;
+
+    // Build the menu
+    QMenu menu(this);
+
+    menu.setToolTipsVisible(false);
+    menu.setSeparatorsCollapsible(false);
+
+    // —— “Add Annotation…” submenu ——
+    struct Annot { QString text; bool secondary; QKeySequence seq; };
+    static const QVector<Annot> annots = {
+        { "(none)",    false, QKeySequence() },
+        { "!",         false, QKeySequence("!") },
+        { "?",         false, QKeySequence("?") },
+        { "!?",        false, QKeySequence("Shift+?") },
+        { "?!",        false, QKeySequence("Ctrl+?") },
+        { "!!",        false, QKeySequence("Shift+!") },
+        { "??",        false, QKeySequence("Ctrl+?") },
+        { "Zugzwang",  true,  QKeySequence("Z") },
+        { "Only move", true,  QKeySequence("M") },
+    };
+
+    QMenu *annotMenu = menu.addMenu(tr("Add Annotation"));
+    for (auto &a : annots) {
+        QAction *act = new QAction(a.text, annotMenu);
+        act->setShortcut(a.seq);
+        act->setShortcutVisibleInContextMenu(true);
+        annotMenu->addAction(act);
+
+        connect(act, &QAction::triggered, this, [this, a]() {
+            if (!m_contextMenuMove) return;
+            if (a.text == "(none)") {
+                m_contextMenuMove->annotation1.clear();
+                m_contextMenuMove->annotation2.clear();
+            } else if (!a.secondary) {
+                m_contextMenuMove->annotation1 = a.text;
+            } else {
+                m_contextMenuMove->annotation2 = a.text;
+            }
+            refresh();
+        });
+
+        // insert a separator before the secondary group
+        if (a.text == "!!")
+            annotMenu->insertSeparator(annotMenu->actions().last());
+    }
+
+    QAction *delVar = menu.addAction(tr("Delete Variation"));
+    connect(delVar, &QAction::triggered, this, &NotationViewer::onActionDeleteVariation);
+
+    QAction *promote = menu.addAction(tr("Promote Variation"));
+    connect(promote, &QAction::triggered, [this]() {
+        promoteVariation(m_contextMenuMove);
+        refresh();
+        emit moveSelected(m_selectedMove);
+    });
+
+    menu.exec(event->globalPos());
+}
+
+void NotationViewer::onActionDeleteVariation() {
+    if (!m_contextMenuMove) return;
+    // Use your existing helper:
+    m_selectedMove = deleteVariation(m_contextMenuMove);
+    emit moveSelected(m_selectedMove);
+    refresh();
+}
+
+void NotationViewer::onActionAddAnnotation() {
+
+}
+

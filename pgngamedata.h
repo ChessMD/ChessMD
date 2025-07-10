@@ -42,6 +42,7 @@ public:
     QSharedPointer<NotationMove> rootMove;
     QVector<QPair<QString,QString>> headerInfo;
     QString result;
+    int dbIndex;
 };
 
 #endif // PGNGAMEDATA_H

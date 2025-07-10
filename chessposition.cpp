@@ -31,7 +31,7 @@ QVector<QVector<QString>> ChessPosition::boardData() const
 
 void ChessPosition::copyFrom(const ChessPosition &other)
 {
-    setBoardData(other.m_boardData);
+    m_boardData = other.m_boardData;
     m_sideToMove = other.m_sideToMove;
     m_castling.whiteKing = other.m_castling.whiteKing;
     m_castling.blackKing = other.m_castling.blackKing;
@@ -103,14 +103,14 @@ bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol)
     switch (piece.toLatin1()) {
     case 'P': {
         int dir = (color == 'w' ? -1 : 1);
-        // Single
+        // single
         if (dc == 0 && dr == dir && dstSq.isEmpty())
             return true;
-        // Double from start
+        // double from start
         if (dc == 0 && dr == 2*dir && oldRow == (color=='w'?6:1) && dstSq.isEmpty() && m_boardData[oldRow+dir][oldCol].isEmpty())
             return true;
-        // Capture
-        if (adr == 1 && dr == dir && (capture || m_enPassantTarget == QString(QChar('a'+newCol))+QString::number(8-newRow)))
+        // capture
+        if (adc == 1 && adr == 1 && dr == dir && (capture || m_enPassantTarget == QString(QChar('a'+newCol))+QString::number(8-newRow)))
             return true;
         return false;
     }
@@ -208,6 +208,26 @@ bool ChessPosition::squareAttacked(int row, int col, QChar attacker) const
     return false;
 }
 
+void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
+{
+    ChessPosition* newPos = new ChessPosition;
+    newPos->copyFrom(*this);
+    newPos->applyMove(sr, sc, dr, dc, promo);
+
+    QString moveText;
+    if (newPos->m_boardData[dr][dc][1] != 'P'){
+        moveText = QString("%1").arg(newPos->m_boardData[dr][dc][1]);
+    }
+    moveText += QString("%1%2").arg(QChar('a' + dc)).arg(8 - dr);
+    if (promo != '\0') {
+        moveText += "=" + QString(promo);
+    }
+
+    QSharedPointer<NotationMove> newMove(new NotationMove(moveText, *newPos));
+
+    emit moveMade(newMove);
+    emit boardDataChanged();
+}
 
 void ChessPosition::release(int oldRow, int oldCol, int newRow, int newCol)
 {
@@ -215,21 +235,16 @@ void ChessPosition::release(int oldRow, int oldCol, int newRow, int newCol)
         return;
     }
 
-    ChessPosition* newPos = new ChessPosition;
-    newPos->copyFrom(*this);
-    newPos->applyMove(oldRow, oldCol, newRow, newCol, '\0');
-
-    QString moveText;
-    if (newPos->m_boardData[newRow][newCol][1] != 'P'){
-        moveText = QString("%1").arg(newPos->m_boardData[newRow][newCol][1]);
+    if (m_boardData[oldRow][oldCol][1] == 'P' && (newRow == 0 || newRow == 7)){
+        emit requestPromotion(oldRow, oldCol, newRow, newCol);
+    } else {
+        buildUserMove(oldRow, oldCol, newRow, newCol, '\0');
     }
-    moveText += QString("%1%2").arg(QChar('a' + newCol)).arg(8 - newRow);
+}
 
-    QSharedPointer<NotationMove> newMove(new NotationMove(moveText, *newPos));
-
-    // Notify QML
-    emit moveMade(newMove);
-    emit boardDataChanged();
+void ChessPosition::promote(int sr, int sc, int dr, int dc, QChar promo)
+{
+    buildUserMove(sr, sc, dr, dc, promo);
 }
 
 void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)
@@ -343,7 +358,7 @@ void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     }
     // Promotion
     if (promotion!=QChar('\0') && from[1]=='P' && (dr==0||dr==7)) {
-        m_boardData[dr][dc] = QString(from[0]) + promotion;
+        m_boardData[dr][dc] = QString(from[0]) + promotion.toUpper();
     }
     m_sideToMove = (m_sideToMove=='w'?'b':'w');
     m_plyCount++;
@@ -613,7 +628,7 @@ QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer
                 continue;
             int sc = token.at(0).toLatin1() - 'a', sr = 8 - token.at(1).digitValue();
             int dc = token.at(2).toLatin1() - 'a', dr = 8 - token.at(3).digitValue();
-            QChar promo = (token.length() == 5 ? token.at(4).toLower() : QChar('\0'));
+            QChar promo = (token.length() == 5 ? token.at(4) : QChar('\0'));
             ChessPosition* clonePos = new ChessPosition;
             clonePos->copyFrom(*tempMove->m_position);
             if (!clonePos->validateMove(sr, sc, dr, dc)) break; // error parsing

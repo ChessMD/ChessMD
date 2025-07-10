@@ -51,15 +51,11 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->setModel(proxyModel);
     dbView->setSortingEnabled(true);
 
-
-
-
     // signals and slots
     connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
     connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
     connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
-
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
@@ -201,6 +197,7 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
         PGNGame game;
         game.headerInfo = PGN.headerInfo;
         game.rootMove = rootMove;
+        game.dbIndex = row;
         for (auto &kv : PGN.headerInfo) {
             if (kv.first == "Result") {
                 game.result = kv.second;
@@ -263,6 +260,7 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     PGNGame game;
     game.headerInfo = PGN.headerInfo;
     game.rootMove = rootMove;
+    game.dbIndex = row;
     for (auto &kv : PGN.headerInfo) {
         if (kv.first == "Result") {
             game.result = kv.second;
