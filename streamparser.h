@@ -14,7 +14,7 @@ class StreamParser
 
 public:
     explicit StreamParser(std::istream &stream) : streamBuffer(stream) {}
-    std::vector<PGNGameData> parseDatabase(void);
+    std::vector<PGNGame> parseDatabase(void);
 private:
     std::istream &streamBuffer;
 };

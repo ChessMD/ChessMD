@@ -61,12 +61,10 @@ void UciEngine::stopSearch() {
 
 void UciEngine::handleReadyRead() {
     while (m_proc->canReadLine()) {
-
-
         QString line = QString::fromUtf8(m_proc->readLine()).trimmed();
         emit infoReceived(line);
 
-        if (line == QLatin1String("readyok")){
+        if (line == "readyok"){
             m_ready = true;
             continue;
         }

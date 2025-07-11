@@ -361,16 +361,39 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
     connect(delVar, &QAction::triggered, this, &NotationViewer::onActionDeleteVariation);
     menu.addAction(delVar);
 
+    QAction *delMovesAfter =  new QAction(tr("Delete Moves After"), &menu);
+    delMovesAfter->setShortcut(QKeySequence("Delete"));
+    delMovesAfter->setShortcutVisibleInContextMenu(true);
+    connect(delMovesAfter, &QAction::triggered, this, &NotationViewer::onActionDeleteMovesAfter);
+    menu.addAction(delMovesAfter);
+
+    QAction *promoteVar =  new QAction(tr("Promote Variation"), &menu);
+    promoteVar->setShortcut(QKeySequence("Ctrl+Up"));
+    promoteVar->setShortcutVisibleInContextMenu(true);
+    connect(promoteVar, &QAction::triggered, this, &NotationViewer::onActionPromoteVariation);
+    menu.addAction(promoteVar);
+
+
     menu.exec(event->globalPos());
 }
 
 void NotationViewer::onActionDeleteVariation() {
-    if (!m_contextMenuMove) return;
-    // Use your existing helper:
-    m_selectedMove = deleteVariation(m_contextMenuMove);
+    m_selectedMove = deleteVariation(m_selectedMove);
     emit moveSelected(m_selectedMove);
     refresh();
 }
+
+void NotationViewer::onActionDeleteMovesAfter() {
+    deleteMovesAfter(m_selectedMove);
+    refresh();
+}
+
+
+void NotationViewer::onActionPromoteVariation() {
+    promoteVariation(m_selectedMove);
+    refresh();
+}
+
 
 void NotationViewer::onActionAddAnnotation() {
 

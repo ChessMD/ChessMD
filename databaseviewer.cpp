@@ -110,7 +110,7 @@ void DatabaseViewer::addGame(QString file_name)
 
     // parse PGN and get headers
     StreamParser parser(file);
-    std::vector<PGNGameData> database = parser.parseDatabase();
+    std::vector<PGNGame> database = parser.parseDatabase();
 
     // init sql database
     QSqlDatabase db = QSqlDatabase::database();
@@ -186,24 +186,11 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     // init game window requirements
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    const PGNGameData& PGN = dbModel->getGame(row);
-    QString title = QString("%1,  \"%2\" vs \"%3\"").arg(PGN.headerInfo[6].second, PGN.headerInfo[4].second, PGN.headerInfo[5].second);
+    const PGNGame& game = dbModel->getGame(row);
+    QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
 
     if(!host->tabExists(title)){
         // create new tab for game
-        QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-        rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-        buildNotationTree(PGN.getRootVariation(), rootMove);
-        PGNGame game;
-        game.headerInfo = PGN.headerInfo;
-        game.rootMove = rootMove;
-        game.dbIndex = row;
-        for (auto &kv : PGN.headerInfo) {
-            if (kv.first == "Result") {
-                game.result = kv.second;
-                break;
-            }
-        }
         ChessGameWindow *gameWindow = new ChessGameWindow(this, game);
         gameWindow->mainSetup();
 
@@ -251,22 +238,9 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    const PGNGameData& PGN = dbModel->getGame(row);
+    const PGNGame& game = dbModel->getGame(row);
 
     // build the notation tree from the game and construct a ChessGameWindow preview
-    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
-    rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-    buildNotationTree(PGN.getRootVariation(), rootMove);
-    PGNGame game;
-    game.headerInfo = PGN.headerInfo;
-    game.rootMove = rootMove;
-    game.dbIndex = row;
-    for (auto &kv : PGN.headerInfo) {
-        if (kv.first == "Result") {
-            game.result = kv.second;
-            break;
-        }
-    }
     ChessGameWindow *embed = new ChessGameWindow(this, game);
     embed->previewSetup();
     embed->setFocusPolicy(Qt::StrongFocus);

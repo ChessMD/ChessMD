@@ -52,9 +52,9 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     // create and connect keyboard shortcuts
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
     QShortcut* nextMove = new QShortcut(QKeySequence(Qt::Key_Right), this);
-    QShortcut* delAfter = new QShortcut(QKeySequence(Qt::Key_BracketRight), this);
+    QShortcut* delAfter = new QShortcut(QKeySequence(Qt::Key_Delete), this);
     QShortcut* delVariation = new QShortcut(QKeySequence("Ctrl+D"), this);
-    QShortcut* promoteVariation = new QShortcut(QKeySequence(Qt::Key_W), this);
+    QShortcut* promoteVariation = new QShortcut(QKeySequence("Ctrl+Up"), this);
 
     connect(prevMove, &QShortcut::activated, this, &ChessGameWindow::onPrevMoveShortcut);
     connect(nextMove, &QShortcut::activated, this, &ChessGameWindow::onNextMoveShortcut);
@@ -282,9 +282,8 @@ void ChessGameWindow::onDeleteVariationShortcut()
 
 void ChessGameWindow::onPromoteVariationShortcut()
 {
-    // m_notationViewer->m_selectedMove = promoteVariation(m_notationViewer->m_selectedMove);
-    // emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
-    // m_notationViewer->refresh();
+    promoteVariation(m_notationViewer->m_selectedMove);
+    m_notationViewer->refresh();
 }
 
 void ChessGameWindow::onPasteClicked()

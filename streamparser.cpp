@@ -10,6 +10,7 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 
 #include "streamparser.h"
 #include "pgngamedata.h"
+#include "chessposition.h"
 
 // Ignore extra whitespace
 void skipWhitespace(std::istream &streamBuffer){
@@ -57,7 +58,7 @@ void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &c
     return;
 }
 
-std::vector<PGNGameData> StreamParser::parseDatabase(){
+std::vector<PGNGame> StreamParser::parseDatabase(){
     std::vector<PGNGameData> database;
     skipWhitespace(streamBuffer);
     int gameNumber = 1;
@@ -122,5 +123,23 @@ std::vector<PGNGameData> StreamParser::parseDatabase(){
         database.push_back(std::move(game));
     }
 
-    return database;
+    std::vector<PGNGame> PGNdatabase;
+    for (int i = 0; i < database.size(); i++){
+        QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+        rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
+        buildNotationTree(database[i].getRootVariation(), rootMove);
+        PGNGame game;
+        game.headerInfo = database[i].headerInfo;
+        game.rootMove = rootMove;
+        game.dbIndex = i;
+        for (auto &kv : database[i].headerInfo) {
+            if (kv.first == "Result") {
+                game.result = kv.second;
+                break;
+            }
+        }
+        PGNdatabase.push_back(game);
+    }
+
+    return PGNdatabase;
 }

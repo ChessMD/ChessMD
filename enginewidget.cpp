@@ -14,6 +14,7 @@ April 11, 2025: File Creation
 #include <QLabel>
 #include <QEvent>
 #include <QFileDialog>
+#include <QThread>
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
@@ -316,6 +317,7 @@ void EngineWidget::onInfoLine(const QString &line) {
 
 void EngineWidget::onCmdSent(const QString &cmd) {
     m_console->append(QStringLiteral(">> %1").arg(cmd));
+    m_console->viewport()->repaint(); // force the UI to catch up
 }
 
 

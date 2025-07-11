@@ -44,7 +44,7 @@ private slots:
 
 private:
     QProcess *m_proc;
-    bool m_ready = false;
+    bool m_ready = true;
 
     // helper to write+emit
     void sendCommand(const QString &cmd) {

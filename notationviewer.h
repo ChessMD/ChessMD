@@ -52,6 +52,8 @@ protected:
 private slots:
     void onActionAddAnnotation();
     void onActionDeleteVariation();
+    void onActionDeleteMovesAfter();
+    void onActionPromoteVariation();
 
 private:
     // DFS traverse notation tree

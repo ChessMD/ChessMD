@@ -57,10 +57,12 @@ void promoteVariation(const QSharedPointer<NotationMove>& move)
     while(temp->m_previousMove != nullptr && !temp->isVarRoot){
         temp = temp->m_previousMove;
     }
+    temp->isVarRoot = false;
     if (temp->m_previousMove != nullptr){
         // Find the required variation and remove it
         for (int i = 0; i < temp->m_previousMove->m_nextMoves.size(); i++){
             if (temp->m_previousMove->m_nextMoves[i]->moveText == temp->moveText){
+                temp->m_previousMove->m_nextMoves[0]->isVarRoot = true;
                 swap(temp->m_previousMove->m_nextMoves[0], temp->m_previousMove->m_nextMoves[i]);
                 break;
             }

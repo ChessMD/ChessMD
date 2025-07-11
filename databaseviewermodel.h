@@ -25,12 +25,12 @@ public:
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
-    void addGame(const PGNGameData& game);
-    const PGNGameData& getGame(int row);
+    void addGame(const PGNGame& game);
+    const PGNGame& getGame(int row);
 
 private:
     std::vector<std::vector<QString>> m_data;
-    QVector<PGNGameData> m_gameData;
+    QVector<PGNGame> m_gameData;
     QString headers[10] = {"Number", "White", "Elo", "Black", "Elo", "Result", "Moves", "Event", "Date"};
 
 
