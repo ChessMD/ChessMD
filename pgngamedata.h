@@ -30,6 +30,7 @@ public:
     void printHeader();
     void printGameTree();
     QSharedPointer<VariationNode> getRootVariation() const { return rootVariation; }
+    QString bodyText;
     QVector<QPair<QString,QString>> headerInfo;
 private:
     QSharedPointer<VariationNode> rootVariation;
@@ -42,6 +43,7 @@ public:
     QSharedPointer<NotationMove> rootMove;
     QVector<QPair<QString,QString>> headerInfo;
     QString result;
+    QString bodyText;
     int dbIndex;
 };
 

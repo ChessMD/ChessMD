@@ -14,13 +14,12 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 
 // Ignore extra whitespace
 void skipWhitespace(std::istream &streamBuffer){
-
     while (streamBuffer.peek() == '\n'){
         streamBuffer.ignore();
     }
 }
 
-void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &curVariation){
+void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &curVariation, QString &bodyText){
     int plyCount = 0, terminated = 0;
     char c;
     QString token;
@@ -34,7 +33,7 @@ void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &c
         if (c == '('){
             QSharedPointer<VariationNode> newVariation = QSharedPointer<VariationNode>::create();
             curVariation->variations.append(qMakePair(plyCount, newVariation));
-            dfsParse(streamBuffer, curVariation->variations.back().second);
+            dfsParse(streamBuffer, curVariation->variations.back().second, bodyText);
         }
 
         if (c == ')'){
@@ -52,6 +51,8 @@ void dfsParse(std::istream &streamBuffer, const QSharedPointer<VariationNode> &c
             }
             token.clear();
         }
+
+        bodyText += c;
     }
 
     curVariation->plyCount = plyCount;
@@ -113,7 +114,7 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
 
         // Parse body of pgn
         if (game.getRootVariation() != nullptr) {
-            dfsParse(streamBuffer, game.getRootVariation());
+            dfsParse(streamBuffer, game.getRootVariation(), game.bodyText);
         } else {
             qDebug() << "Error: rootVariation is not initialized!\n";
         }
@@ -130,6 +131,7 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
         buildNotationTree(database[i].getRootVariation(), rootMove);
         PGNGame game;
         game.headerInfo = database[i].headerInfo;
+        game.bodyText = database[i].bodyText;
         game.rootMove = rootMove;
         game.dbIndex = i;
         for (auto &kv : database[i].headerInfo) {
