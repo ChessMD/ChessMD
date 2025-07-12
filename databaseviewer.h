@@ -31,6 +31,7 @@ public:
     ~DatabaseViewer();
 
     void addGame(QString file_name);
+    void loadExistingDatabase(QString file_name);
     void setWindowTitle(QString text);
 
 protected:
@@ -44,6 +45,10 @@ private slots:
 private:
     void filter();
     void resizeTable();
+    QString getDatabasePath(const QString &pgnFilePath);
+    QString m_databasePath;
+    QString m_connectionName;
+
     int DATA_ORDER[13] = {7, -1, 8, -1, 1, 3, 5, -1, 2, 4, 6, -1, -1};
     Ui::DatabaseViewer *ui;
 

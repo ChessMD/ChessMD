@@ -21,6 +21,9 @@ March 18, 2025 - Program Creation
 #include <QResizeEvent>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QDir>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QWidget *parent)
@@ -101,10 +104,56 @@ void DatabaseViewer::resizeTable(){
     }
 }
 
+QString DatabaseViewer::getDatabasePath(const QString &pgnFilePath){
+    QFileInfo fileInfo(pgnFilePath);
+    
+    //store in AppData
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QString dbDir = appDataPath + "/databases";
+    
+    // create directory if not exist
+    QDir().mkpath(dbDir);
+    
+    return dbDir + "/" + fileInfo.baseName() + ".db";
+}
+
 
 // Adds game to database given PGN
 void DatabaseViewer::addGame(QString file_name)
 {
+    // init sql database
+    m_databasePath = getDatabasePath(file_name);
+    m_connectionName = QFileInfo(file_name).absoluteFilePath();
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", m_connectionName);
+    db.setDatabaseName(m_databasePath);
+    if (!db.open()) {
+        qWarning() << "Failed to open database:" << m_databasePath;
+        return;
+    }
+
+
+    //table
+    QSqlQuery q(db);
+    q.exec(R"(
+        CREATE TABLE IF NOT EXISTS games (
+            Event TEXT,
+            Site TEXT,
+            Date TEXT,
+            Round TEXT,
+            White TEXT,
+            Black TEXT,
+            Result TEXT,
+            WhiteElo TEXT,
+            BlackElo TEXT,
+            ECO TEXT,
+            PlyCount TEXT,
+            SourceVersionDate TEXT,
+            PGNBody TEXT
+        )
+    )");
+
+
+
     std::ifstream file(file_name.toStdString());
     if(file.fail()) return;
 
@@ -112,16 +161,14 @@ void DatabaseViewer::addGame(QString file_name)
     StreamParser parser(file);
     std::vector<PGNGame> database = parser.parseDatabase();
 
-    // init sql database
-    QSqlDatabase db = QSqlDatabase::database();
-    db.open();
-    QSqlQuery q(db);
+    
 
     // requirements for SQL db
     const QSet<QString> requiredKeys = {"Event","Site","Date","Round","White","Black","Result", "WhiteElo", "BlackElo", "ECO"};
 
     // iterate through parsed pgn
     for(auto &game: database){
+
         if(game.headerInfo.size() > 0){
             // add to model
             int row = dbModel->rowCount();
@@ -130,6 +177,13 @@ void DatabaseViewer::addGame(QString file_name)
 
             // sql table values
             QStringList cols, params;
+
+            //add pgnbody since not part of headers
+            cols << "PGNBody";
+            QString escapedPGN = game.bodyText;
+            escapedPGN.replace("'", "''");
+            params << QString("'%1'").arg(escapedPGN);
+
 
             for(int h = 0; h < game.headerInfo.size(); h++){
 
@@ -149,7 +203,7 @@ void DatabaseViewer::addGame(QString file_name)
             }
 
             // insert into SQL database + error handling
-            QString sql = QStringLiteral("INSERT INTO databases(%1) VALUES(%2)").arg(cols.join(", ")).arg(params.join(", "));
+            QString sql = QStringLiteral("INSERT INTO games(%1) VALUES(%2)").arg(cols.join(", ")).arg(params.join(", "));
             if (!q.exec(sql)) {
                 qWarning() << "Insert failed:" << q.lastError().text();
                 return;
@@ -160,6 +214,37 @@ void DatabaseViewer::addGame(QString file_name)
             qDebug() << "Error: no game found!";
         }
     }
+
+    
+
+    dbModel->setConnectionName(m_connectionName);
+}
+
+void DatabaseViewer::loadExistingDatabase(QString file_name){
+    if (file_name.isEmpty()) return;
+
+    m_databasePath = getDatabasePath(file_name);
+    m_connectionName = QFileInfo(file_name).absoluteFilePath();
+
+    if (!QFile::exists(m_databasePath)) {
+        qWarning() << "Database file does not exist:" << m_databasePath;
+        return;
+    }
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", m_connectionName);
+    db.setDatabaseName(m_databasePath);
+    
+    if (!db.open()) {
+        qWarning() << "Failed to open existing database:" << m_databasePath;
+        return;
+    }
+
+    // Set connection name for the model and load data
+    dbModel->setConnectionName(m_connectionName);
+    dbModel->loadExistingDatabase();
+    
+    
+
 }
 
 // Handles custom filters

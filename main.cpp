@@ -19,12 +19,6 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-
-    //open an sql connection globally.
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("library.db");
-    db.open();
-
     //render the main window
     MainWindow w;
     w.show();

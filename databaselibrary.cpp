@@ -1,6 +1,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QFileDialog>
+#include <QFileInfo>
 
 #include "databaseviewer.h"
 #include "databaselibrary.h"
@@ -84,7 +85,16 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
         ((MainWindow *) parent())->setStatusBarText("Loading ...");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
 
-        gamesViewer->addGame(fileName);
+        QFileInfo fileInfo(fileName);
+        QString dbPath = fileInfo.absolutePath() + "/" + fileInfo.baseName() + ".db";
+        
+        if (QFile::exists(dbPath)) {
+            // Load from existing database 
+            gamesViewer->loadExistingDatabase(fileName);
+        } else {
+            // Create new database from PGN (first time)
+            gamesViewer->addGame(fileName);
+        }
 
         host->addNewTab(gamesViewer, fileName);
 

@@ -14,7 +14,6 @@ March 18, 2025 - Program Creation
 #include <qDebug>
 #include <QPushButton>
 #include <QMouseEvent>
-#include <QSqlQuery>
 #include <QCloseEvent>
 
 //initializes custom tab bar
@@ -172,23 +171,6 @@ void ChessTabHost::addNewTab(QWidget* embed, QString title) {
     if(DatabaseLibrary* dbLibrary = qobject_cast<DatabaseLibrary*>(embed)){
         connect(dbLibrary, &DatabaseLibrary::fileDoubleClicked, this, &ChessTabHost::onTabReplaced);
         tabTitle = QString("New Tab");
-        // QSqlDatabase db = QSqlDatabase::database();
-
-        // QSqlQuery query(db);
-        // query.exec(R"(
-        //     CREATE TABLE IF NOT EXISTS databases (
-        //         id    INTEGER PRIMARY KEY AUTOINCREMENT,
-        //         Event TEXT,
-        //         Site TEXT,
-        //         Date TEXT,
-        //         Round TEXT,
-        //         White TEXT,
-        //         Black TEXT,
-        //         Result TEXT,
-        //         WhiteElo TEXT,
-        //         BlackElo TEXT
-        //     )
-        // )");
 
     }
     else if(ChessGameWindow* gameWindow = qobject_cast<ChessGameWindow*>(embed)){
