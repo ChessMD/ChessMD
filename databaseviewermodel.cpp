@@ -121,7 +121,7 @@ void DatabaseViewerModel::addGame(const PGNGame& game) {
     m_cachedGames.append(PGNGame());
 }
 
-const PGNGame& DatabaseViewerModel::getGame(int row) {
+PGNGame& DatabaseViewerModel::getGame(int row) {
     if (row >= 0 && row < m_gameData.size()){
         return m_gameData[row];
     }

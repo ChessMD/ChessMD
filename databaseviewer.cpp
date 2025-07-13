@@ -123,19 +123,14 @@ void DatabaseViewer::addGame(QString file_name)
         return;
     }
 
-
-    
-
-
-
     std::ifstream file(file_name.toStdString());
     if(file.fail()) return;
 
     // parse PGN and get headers
     StreamParser parser(file);
-    std::vector<PGNGame> database = parser.parseDatabase();
 
-    
+    auto t0 = std::chrono::high_resolution_clock::now();
+    std::vector<PGNGame> database = parser.parseDatabase();
 
     // requirements for SQL db
     const QSet<QString> requiredKeys = {"Event","Site","Date","Round","White","Black","Result", "WhiteElo", "BlackElo", "ECO"};
@@ -268,7 +263,7 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     // init game window requirements
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    const PGNGame& game = dbModel->getGame(row);
+    PGNGame& game = dbModel->getGame(row);
     QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
 
     if(!host->tabExists(title)){
@@ -320,7 +315,8 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    const PGNGame& game = dbModel->getGame(row);
+    PGNGame &game = dbModel->getGame(row);
+    parseBodyText(game.bodyText, game.rootMove);
 
     // build the notation tree from the game and construct a ChessGameWindow preview
     ChessGameWindow *embed = new ChessGameWindow(this, game);

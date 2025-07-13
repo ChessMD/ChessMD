@@ -12,6 +12,9 @@ March 18, 2025: File Creation
 #include <QScrollBar>
 #include <QDebug>
 #include <QMenu>
+#include <QTextLayout>
+#include <QInputDialog>
+#include <QRegularExpression>
 
 NotationViewer::NotationViewer(PGNGame game, QWidget* parent)
     : QAbstractScrollArea(parent)
@@ -71,7 +74,7 @@ void NotationViewer::layoutNotation()
     verticalScrollBar()->setPageStep(viewport()->height());
 }
 
-void NotationViewer::paintEvent(QPaintEvent* /*event*/)
+void NotationViewer::paintEvent(QPaintEvent *event)
 {
     QPainter painter(viewport());
     QFontMetrics fm(painter.font());
@@ -84,7 +87,6 @@ void NotationViewer::paintEvent(QPaintEvent* /*event*/)
         drawNotation(painter, m_rootMove, 0, x, y, true, false);
     }
 
-    // Highlight the selected move if any.
     if (!m_selectedMove.isNull()) {
         for (const MoveSegment &seg : m_moveSegments) {
             if (seg.move == m_selectedMove) {
@@ -103,59 +105,70 @@ void NotationViewer::paintEvent(QPaintEvent* /*event*/)
     painter.drawText(0, y, m_game.result);
 }
 
+void drawManuallyWrappedText(QPainter &painter, const QString &text, int indent, int &x, int &y, int availWidth, int lineSpacing)
+{
+    QFontMetrics fm(painter.font());
+    int lineHeight = fm.height() + lineSpacing;
+    QStringList tokens = text.split(' ', Qt::SkipEmptyParts);
+    for (int i = 0; i < tokens.size(); ++i) {
+        QString tok = tokens[i];
+        int tokWidth = fm.horizontalAdvance(tok + ' ');
+        if (x - indent + tokWidth > availWidth) {
+            x = indent;
+            y += lineHeight;
+        }
+        painter.setPen(Qt::green);
+        painter.drawText(x, y + fm.ascent(), tok + ' ');
+        x += tokWidth;
+    }
+    painter.setPen(Qt::black);
+}
+
+
 void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMove>& currentMove, int indent, int& x, int& y, bool isMain)
 {
-    if (isMain){
-        QFont boldFont = painter.font();
-        boldFont.setBold(true);
-        painter.setFont(boldFont);
+    QFont normal = painter.font();
+    QFontMetrics fm(normal);
+    int lineHeight = fm.height() + m_lineSpacing, availWidth = viewport()->width() - indent - 10;
+    if (isMain) {
+        normal.setBold(true);
+        painter.setFont(normal);
+        fm = QFontMetrics(normal);
+        lineHeight = fm.height() + m_lineSpacing;
     }
-
-    QFontMetrics fm(painter.font());
-    int availableWidth = viewport()->width() - indent - 10; // some padding
-    int lineHeight = fm.height() + m_lineSpacing;
 
     QString numPrefix;
     int moveNum = currentMove->m_position->getPlyCount()/2 + 1;
     if (currentMove->m_position->m_sideToMove == 'b') {
-        // white to move → number + ". "
-        numPrefix = QString::number(moveNum) + ". ";
+        numPrefix = QString::number(moveNum) + ".";
     } else if (currentMove->isVarRoot) {
-        // first move in variation on black → number + "... "
-        numPrefix = QString::number(moveNum) + "... ";
+        numPrefix = QString::number(moveNum) + "...";
     }
 
-
+    QString moveStr = numPrefix + currentMove->moveText + currentMove->annotation1 + currentMove->annotation2;
     QString preComment = currentMove->commentBefore.isEmpty() ? "" : currentMove->commentBefore + " ";
-    QString moveStr = numPrefix + currentMove->moveText;
-    QString annotations = currentMove->annotation1 + currentMove->annotation2;
     QString postComment = currentMove->commentAfter;
-    QString fullMove = preComment + moveStr + annotations + postComment + " ";
+    QString fullMove = preComment + moveStr + postComment + " ";
 
-    // Line wrap
-    if (x + fm.horizontalAdvance(fullMove) > viewport()->width() - 10) {
+
+    drawManuallyWrappedText(painter, preComment, indent, x, y, availWidth, m_lineSpacing);
+
+    if (x - indent + fm.horizontalAdvance(moveStr + ' ') > availWidth) {
         x = indent;
         y += lineHeight;
     }
-
-    painter.drawText(x, y + fm.ascent(), fullMove);
-
-    // Record the bounding rectangle for the move text portion (we want the move text clickable).
-    int moveTextStart = x + fm.horizontalAdvance(preComment);
-    int moveTextWidth = fm.horizontalAdvance(fullMove);
-    QRect moveRect(moveTextStart, y, moveTextWidth, lineHeight);
-    x += fm.horizontalAdvance(fullMove); // Update x for next move.
-
+    painter.drawText(x, y + fm.ascent(), moveStr + ' ');
     // Store all segments to use when highlighting moves
-    MoveSegment seg;
-    seg.rect = moveRect;
-    seg.move = currentMove;
-    m_moveSegments.append(seg);
+    MoveSegment seg = {QRect(x, y, fm.horizontalAdvance(moveStr + ' '), lineHeight), currentMove};
+    m_moveSegments.append({seg});
+    x += fm.horizontalAdvance(moveStr + ' ');
+
+    drawManuallyWrappedText(painter, postComment, indent, x, y, availWidth, m_lineSpacing);
 
     if (isMain){
-        QFont unboldFont = painter.font();
-        unboldFont.setBold(false);
-        painter.setFont(unboldFont);
+        QFont unbold = normal;
+        unbold.setBold(false);
+        painter.setFont(unbold);
     }
 }
 
@@ -330,8 +343,6 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
         { "?!",        false, QKeySequence() },
         { "!!",        false, QKeySequence() },
         { "??",        false, QKeySequence() },
-        { "Zugzwang",  true,  QKeySequence() },
-        { "Only move", true,  QKeySequence() },
     };
 
     QMenu *annotMenu = menu.addMenu(tr("Add Annotation"));
@@ -355,6 +366,38 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
         });
     }
 
+    struct CommentEntry {
+        QString actionText;
+        QString NotationMove::* member;
+    };
+
+    const QVector<CommentEntry> commentEntries = {
+        { tr("Enter Comment Before"), &NotationMove::commentBefore },
+        { tr("Enter Comment After"),  &NotationMove::commentAfter  }
+    };
+
+    for (auto &ce : commentEntries) {
+        QAction *act = menu.addAction(ce.actionText);
+        connect(act, &QAction::triggered, this, [this, ce]() {
+            if (!m_contextMenuMove) return;
+            bool ok = false;
+            // fetch the current comment to use as the default text
+            QString initial = (m_contextMenuMove.data()->*(ce.member));
+            QString text = QInputDialog::getText(
+                this,
+                ce.actionText,                            // dialog title
+                tr("Enter %1").arg(ce.actionText),       // prompt
+                QLineEdit::Normal,
+                initial,
+                &ok
+                );
+            if (ok) {
+                (m_contextMenuMove.data()->*(ce.member)) = text.trimmed();
+                refresh();
+            }
+        });
+    }
+
     QAction *delVar =  new QAction(tr("Delete Variation"), &menu);
     delVar->setShortcut(QKeySequence("Ctrl+D"));
     delVar->setShortcutVisibleInContextMenu(true);
@@ -372,7 +415,6 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
     promoteVar->setShortcutVisibleInContextMenu(true);
     connect(promoteVar, &QAction::triggered, this, &NotationViewer::onActionPromoteVariation);
     menu.addAction(promoteVar);
-
 
     menu.exec(event->globalPos());
 }

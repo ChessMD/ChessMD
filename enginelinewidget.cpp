@@ -101,11 +101,9 @@ void EngineLineWidget::paintEvent(QPaintEvent *event) {
         QString numPrefix;
         int moveNum = moves[i]->m_position->getPlyCount()/2 + 1;
         if (moves[i]->m_position->m_sideToMove == 'b') {
-            // white to move → number + ". "
-            numPrefix = QString::number(moveNum) + ". ";
+            numPrefix = QString::number(moveNum) + ".";
         } else if (moves[i]->isVarRoot) {
-            // first move in variation on black → number + "... "
-            numPrefix = QString::number(moveNum) + "... ";
+            numPrefix = QString::number(moveNum) + "...";
         }
         QString tok = numPrefix + moves[i]->moveText + " ";
         int w = fm.horizontalAdvance(tok);

@@ -14,7 +14,10 @@ class StreamParser
 
 public:
     explicit StreamParser(std::istream &stream) : streamBuffer(stream) {}
-    std::vector<PGNGame> parseDatabase(void);
+    std::vector<PGNGame> parseDatabaseOld();
+    std::vector<PGNGame> parseDatabase();
 private:
     std::istream &streamBuffer;
 };
+
+void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove);

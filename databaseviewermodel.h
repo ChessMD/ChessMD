@@ -26,7 +26,7 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
     void addGame(const PGNGame& game);
-    const PGNGame& getGame(int row);
+    PGNGame& getGame(int row);
 
     void setConnectionName(const QString &connectionName);
     PGNGame getGameFromSQL(int row);
