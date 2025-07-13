@@ -118,31 +118,28 @@ void DatabaseViewer::addGame(QString file_name)
     m_connectionName = QFileInfo(file_name).absoluteFilePath();
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", m_connectionName);
     db.setDatabaseName(m_databasePath);
+    
     if (!db.open()) {
         qWarning() << "Failed to open database:" << m_databasePath;
         return;
     }
 
-
-    
-
-
-
+    // Parse PGN file
     std::ifstream file(file_name.toStdString());
-    if(file.fail()) return;
+    if(file.fail()) {
+        qWarning() << "Failed to open PGN file:" << file_name;
+        return;
+    }
 
     // parse PGN and get headers
     StreamParser parser(file);
     std::vector<PGNGame> database = parser.parseDatabase();
-
     
+    qDebug() << "Parsed" << database.size() << "games";
 
-    // requirements for SQL db
-    const QSet<QString> requiredKeys = {"Event","Site","Date","Round","White","Black","Result", "WhiteElo", "BlackElo", "ECO"};
-
-    //table
-    QSqlQuery q(db);
-    q.exec(R"(
+    // Create table
+    QSqlQuery createQuery(db);
+    if (!createQuery.exec(R"(
         CREATE TABLE IF NOT EXISTS games (
             Event TEXT,
             Site TEXT,
@@ -158,63 +155,85 @@ void DatabaseViewer::addGame(QString file_name)
             SourceVersionDate TEXT,
             PGNBody TEXT
         )
-    )");
-    q.exec("BEGIN TRANSACTION");
+    )")) {
+        qWarning() << "Failed to create table:" << createQuery.lastError().text();
+        return;
+    }
 
 
-    // iterate through parsed pgn
-    for(auto &game: database){
+    QSqlQuery transactionQuery(db);
+    transactionQuery.exec("BEGIN TRANSACTION");
 
-        if(game.headerInfo.size() > 0){
-            // add to model
+    // performance check
+    QSqlQuery insertQuery(db);
+    if (!insertQuery.prepare(R"(
+        INSERT INTO games (
+            Event, Site, Date, Round, White, Black, Result, 
+            WhiteElo, BlackElo, ECO, PlyCount, SourceVersionDate, PGNBody
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )")) {
+        qWarning() << "Failed to prepare insert statement:" << insertQuery.lastError().text();
+        return;
+    }
+
+    // temp helper function
+    auto getHeaderValue = [](const PGNGame& game, const QString& key) -> QString {
+        for (const auto& header : game.headerInfo) {
+            if (header.first == key) {
+                return header.second;
+            }
+        }
+        return QString(); 
+    };
+
+    // iterate through db
+    for(const auto &game : database) {
+        if(game.headerInfo.size() > 0) {
+            
+
             int row = dbModel->rowCount();
             dbModel->insertRow(row);
             dbModel->addGame(game);
 
-            // sql table values
-            QStringList cols, params;
+            // better performance?
+            insertQuery.bindValue(0, getHeaderValue(game, "Event"));
+            insertQuery.bindValue(1, getHeaderValue(game, "Site"));
+            insertQuery.bindValue(2, getHeaderValue(game, "Date"));
+            insertQuery.bindValue(3, getHeaderValue(game, "Round"));
+            insertQuery.bindValue(4, getHeaderValue(game, "White"));
+            insertQuery.bindValue(5, getHeaderValue(game, "Black"));
+            insertQuery.bindValue(6, getHeaderValue(game, "Result"));
+            insertQuery.bindValue(7, getHeaderValue(game, "WhiteElo"));
+            insertQuery.bindValue(8, getHeaderValue(game, "BlackElo"));
+            insertQuery.bindValue(9, getHeaderValue(game, "ECO"));
+            insertQuery.bindValue(10, getHeaderValue(game, "PlyCount"));
+            insertQuery.bindValue(11, getHeaderValue(game, "SourceVersionDate"));
+            insertQuery.bindValue(12, game.bodyText); // PGNBody
 
-            //add pgnbody since not part of headers
-            cols << "PGNBody";
-            QString escapedPGN = game.bodyText;
-            escapedPGN.replace("'", "''");
-            params << QString("'%1'").arg(escapedPGN);
+            if (!insertQuery.exec()) {
+                qWarning() << "Insert failed for game" << row << ":" << insertQuery.lastError().text();
+                continue; 
+            }
 
-
-            for(int h = 0; h < game.headerInfo.size(); h++){
-
-                // handle required SQL db elements
-                if(requiredKeys.contains(game.headerInfo[h].first)){
-                    cols << game.headerInfo[h].first;
-                    QString tS = game.headerInfo[h].second;
-                    tS.replace("'", "''");
-                    params << QString("'%1'").arg(tS);
-                }
-
-                // add to dbModel
-                if(DATA_ORDER[h] > -1){
+            // update model 
+            for(int h = 0; h < game.headerInfo.size(); h++) {
+                if(DATA_ORDER[h] > -1) {
                     QModelIndex index = dbModel->index(row, DATA_ORDER[h]);
                     dbModel->setData(index, game.headerInfo[h].second);
                 }
             }
-
-            // insert into SQL database + error handling
-            QString sql = QStringLiteral("INSERT INTO games(%1) VALUES(%2)").arg(cols.join(", ")).arg(params.join(", "));
-            if (!q.exec(sql)) {
-                qWarning() << "Insert failed:" << q.lastError().text();
-                return;
-            }
-
-
         } else {
             qDebug() << "Error: no game found!";
         }
     }
 
-    q.exec("COMMIT");
-    
+    // Commit transaction
+    transactionQuery.exec("COMMIT");
 
+    // Set connection for the model
     dbModel->setConnectionName(m_connectionName);
+    
+    qDebug() << "Successfully imported" << database.size() << "games to database";
 }
 
 void DatabaseViewer::loadExistingDatabase(QString file_name){
