@@ -9,6 +9,7 @@
 #include "chessgamefilesdata.h"
 #include "mainwindow.h"
 #include "chesstabhost.h"
+#include "helpers.h"
 
 // DatabaseLibrary Constructor
 DatabaseLibrary::DatabaseLibrary(QWidget *parent)
@@ -85,8 +86,7 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
         ((MainWindow *) parent())->setStatusBarText("Loading ...");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
 
-        QFileInfo fileInfo(fileName);
-        QString dbPath = fileInfo.absolutePath() + "/" + fileInfo.baseName() + ".db";
+        QString dbPath = getDatabasePathForPGN(fileName);
         
         if (QFile::exists(dbPath)) {
             // Load from existing database 

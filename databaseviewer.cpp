@@ -15,6 +15,7 @@ March 18, 2025 - Program Creation
 #include "chessposition.h"
 #include "chesstabhost.h"
 #include "pgngamedata.h"
+#include "helpers.h"
 
 #include <fstream>
 #include <vector>
@@ -105,16 +106,7 @@ void DatabaseViewer::resizeTable(){
 }
 
 QString DatabaseViewer::getDatabasePath(const QString &pgnFilePath){
-    QFileInfo fileInfo(pgnFilePath);
-    
-    //store in AppData
-    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    QString dbDir = appDataPath + "/databases";
-    
-    // create directory if not exist
-    QDir().mkpath(dbDir);
-    
-    return dbDir + "/" + fileInfo.baseName() + ".db";
+    return getDatabasePathForPGN(pgnFilePath);
 }
 
 
@@ -131,6 +123,22 @@ void DatabaseViewer::addGame(QString file_name)
         return;
     }
 
+
+    
+
+
+
+    std::ifstream file(file_name.toStdString());
+    if(file.fail()) return;
+
+    // parse PGN and get headers
+    StreamParser parser(file);
+    std::vector<PGNGame> database = parser.parseDatabase();
+
+    
+
+    // requirements for SQL db
+    const QSet<QString> requiredKeys = {"Event","Site","Date","Round","White","Black","Result", "WhiteElo", "BlackElo", "ECO"};
 
     //table
     QSqlQuery q(db);
@@ -151,20 +159,8 @@ void DatabaseViewer::addGame(QString file_name)
             PGNBody TEXT
         )
     )");
+    q.exec("BEGIN TRANSACTION");
 
-
-
-    std::ifstream file(file_name.toStdString());
-    if(file.fail()) return;
-
-    // parse PGN and get headers
-    StreamParser parser(file);
-    std::vector<PGNGame> database = parser.parseDatabase();
-
-    
-
-    // requirements for SQL db
-    const QSet<QString> requiredKeys = {"Event","Site","Date","Round","White","Black","Result", "WhiteElo", "BlackElo", "ECO"};
 
     // iterate through parsed pgn
     for(auto &game: database){
@@ -215,6 +211,7 @@ void DatabaseViewer::addGame(QString file_name)
         }
     }
 
+    q.exec("COMMIT");
     
 
     dbModel->setConnectionName(m_connectionName);
