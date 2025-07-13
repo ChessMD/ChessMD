@@ -1,11 +1,10 @@
 #include <QFileDialog>
+#include <QOperatingSystemVersion>
 
 #include "chesstabhost.h"
 #include "databaselibrary.h"
 #include "chessqsettings.h"
 #include "mainwindow.h"
-
-
 
 MainWindow::MainWindow()
 {
@@ -75,13 +74,21 @@ void MainWindow::onAddGame()
 
 void MainWindow::onSelectEngineFile()
 {
-    QString file_name =  QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+
+    QString file_name;
+
+    if (osVersion.type() == QOperatingSystemVersion::Windows)
+        file_name =  QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
+    else
+        file_name =  QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*)"));
 
     ChessQSettings * m_settings = new ChessQSettings();
 
     m_settings->setEngineFile(file_name);
     m_settings->saveSettings();
 }
+
 
 void MainWindow::setStatusBarText(const QString &text)
 {

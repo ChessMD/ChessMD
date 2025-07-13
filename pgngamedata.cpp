@@ -4,7 +4,7 @@ March 18, 2025: Completed PGN Parsing
 April 20, 2025: Overhauled C++ headers with Qt framework
 */
 
-#include <qDebug>
+#include <QDebug>
 
 #include "pgngamedata.h"
 #include "chessposition.h"
@@ -13,6 +13,7 @@ PGNGame::PGNGame()
 {
     result = "*";
     rootMove = QSharedPointer<NotationMove>::create("", *new ChessPosition);
+    isParsed = false;
 }
 
 PGNGameData::PGNGameData()

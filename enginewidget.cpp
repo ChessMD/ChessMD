@@ -15,6 +15,7 @@ April 11, 2025: File Creation
 #include <QEvent>
 #include <QFileDialog>
 #include <QThread>
+#include <QOperatingSystemVersion>
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
@@ -158,7 +159,14 @@ EngineWidget::EngineWidget(QWidget *parent)
 
 void EngineWidget::onConfigEngineClicked()
 {
-    QString binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+
+    QString binary;
+
+    if (osVersion.type() == QOperatingSystemVersion::Windows)
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
+    else
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*)"));
     if (binary.isEmpty()) return;
 
     ChessQSettings s;
@@ -173,7 +181,6 @@ void EngineWidget::onConfigEngineClicked()
 
     doPendingAnalysis();
 }
-
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     if (!move.isNull() && move->m_position) {

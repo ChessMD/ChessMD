@@ -45,6 +45,7 @@ public:
     QString result;
     QString bodyText;
     int dbIndex;
+    bool isParsed;
 };
 
 #endif // PGNGAMEDATA_H

@@ -215,8 +215,10 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
     PGNGame &game = dbModel->getGame(row);
-    parseBodyText(game.bodyText, game.rootMove);
-
+    if (!game.isParsed){
+        parseBodyText(game.bodyText, game.rootMove);
+        game.isParsed = true;
+    }
     // build the notation tree from the game and construct a ChessGameWindow preview
     ChessGameWindow *embed = new ChessGameWindow(this, game);
     embed->previewSetup();
