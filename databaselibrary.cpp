@@ -86,15 +86,10 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
         ((MainWindow *) parent())->setStatusBarText("Loading ...");
         QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
 
-        QString dbPath = getDatabasePathForPGN(fileName);
         
-        if (QFile::exists(dbPath)) {
-            // Load from existing database 
-            gamesViewer->loadExistingDatabase(fileName);
-        } else {
-            // Create new database from PGN (first time)
-            gamesViewer->addGame(fileName);
-        }
+
+        gamesViewer->addGame(fileName);
+
 
         host->addNewTab(gamesViewer, fileName);
 

@@ -3,11 +3,8 @@
 #include "chesstabhost.h"
 #include "databaselibrary.h"
 #include "chessqsettings.h"
-#include "chesstabhost.h"
 #include "mainwindow.h"
 
-#include <QSqlDatabase>
-#include <QSqlQuery>
 
 
 MainWindow::MainWindow()

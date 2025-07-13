@@ -27,18 +27,11 @@ public:
 
     void addGame(const PGNGame& game);
     PGNGame& getGame(int row);
-
-    void setConnectionName(const QString &connectionName);
-    PGNGame getGameFromSQL(int row);
-    void loadExistingDatabase();
-
     
 
 private:
     std::vector<std::vector<QString>> m_data;
     QVector<PGNGame> m_gameData;
-    QVector<PGNGame> m_cachedGames;     
-    QString m_connectionName;     
     QString headers[10] = {"Number", "White", "Elo", "Black", "Elo", "Result", "Moves", "Event", "Date"};
 
 

@@ -5,6 +5,4 @@
 
 QString getStyle(QString s);
 
-QString getDatabasePathForPGN(const QString &pgnFilePath);
-
 #endif // HELPERS_H

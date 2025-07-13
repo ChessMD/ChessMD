@@ -12,7 +12,6 @@ Jan 15, 2025 - Program Creation
 #include <QFile>
 #include <QDockWidget>
 #include "mainwindow.h"
-#include <QSqlDatabase>
 
 
 int main(int argc, char *argv[])
