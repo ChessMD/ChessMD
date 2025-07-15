@@ -256,6 +256,16 @@ void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)
 }
 
 bool ChessPosition::tryMakeMove(QString san) {
+
+    san = san.trimmed();
+    while (!san.isEmpty() && (san.endsWith('+') || san.endsWith('#'))){
+        san.chop(1);
+    }
+
+    if (san.isEmpty()){
+        return false;
+    }
+
     // Handle castling
     if (san == "O-O" || san == "O-O-O") {
         bool kingSide = (san == "O-O");
@@ -267,7 +277,6 @@ bool ChessPosition::tryMakeMove(QString san) {
         int newRC = kingSide?5:3;
         // Validate
         if (!validateMove(row, oldKC, row, newKC)) return false;
-
         applyMove(row, oldKC, row, newKC, '\0');
         if (color=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
         else { m_castling.blackKing=m_castling.blackQueen=false; }
@@ -275,30 +284,78 @@ bool ChessPosition::tryMakeMove(QString san) {
         if (m_sideToMove=='b') m_fullmoveNumber++;
         return true;
     }
-    QRegularExpression re(R"(^([NBRQK]?)([a-h]?)([1-8]?)(x?)([a-h][1-8])(=?[QNRB]?)([+#]?)$)");
-    auto m = re.match(san);
-    if (!m.hasMatch()) return false;
-    QChar piece = m.captured(1).isEmpty() ? 'P' : m.captured(1)[0];
-    QString disFile  = m.captured(2);
-    QString disRank  = m.captured(3);
-    bool capture    = !m.captured(4).isEmpty();
-    QString dst      = m.captured(5);
-    QString promoStr = m.captured(6);
-    QChar promo      = promoStr.startsWith('=') ? promoStr[1] : '\0';
+
+    // capture
+    int xPos = san.indexOf('x');
+    if (xPos >= 0) {
+        san.remove(xPos,1);
+    }
+
+    // promotion
+    QChar promo = '\0';
+    int eq = san.indexOf('=');
+    if (eq >= 0 && eq + 1 < san.size()) {
+        promo = san[eq+1];
+        san = san.left(eq);
+    }
+
+    // piece letter
+    QChar piece = 'P';
+    int idx = 0;
+    if (san.size() && san[0].isUpper() && QString("NBRQK").contains(san[0])) {
+        piece = san[0];
+        idx = 1;
+    }
+
+    int total = san.size();
+    int destPos = total - 2;
+    if (destPos < idx || destPos + 2 > total) {
+        // malformed SAN
+        return false;
+    }
+    QString dst = san.mid(destPos, 2);
+    int dr = 8 - dst[1].digitValue();
+    int dc = dst[0].unicode() - 'a';
+
+    QString disamb;
+    int disambLen = destPos - idx;
+    if (disambLen > 0) {
+        disamb = san.mid(idx, disambLen);
+    }
 
     // Find all origins for this piece that can move to dst
-    auto origins = findPieceOrigins(piece, dst, disFile+disRank);
+    auto origins = findPieceOrigins(piece, dst, QString());
+    QVector<QPair<int,int>> candidates;
     for (auto &o : origins) {
         int sr = o.first, sc = o.second;
-        int dr = 8 - dst[1].digitValue(), dc = dst[0].unicode() - 'a';
+        // check SAN disambiguation
+        bool ok = true;
+        if (disamb.size() == 1) {
+            QChar c = disamb[0];
+            if (c.isLetter()) {
+                ok = (sc == c.unicode() - 'a');
+            } else if (c.isDigit()) {
+                ok = (sr == (8 - c.digitValue()));
+            }
+        } else if (disamb.size() == 2) {
+            // both file & rank given
+            ok = (sc == disamb[0].unicode() - 'a')
+                 && (sr == (8 - disamb[1].digitValue()));
+        }
+        if (ok)
+            candidates.append(o);
+    }
+
+    // 9) Try each candidate
+    for (auto &o : candidates) {
+        int sr = o.first, sc = o.second;
         if (validateMove(sr, sc, dr, dc)) {
             applyMove(sr, sc, dr, dc, promo);
-            m_halfmoveClock = (piece=='P' || capture)?0:m_halfmoveClock+1;
-            if (m_sideToMove == 'b') m_fullmoveNumber++;
-            auto moveObj = QSharedPointer<NotationMove>::create(san, *this);
+            // update halfmove/fullmove…
             return true;
         }
     }
+
     return false;
 }
 
@@ -544,7 +601,6 @@ QString ChessPosition::positionToFEN() const {
 
 QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) const
 {
-    // 1) Piece identity
     const QString fromSq = m_boardData[sr][sc];
     if (fromSq.size() < 2) {
         qWarning() << "Invalid ‘from’ string, aborting move.";
@@ -553,15 +609,12 @@ QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) con
     QChar piece = fromSq[1];  // 'P','N','B','R','Q','K'
     bool isPawn = (piece == 'P');
 
-    // 2) Castling?
+    // castling
     if (piece == 'K' && qAbs(dc - sc) == 2) {
         return (dc > sc ? "O-O" : "O-O-O");
     }
 
-    // 3) Detect capture (including en passant)
     bool isCapture = !m_boardData[dr][dc].isEmpty() || (isPawn && qAbs(dc - sc)==1 && m_enPassantTarget == QString(QChar('a'+dc)) + QString::number(8-dr));
-
-    // 4) Find all same‐type pieces that *could* move to (dr,dc)
     QVector<QPair<int,int>> candidates;
     QChar mySide = m_sideToMove;
     for (int r = 0; r < 8; ++r) {
@@ -574,10 +627,9 @@ QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) con
             }
         }
     }
-    // always include the actual mover
     candidates.append({sr,sc});
 
-    // 5) Disambiguator if more than one candidate (and not pawn)
+    // disambiguator
     QString disamb;
     if (!isPawn && candidates.size() > 1) {
         bool needFile=false, needRank=false;
@@ -589,22 +641,22 @@ QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) con
         if (needRank) disamb += QChar('1' + (7 - sr));
     }
 
-    // 6) Build SAN prefix
+    // SAN prefix
     QString san;
     if (!isPawn) {
-        san += piece;    // N/B/R/Q
+        san += piece;
         san += disamb;
     } else if (isCapture) {
         // pawn captures include file
         san += QChar('a' + sc);
     }
 
-    // 7) Capture marker and destination
+    // capture and destination
     if (isCapture) san += 'x';
     san += QChar('a' + dc);
     san += QString::number(8 - dr);
 
-    // 8) Promotion?
+    // [romotion
     if (promo != QChar('\0')) {
         san += '=';
         san += promo.toUpper();

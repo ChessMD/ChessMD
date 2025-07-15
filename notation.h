@@ -16,6 +16,8 @@ class NotationMove
 public:
     NotationMove(const QString &text, ChessPosition &position);
 
+    QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
+
     QString FEN; // FEN string of chess position (after this move)
 
     QString commentBefore;

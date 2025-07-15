@@ -47,19 +47,6 @@ QSize CustomTabBar::tabSizeHint(int index) const {
     return defaultSize;
 }
 
-// removes all tabs when a window is closed
-void ChessTabHost::closeEvent(QCloseEvent *event)
-{
-    while (tabBar->count() > 0) {
-        onTabCloseRequested(0);
-        if (!isVisible()) {
-            return;
-        }
-    }
-    QWidget::closeEvent(event);
-}
-
-
 //initalizes container for custom tab bar
 CustomTitleBar::CustomTitleBar(QWidget* parent)
     : QWidget(parent)
@@ -133,8 +120,8 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
 ChessTabHost::ChessTabHost(QWidget* parent)
     : QWidget(parent)
 {
-    setWindowFlags(Qt::CustomizeWindowHint);
-
+    setMinimumSize(1024,768);
+    setWindowFlags(Qt::Window | Qt::CustomizeWindowHint);
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -153,8 +140,30 @@ ChessTabHost::ChessTabHost(QWidget* parent)
 
     mainLayout->addWidget(titleBar);
     mainLayout->addWidget(stack);
+}
 
 
+void ChessTabHost::closeEvent(QCloseEvent *event)
+{
+    if (tabBar->count()){
+        // request to close the current tab
+        int count = tabBar->count();
+        onTabCloseRequested(tabBar->currentIndex());
+        if (count == tabBar->count()){
+            event->ignore();
+            return;
+        }
+
+        // continue request to closing tabs
+        while ((count = tabBar->count()) > 0) {
+            onTabCloseRequested(0);
+            if (count == tabBar->count()) {
+                event->ignore();
+                return;
+            }
+        }
+    }
+    QWidget::closeEvent(event);
 }
 
 int ChessTabHost::rowCount(){
@@ -187,8 +196,6 @@ void ChessTabHost::addNewTab(QWidget* embed, QString title) {
     containerLayout->addWidget(embed);
     container->setLayout(containerLayout);
 
-
-
     int index = stack->addWidget(container);
     tabBar->addTab(title);
     tabBar->setCurrentIndex(index);
@@ -201,7 +208,29 @@ void ChessTabHost::onTabChanged(int index) {
 }
 
 void ChessTabHost::onTabCloseRequested(int index) {
+    if (index < 0 || index >= tabBar->count()){
+        qDebug() << "onTabCloseRequested: index out of range";
+        return;
+    }
+
     QWidget* widget = stack->widget(index);
+
+    QWidget* embed = nullptr;
+    if (auto* lay = widget->layout()){
+        if (auto* item = lay->itemAt(0))
+            embed = item->widget();
+    }
+
+    // save dialogue
+    if (embed){
+        if (auto* gameWin = qobject_cast<ChessGameWindow*>(embed)) {
+            gameWin->close();
+            if (gameWin->isVisible()) {
+                return;
+            }
+        }
+    }
+
     stack->removeWidget(widget);
     widget->deleteLater();
     tabBar->removeTab(index);
@@ -230,7 +259,7 @@ void ChessTabHost::onTabMoved(int from, int to) {
 void ChessTabHost::onTabReplaced(const QString &fileIdentifier)
 {
     int closeIndex = tabBar->currentIndex();
-    addNewTab(new DatabaseViewer, fileIdentifier);
+    addNewTab(new DatabaseViewer(fileIdentifier), fileIdentifier);
     onTabCloseRequested(closeIndex);
 }
 

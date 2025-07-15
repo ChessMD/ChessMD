@@ -8,6 +8,7 @@ March 18, 2025: File Creation
 #include "streamparser.h"
 #include "chessposition.h"
 #include "enginewidget.h"
+#include "pgnsavedialog.h"
 
 #include <QDebug>
 #include <QLabel>
@@ -23,6 +24,7 @@ March 18, 2025: File Creation
 #include <QShortcut>
 #include <QKeySequence>
 #include <QQmlEngine>
+#include <QDialogButtonBox>
 
 // Constructs a ChessGameWindow inside a parent widget
 ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
@@ -63,6 +65,46 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
 
+void ChessGameWindow::closeEvent(QCloseEvent *event)
+{
+    if (m_isPreview) {
+        QMainWindow::closeEvent(event);
+        return;
+    }
+
+    QMessageBox message = QMessageBox(this);
+    message.setIcon(QMessageBox::Question);
+    message.setWindowTitle(tr("Save changes?"));
+    message.setText(tr("Do you want to save your changes to this game?"));
+    auto saveBtn   = message.addButton(tr("Yes"),   QMessageBox::AcceptRole);
+    auto noSaveBtn = message.addButton(tr("No"), QMessageBox::DestructiveRole);
+    auto cancelBtn = message.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    message.setDefaultButton(saveBtn);
+    message.exec();
+
+    if (message.clickedButton() == cancelBtn) {
+        event->ignore();
+        return;
+    }
+
+    if (message.clickedButton() == saveBtn) {
+        PGNSaveDialog dialog(this);
+        dialog.setHeaders(m_notationViewer->m_game);
+        if (dialog.exec() != QDialog::Accepted) {
+            event->ignore();
+            return;
+        }
+        dialog.applyTo(m_notationViewer->m_game);
+        saveGame();
+    }
+
+    event->accept();
+}
+
+void ChessGameWindow::saveGame(){
+
+    emit PGNGameUpdated(m_notationViewer->m_game);
+}
 
 // Builds a dockable notation panelw
 void ChessGameWindow::notationSetup()
@@ -153,20 +195,20 @@ void ChessGameWindow::notationToolbarSetup()
     QPushButton* pasteGame = new QPushButton("Paste");
     QPushButton* loadPgn = new QPushButton("Load PGN");
     QPushButton* resetBoard = new QPushButton("Reset");
-    QPushButton* exportPgn = new QPushButton("Export");
+    QPushButton* savePgn = new QPushButton("Save");
 
     // horizontal layout for toolbar buttons
     QHBoxLayout* buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(pasteGame);
     buttonLayout->addWidget(loadPgn);
     buttonLayout->addWidget(resetBoard);
-    buttonLayout->addWidget(exportPgn);
+    buttonLayout->addWidget(savePgn);
 
     // connect buttons to signals and slots
     connect(pasteGame, &QPushButton::clicked, this, &ChessGameWindow::onPasteClicked);
     connect(loadPgn, &QPushButton::clicked, this, &ChessGameWindow::onLoadPgnClicked);
     connect(resetBoard, &QPushButton::clicked, this, &ChessGameWindow::onResetBoardClicked);
-    connect(exportPgn, &QPushButton::clicked, this, &ChessGameWindow::onExportPgnClicked);
+    connect(savePgn, &QPushButton::clicked, this, &ChessGameWindow::onSavePgnClicked);
 
     // attach button toolbar to NotationViewer
     QWidget* dockContent = new QWidget;
@@ -176,6 +218,11 @@ void ChessGameWindow::notationToolbarSetup()
     dockLayout->setContentsMargins(0, 0, 0, 0);
 
     m_notationDock->setWidget(dockContent);
+}
+
+NotationViewer* ChessGameWindow::getNotationViewer()
+{
+    return m_notationViewer;
 }
 
 void ChessGameWindow::onEvalScoreChanged(double evalScore){
@@ -213,6 +260,7 @@ void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)
 
 // Configures ChessGameWindow for complete analysis
 void ChessGameWindow::mainSetup(){
+    m_isPreview = false;
     notationSetup();
     notationToolbarSetup();
     toolbarSetup();
@@ -227,6 +275,7 @@ void ChessGameWindow::mainSetup(){
 // Configures ChessGameWindow for previewing
 void ChessGameWindow::previewSetup()
 {
+    m_isPreview = true;
     notationSetup();
     toolbarSetup();
     addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
@@ -335,15 +384,18 @@ void ChessGameWindow::onResetBoardClicked()
 {
 }
 
-void ChessGameWindow::onExportPgnClicked()
+void ChessGameWindow::onSavePgnClicked()
 {
     QString result;
     QTextStream out(&result);
     int plyCount = 0;
 
-    // write moves recursively
     writeMoves(m_notationViewer->getRootMove(), out, plyCount);
-    qDebug() << result.trimmed();
+    m_notationViewer->m_game.bodyText = result.trimmed();
+
+    saveGame();
+
+    // qDebug() << result.trimmed();
 }
 
 void ChessGameWindow::showEvent(QShowEvent *ev)

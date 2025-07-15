@@ -36,6 +36,7 @@ public slots:
     void onMoveSelected(const QSharedPointer<NotationMove>& move);
 
 private slots:
+    void onEngineMoveClicked(QSharedPointer<NotationMove>& move);
     void onConfigEngineClicked();
     void doPendingAnalysis();
     void onPvUpdate(PvInfo &info);
