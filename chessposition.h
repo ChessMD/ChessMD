@@ -60,7 +60,7 @@ public:
     QString positionToFEN() const;
 
     // Tries to make a new move from the current position given a SAN string
-    bool tryMakeMove(QString san);
+    bool tryMakeMove(QString san, QSharedPointer<NotationMove> move);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
 

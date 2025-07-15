@@ -224,6 +224,7 @@ void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
     }
 
     QSharedPointer<NotationMove> newMove(new NotationMove(moveText, *newPos));
+    newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
 
     emit moveMade(newMove);
     emit boardDataChanged();
@@ -255,7 +256,7 @@ void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)
     }
 }
 
-bool ChessPosition::tryMakeMove(QString san) {
+bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) {
 
     san = san.trimmed();
     while (!san.isEmpty() && (san.endsWith('+') || san.endsWith('#'))){
@@ -277,6 +278,7 @@ bool ChessPosition::tryMakeMove(QString san) {
         int newRC = kingSide?5:3;
         // Validate
         if (!validateMove(row, oldKC, row, newKC)) return false;
+        move->lanText = QString("%1%2%3%4").arg(QChar('a' + oldKC)).arg(8 - row).arg(QChar('a' + newKC)).arg(8 - row);
         applyMove(row, oldKC, row, newKC, '\0');
         if (color=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
         else { m_castling.blackKing=m_castling.blackQueen=false; }
@@ -350,6 +352,7 @@ bool ChessPosition::tryMakeMove(QString san) {
     for (auto &o : candidates) {
         int sr = o.first, sc = o.second;
         if (validateMove(sr, sc, dr, dc)) {
+            move->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
             applyMove(sr, sc, dr, dc, promo);
             // update halfmove/fullmove…
             return true;
@@ -446,8 +449,6 @@ bool ChessPosition::canCastleQueenside(QChar side) const
 
 QVector<QPair<int,int>> ChessPosition::findPieceOrigins(QChar piece, const QString &dest, const QString &disamb) const {
     QVector<QPair<int,int>> vec;
-    int tgtRow = dest[1].digitValue();
-    int tgtCol = dest[0].unicode() - 'a';
     for (int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
             QString sq = m_boardData[r][c];
@@ -506,17 +507,16 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
 
         ChessPosition *clonePos = new ChessPosition;
         clonePos->copyFrom(*parentMove->m_position);
+        QSharedPointer<NotationMove> childMove = QSharedPointer<NotationMove>::create(token, *clonePos);
 
-        if (!clonePos->tryMakeMove(token)) {
+        if (!clonePos->tryMakeMove(token, childMove)) {
             parentMove->commentAfter += token;
             // qDebug() << "Illegal move skipped:" << token;
             delete clonePos;
             continue;
         }
 
-        auto childMove = QSharedPointer<NotationMove>::create(token, *clonePos);
         linkMoves(parentMove, childMove);
-
         parentMove = childMove;
     }
 
@@ -687,6 +687,8 @@ QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer
             clonePos->applyMove(sr, sc, dr, dc, promo);
             newMove = QSharedPointer<NotationMove>::create(token, *clonePos);
             newMove->moveText = tempMove->m_position->lanToSan(sr, sc, dr, dc, promo);
+            newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
+
             if (!root){
                 linkMoves(tempMove, newMove);
             } else {

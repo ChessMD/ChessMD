@@ -21,12 +21,13 @@ QSharedPointer<NotationMove> NotationMove::cloneNotationTree(QSharedPointer<Nota
     ChessPosition* posCopy = new ChessPosition;
     posCopy->copyFrom(*move->m_position);
     auto copy = QSharedPointer<NotationMove>::create(move->moveText, *posCopy);
-    copy->FEN           = move->FEN;
+    copy->FEN = move->FEN;
+    copy->lanText = move->lanText;
     copy->commentBefore = move->commentBefore;
-    copy->annotation1   = move->annotation1;
-    copy->annotation2   = move->annotation2;
-    copy->commentAfter  = move->commentAfter;
-    copy->isVarRoot     = move->isVarRoot;
+    copy->annotation1 = move->annotation1;
+    copy->annotation2 = move->annotation2;
+    copy->commentAfter = move->commentAfter;
+    copy->isVarRoot = move->isVarRoot;
     for (auto& childMove : move->m_nextMoves) {
         auto childCopy = cloneNotationTree(childMove);
         childCopy->m_previousMove = copy;
