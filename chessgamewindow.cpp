@@ -115,6 +115,36 @@ void ChessGameWindow::engineSetup()
     connect(m_engineViewer, &EngineWidget::engineEvalScoreChanged, this, &ChessGameWindow::onEvalScoreChanged);
 }
 
+void ChessGameWindow::openingSetup()
+{
+    m_openingViewer = new OpeningViewer(this);
+
+    m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
+    m_openingDock->setWidget(m_openingViewer);
+    m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    
+    addDockWidget(Qt::BottomDockWidgetArea, m_openingDock);
+    
+    connect(m_notationViewer, &NotationViewer::moveSelected, 
+        [this](QSharedPointer<NotationMove> move) {
+            if (!move.isNull() && move->m_position) {
+                //update openingviewer when notation viewer changed
+                m_openingViewer->updatePosition(move->m_position->positionToFEN());
+            }
+        });
+    
+    connect(m_openingViewer, &OpeningViewer::moveClicked,
+        [this](const QString& move) {
+            if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
+                
+                //todo, make it play the move and create a variation maybe idk
+            }
+        });
+
+
+}
+
 // Builds the notation toolbar with notation controls
 void ChessGameWindow::notationToolbarSetup()
 {
@@ -187,6 +217,10 @@ void ChessGameWindow::mainSetup(){
     notationToolbarSetup();
     toolbarSetup();
     engineSetup();
+    openingSetup();
+    setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+    setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
     resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
 }
 

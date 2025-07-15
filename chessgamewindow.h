@@ -10,6 +10,7 @@ March 18, 2025: File Creation
 #include "enginewidget.h"
 #include "chessposition.h"
 #include "pgngamedata.h"
+#include "openingviewer.h"
 
 #include <QQuickWidget>
 #include <QMainWindow>
@@ -27,6 +28,7 @@ public:
     void engineSetup();
     void notationToolbarSetup();
     void toolbarSetup();
+    void openingSetup();
 
     void mainSetup();
     void previewSetup();
@@ -39,12 +41,15 @@ public slots:
 
 private:
     NotationViewer* m_notationViewer;
+    OpeningViewer* m_openingViewer;
     EngineWidget* m_engineViewer;
     ChessPosition* m_positionViewer;
     QToolBar* m_Toolbar;
 
+
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
+    QDockWidget* m_openingDock;
 
 private slots:
     void onMoveMade(QSharedPointer<NotationMove> move);
