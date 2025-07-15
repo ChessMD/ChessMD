@@ -11,7 +11,7 @@ March 18, 2025 - Program Creation
 #include "databaseviewer.h"
 #include "databaselibrary.h"
 
-#include <qDebug>
+#include <QDebug>
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QCloseEvent>

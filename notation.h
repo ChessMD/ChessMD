@@ -22,6 +22,7 @@ public:
 
     QString commentBefore;
     QString moveText;
+    QString lanText;
     QString annotation1;
     QString annotation2;
     QString commentAfter;
