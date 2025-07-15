@@ -31,6 +31,7 @@ public:
 
     void refresh();
 
+    PGNGame m_game;
     QSharedPointer<NotationMove> m_selectedMove; // Current move
 
 public slots:
@@ -67,7 +68,6 @@ private:
 
     void drawTextSegment(QPainter &painter, const QString &text, int x, int &y, int indent, int availableWidth, QRect &outRect);
 
-    PGNGame m_game;
     QSharedPointer<NotationMove> m_rootMove;
     QSharedPointer<NotationMove> m_contextMenuMove;
     QList<MoveSegment> m_moveSegments;   // Clickable segments    

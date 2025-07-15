@@ -19,13 +19,15 @@ March 18, 2025 - Program Creation
 #include <fstream>
 #include <vector>
 #include <QResizeEvent>
+#include <QFile>
 
 // Initializes the DatabaseViewer
-DatabaseViewer::DatabaseViewer(QWidget *parent)
+DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     : QWidget(parent)
     , dbView(new QTableView(this))
     , ui(new Ui::DatabaseViewer)
     , host(new ChessTabHost)
+    , m_filePath(filePath)
 {
     // connect to ui and initialization
     ui->setupUi(this);
@@ -38,6 +40,7 @@ DatabaseViewer::DatabaseViewer(QWidget *parent)
     dbView->setStyleSheet(getStyle("styles/tablestyle.qss"));
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
+    dbView->setMinimumWidth(500);
 
     dbView->setSelectionBehavior(QAbstractItemView::SelectRows);
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -99,12 +102,25 @@ void DatabaseViewer::resizeTable(){
     }
 }
 
+// Handles custom filters
+void DatabaseViewer::filter(){
 
+    // init filter window
+    DatabaseFilter filterWindow(this);
+
+    // apply filters
+    if(filterWindow.exec() == QDialog::Accepted){
+        auto filters = filterWindow.getNameFilters();
+        proxyModel->setTextFilter("Black", QString("^(?=.*%1)(?=.*%2).*").arg(filters.blackFirst, filters.blackLast));
+        proxyModel->setTextFilter("White", QString("^(?=.*%1)(?=.*%2).*").arg(filters.whiteFirst, filters.whiteLast));
+        proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
+    }
+}
 
 // Adds game to database given PGN
-void DatabaseViewer::addGame(QString file_name)
+void DatabaseViewer::importPGN()
 {
-    std::ifstream file(file_name.toStdString());
+    std::ifstream file(m_filePath.toStdString());
     if(file.fail()) return;
 
     // parse PGN and get headers
@@ -118,6 +134,7 @@ void DatabaseViewer::addGame(QString file_name)
         if(game.headerInfo.size() > 0){
             // add to model
             int row = dbModel->rowCount();
+            game.dbIndex = row;
             dbModel->insertRow(row);
             dbModel->addGame(game);
 
@@ -137,20 +154,46 @@ void DatabaseViewer::addGame(QString file_name)
     }
 }
 
-
-// Handles custom filters
-void DatabaseViewer::filter(){
-
-    // init filter window
-    DatabaseFilter filterWindow(this);
-
-    // apply filters
-    if(filterWindow.exec() == QDialog::Accepted){
-        auto filters = filterWindow.getNameFilters();
-        proxyModel->setTextFilter("Black", QString("^(?=.*%1)(?=.*%2).*").arg(filters.blackFirst, filters.blackLast));
-        proxyModel->setTextFilter("White", QString("^(?=.*%1)(?=.*%2).*").arg(filters.whiteFirst, filters.whiteLast));
-        proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
+void DatabaseViewer::exportPGN()
+{
+    QFile file(m_filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, tr("Cannot write PGN"), tr("Unable to open file \"%1\" for writing.").arg(m_filePath));
+        return;
     }
+
+    QTextStream out(&file);
+    for (int i = 0; i < dbModel->rowCount(); i++){
+        PGNGame &dbGame = dbModel->getGame(i);
+        QString PGNtext = dbGame.serializePGN();
+        out << PGNtext << "\n\n";
+    }
+
+    file.close();
+}
+
+void DatabaseViewer::onPGNGameUpdated(PGNGame &game)
+{
+    if (game.dbIndex < 0 || game.dbIndex >= dbModel->rowCount()) {
+        qDebug() << "Error: invalid dbIndex";
+        return;
+    }
+
+    PGNGame &dbGame = dbModel->getGame(game.dbIndex);
+    dbGame.bodyText = game.bodyText;
+    dbGame.headerInfo = game.headerInfo;
+    dbGame.rootMove = game.rootMove;
+
+    if (m_embed){
+        NotationViewer* notationViewer = m_embed->getNotationViewer();
+        if (notationViewer->m_game.dbIndex == game.dbIndex){
+            notationViewer->m_game.copyFrom(game);
+            notationViewer->setRootMove(game.rootMove);
+        }
+    }
+
+    exportPGN();
+    // qDebug() << "Received updated PGNGame:" << game.bodyText;
 }
 
 // Handle game opened in table
@@ -162,12 +205,16 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     // init game window requirements
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    PGNGame& game = dbModel->getGame(row);
+    PGNGame &dbGame = dbModel->getGame(row);
+    PGNGame game;
+    // copy game to allow user to make temporary changes
+    game.copyFrom(dbGame);
     QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
 
     if(!host->tabExists(title)){
         // create new tab for game
         ChessGameWindow *gameWindow = new ChessGameWindow(this, game);
+        connect(gameWindow, &ChessGameWindow::PGNGameUpdated, this, &DatabaseViewer::onPGNGameUpdated);
         gameWindow->mainSetup();
 
         host->addNewTab(gameWindow, title);
@@ -214,15 +261,20 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
-    PGNGame &game = dbModel->getGame(row);
-    if (!game.isParsed){
-        parseBodyText(game.bodyText, game.rootMove);
-        game.isParsed = true;
+    PGNGame &dbGame = dbModel->getGame(row);
+    if (!dbGame.isParsed){
+        parseBodyText(dbGame.bodyText, dbGame.rootMove);
+        dbGame.isParsed = true;
     }
+
+    // copy game to allow user to make temporary changes
+    PGNGame game;
+    game.copyFrom(dbGame);
+
     // build the notation tree from the game and construct a ChessGameWindow preview
-    ChessGameWindow *embed = new ChessGameWindow(this, game);
-    embed->previewSetup();
-    embed->setFocusPolicy(Qt::StrongFocus);
+    m_embed = new ChessGameWindow(this, game);
+    m_embed->previewSetup();
+    m_embed->setFocusPolicy(Qt::StrongFocus);
 
     // put embed inside gamePreview
     ui->gamePreview->hide();
@@ -232,7 +284,7 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     QLayout* containerLayout = new QVBoxLayout(ui->gamePreview);
 
     containerLayout->setContentsMargins(0, 0, 0, 0);
-    containerLayout->addWidget(embed);
+    containerLayout->addWidget(m_embed);
     ui->gamePreview->setLayout(containerLayout);
     ui->gamePreview->show();
 }

@@ -4,7 +4,7 @@ March 18, 2025: File Creation
 
 
 #include "notation.h"
-
+#include "chessposition.h"
 
 #include <QDebug>
 
@@ -12,6 +12,28 @@ NotationMove::NotationMove(const QString &text, ChessPosition &position)
 {
     moveText = text;
     m_position = &position;
+}
+
+QSharedPointer<NotationMove> NotationMove::cloneNotationTree(QSharedPointer<NotationMove>& move)
+{
+    if (!move) return nullptr;
+
+    ChessPosition* posCopy = new ChessPosition;
+    posCopy->copyFrom(*move->m_position);
+    auto copy = QSharedPointer<NotationMove>::create(move->moveText, *posCopy);
+    copy->FEN           = move->FEN;
+    copy->commentBefore = move->commentBefore;
+    copy->annotation1   = move->annotation1;
+    copy->annotation2   = move->annotation2;
+    copy->commentAfter  = move->commentAfter;
+    copy->isVarRoot     = move->isVarRoot;
+    for (auto& childMove : move->m_nextMoves) {
+        auto childCopy = cloneNotationTree(childMove);
+        childCopy->m_previousMove = copy;
+        copy->m_nextMoves.append(childCopy);
+    }
+
+    return copy;
 }
 
 // Links a new move to a previous move in the game tree

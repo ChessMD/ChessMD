@@ -110,6 +110,11 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
                 value += *c;
                 c++;
             }
+
+            if (tag == "Result"){
+                game.result = value;
+            }
+
             game.headerInfo.push_back({tag, value});
         }
 

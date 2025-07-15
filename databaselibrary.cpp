@@ -79,22 +79,18 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
     if (host->tabExists(fileName) == false) {
         // Open new window if not previously opened
-        DatabaseViewer * gamesViewer = new DatabaseViewer;
-
-        gamesViewer->setWindowTitle(fileName);
+        DatabaseViewer * databaseViewer = new DatabaseViewer(fileName);
+        databaseViewer->setWindowTitle(fileName);
 
         ((MainWindow *) parent())->setStatusBarText("Loading ...");
-        QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
+        QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar
 
-        
+        databaseViewer->importPGN();
 
-        gamesViewer->addGame(fileName);
-
-
-        host->addNewTab(gamesViewer, fileName);
+        host->addNewTab(databaseViewer, fileName);
 
         ((MainWindow *) parent())->setStatusBarText("");
-        QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar.
+        QApplication::processEvents(); // force the event loop to process all pending events, including the update to the status bar
     } else {
         // Direct to previously opened window
         host->activateTabByLabel(fileName);

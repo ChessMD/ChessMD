@@ -1,11 +1,12 @@
 #ifndef DATABASEVIEWER_H
 #define DATABASEVIEWER_H
 
+#include "chessgamewindow.h"
 #include "pgngamedata.h"
 #include "streamparser.h"
 #include "databaseviewermodel.h"
 #include "databasefilterproxymodel.h"
-
+#include "pgngamedata.h"
 
 #include <QTextEdit>
 #include <QSortFilterProxyModel>
@@ -27,10 +28,11 @@ class DatabaseViewer : public QWidget
 
 public:
 
-    explicit DatabaseViewer(QWidget *parent = nullptr);
+    explicit DatabaseViewer(QString filePath, QWidget *parent = nullptr);
     ~DatabaseViewer();
 
-    void addGame(QString file_name);
+    void importPGN();
+    void exportPGN();
     void setWindowTitle(QString text);
 
 protected:
@@ -38,6 +40,7 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private slots:
+    void onPGNGameUpdated(PGNGame &game);
     void onDoubleSelected(const QModelIndex &proxyIndex);
     void onSingleSelected(const QModelIndex &current, const QModelIndex &previous);
 
@@ -48,12 +51,14 @@ private:
     int DATA_ORDER[13] = {7, -1, 8, -1, 1, 3, 5, -1, 2, 4, 6, -1, -1};
     Ui::DatabaseViewer *ui;
 
+    ChessGameWindow *m_embed;
     QTableView *dbView;
     DatabaseViewerModel *dbModel;
     DatabaseFilterProxyModel *proxyModel;
 
     ChessTabHost *host;
 
+    QString m_filePath;
 };
 
 #endif // DATABASEVIEWER_H

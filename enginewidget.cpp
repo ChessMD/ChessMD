@@ -182,7 +182,8 @@ void EngineWidget::onConfigEngineClicked()
     doPendingAnalysis();
 }
 
-void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
+void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move)
+{
     if (!move.isNull() && move->m_position) {
         m_ignoreHover = true;
         m_isHovering = false;
@@ -193,7 +194,32 @@ void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move) {
     }
 }
 
-void EngineWidget::doPendingAnalysis() {
+void EngineWidget::onEngineMoveClicked(QSharedPointer<NotationMove>& move)
+{
+    emit engineMoveClicked(move);
+
+    // reset all engine lines
+    QLayoutItem *child;
+    while ((child = m_containerLay->takeAt(0)) != nullptr) {
+        if (auto *w = child->widget()) {
+            w->deleteLater();
+        }
+        delete child;
+    }
+    m_lineWidgets.clear();
+    for (int i = 1; i <= m_multiPv; i++) {
+        ChessPosition* dummyPos = new ChessPosition;
+        auto temp = QSharedPointer<NotationMove>::create(QString(), *dummyPos);
+        auto *lineW = new EngineLineWidget("...", "", temp, this);
+        lineW->installEventFilter(this);
+        m_containerLay->addWidget(lineW);
+        m_lineWidgets[i] = lineW;
+    }
+    m_containerLay->addStretch();
+}
+
+void EngineWidget::doPendingAnalysis()
+{
     m_engine->setPosition(m_currentFen);
     analysePosition();
 }
@@ -251,7 +277,7 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
     EngineLineWidget *newW = new EngineLineWidget(evalTxt, info.pvLine, rootMove, this);
 
     newW->installEventFilter(this);
-    connect(newW, &EngineLineWidget::moveClicked, this, &EngineWidget::engineMoveClicked);
+    connect(newW, &EngineLineWidget::moveClicked, this, &EngineWidget::onEngineMoveClicked);
     connect(newW, &EngineLineWidget::moveHovered, this, &EngineWidget::moveHovered);
 
     int index = m_containerLay->indexOf(lineW);
@@ -270,8 +296,8 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
         m_currentMove->m_position->setEvalScore(qMax(4.0, qMin(-4.0, evalScore)));
         emit engineEvalScoreChanged(evalScore);
 
-        QString bg   = info.positive ? QStringLiteral("white") : QStringLiteral("#333");
-        QString fg   = info.positive ? QStringLiteral("black") : QStringLiteral("white");
+        QString bg = info.positive ? QStringLiteral("white") : QStringLiteral("#333");
+        QString fg = info.positive ? QStringLiteral("black") : QStringLiteral("white");
         m_evalButton->setStyleSheet(QStringLiteral(R"(
             QPushButton {
                 font-size: 24px;
@@ -286,7 +312,8 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
     }
 }
 
-void EngineWidget::flushBufferedInfo() {
+void EngineWidget::flushBufferedInfo()
+{
     // Apply the newest info for each multipv, in order
     for (auto it = m_bufferedInfo.begin(); it != m_bufferedInfo.end(); ++it) {
         onPvUpdate(it.value());
@@ -294,7 +321,8 @@ void EngineWidget::flushBufferedInfo() {
     m_bufferedInfo.clear();
 }
 
-bool EngineWidget::eventFilter(QObject *watched, QEvent *event) {
+bool EngineWidget::eventFilter(QObject *watched, QEvent *event)
+{
     if (auto *line = qobject_cast<EngineLineWidget*>(watched)) {
         if (event->type() == QEvent::Enter) {
             m_isHovering = true;
@@ -313,7 +341,8 @@ bool EngineWidget::eventFilter(QObject *watched, QEvent *event) {
     return QWidget::eventFilter(watched, event);
 }
 
-void EngineWidget::onInfoLine(const QString &line) {
+void EngineWidget::onInfoLine(const QString &line)
+{
     m_console->append(QStringLiteral("<< %1").arg(line));
     if (line.startsWith("id name ")) {
         // everything after "id name " is the engine's name
@@ -322,7 +351,8 @@ void EngineWidget::onInfoLine(const QString &line) {
     }
 }
 
-void EngineWidget::onCmdSent(const QString &cmd) {
+void EngineWidget::onCmdSent(const QString &cmd)
+{
     m_console->append(QStringLiteral(">> %1").arg(cmd));
     m_console->viewport()->repaint(); // force the UI to catch up
 }

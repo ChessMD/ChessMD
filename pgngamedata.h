@@ -40,6 +40,9 @@ class PGNGame
 {
 public:
     PGNGame();
+    void copyFrom(PGNGame &other);
+    QString serializePGN();
+
     QSharedPointer<NotationMove> rootMove;
     QVector<QPair<QString,QString>> headerInfo;
     QString result;

@@ -16,6 +16,27 @@ PGNGame::PGNGame()
     isParsed = false;
 }
 
+
+void PGNGame::copyFrom(PGNGame &other)
+{
+    headerInfo = other.headerInfo;
+    result     = other.result;
+    bodyText   = other.bodyText;
+    dbIndex    = other.dbIndex;
+    isParsed   = other.isParsed;
+    rootMove = other.rootMove->cloneNotationTree(other.rootMove);
+}
+
+QString PGNGame::serializePGN(){
+    QString PGNtext;
+    for (auto &kv: headerInfo){
+        PGNtext += "[" + kv.first + " \"" + kv.second + "\"]\n";
+    }
+    PGNtext += "\n\n";
+    PGNtext += bodyText;
+    return PGNtext;
+}
+
 PGNGameData::PGNGameData()
 {
     rootVariation = QSharedPointer<VariationNode>::create();

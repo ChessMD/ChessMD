@@ -15,6 +15,28 @@ March 18, 2025: File Creation
 #include <QMainWindow>
 #include <QToolBar>
 #include <QDockWidget>
+#include <QCloseEvent>
+#include <QMessageBox>
+
+class HeaderEditDialog : public QDialog {
+    Q_OBJECT
+public:
+    explicit HeaderEditDialog(QWidget* parent = nullptr)
+        : QDialog(parent)
+    {
+        setWindowTitle(tr("Edit PGN Headers"));
+        auto *layout = new QVBoxLayout(this);
+        layout->addWidget(new QLabel(tr("Here you will edit your PGN headers…"), this));
+
+        auto *buttons = new QDialogButtonBox(
+            QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+            Qt::Horizontal, this
+            );
+        layout->addWidget(buttons);
+        connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
+        connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    }
+};
 
 // Main window that displays a chessboard, an engine, a notation viewer, and an opening viewer
 class ChessGameWindow  : public QMainWindow
@@ -30,9 +52,16 @@ public:
 
     void mainSetup();
     void previewSetup();
+    void saveGame();
+
+    NotationViewer* getNotationViewer();
+
+signals:
+    void PGNGameUpdated(PGNGame &game);
 
 protected:
     void showEvent(QShowEvent *ev) override;
+    void closeEvent(QCloseEvent *event) override;
 
 public slots:
     void onMoveHovered(QSharedPointer<NotationMove> move);
@@ -45,6 +74,8 @@ private:
 
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
+
+    bool m_isPreview;
 
 private slots:
     void onMoveMade(QSharedPointer<NotationMove> move);
@@ -60,7 +91,7 @@ private slots:
     void onPasteClicked();
     void onLoadPgnClicked();
     void onResetBoardClicked();
-    void onExportPgnClicked();
+    void onSavePgnClicked();
 
 signals:
 };
