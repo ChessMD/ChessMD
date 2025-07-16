@@ -20,6 +20,7 @@ NotationViewer::NotationViewer(PGNGame game, QWidget* parent)
     : QAbstractScrollArea(parent)
     , m_game(game)
     , m_rootMove(game.rootMove)
+    , m_isEdited(false)
 {
     QFont f = font();
     f.setPointSize(f.pointSize() + 2);
@@ -293,6 +294,7 @@ void NotationViewer::refresh()
 
 
 void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
+    m_isEdited = true;
     QSharedPointer<NotationMove> tempMove = move;
     while(tempMove->m_previousMove){
         tempMove = tempMove->m_previousMove;
@@ -353,6 +355,7 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
         annotMenu->addAction(act);
 
         connect(act, &QAction::triggered, this, [this, a]() {
+            m_isEdited = true;
             if (!m_contextMenuMove) return;
             if (a.text == "(none)") {
                 m_contextMenuMove->annotation1.clear();
@@ -392,6 +395,7 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
                 &ok
                 );
             if (ok) {
+                m_isEdited = true;
                 (m_contextMenuMove.data()->*(ce.member)) = text.trimmed();
                 refresh();
             }
@@ -420,18 +424,21 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
 }
 
 void NotationViewer::onActionDeleteVariation() {
+    m_isEdited = true;
     m_selectedMove = deleteVariation(m_selectedMove);
     emit moveSelected(m_selectedMove);
     refresh();
 }
 
 void NotationViewer::onActionDeleteMovesAfter() {
+    m_isEdited = true;
     deleteMovesAfter(m_selectedMove);
     refresh();
 }
 
 
 void NotationViewer::onActionPromoteVariation() {
+    m_isEdited = true;
     promoteVariation(m_selectedMove);
     refresh();
 }

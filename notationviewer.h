@@ -31,6 +31,7 @@ public:
 
     void refresh();
 
+    bool m_isEdited;
     PGNGame m_game;
     QSharedPointer<NotationMove> m_selectedMove; // Current move
 

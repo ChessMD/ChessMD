@@ -46,7 +46,6 @@ public:
     explicit ChessGameWindow (QWidget *parent, PGNGame game);
 
     void notationSetup();
-    void engineSetup();
     void notationToolbarSetup();
     void toolbarSetup();
 
@@ -64,9 +63,14 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 public slots:
+    void engineSetup();
+    void engineTeardown();
+
     void onMoveHovered(QSharedPointer<NotationMove> move);
 
 private:
+    void updateEngineActions();
+
     NotationViewer* m_notationViewer;
     EngineWidget* m_engineViewer;
     ChessPosition* m_positionViewer;
@@ -74,6 +78,9 @@ private:
 
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
+
+    QAction* m_startEngineAction;
+    QAction* m_stopEngineAction;
 
     bool m_isPreview;
 

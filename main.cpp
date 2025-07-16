@@ -18,10 +18,12 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    //render the main window
+    app.setWindowIcon(QIcon(":/resource/img/logo.png"));
+
+    // render the main window
     MainWindow w;
     w.show();
 
-    //process user and system events
+    // process user and system events
     return app.exec();
 }
