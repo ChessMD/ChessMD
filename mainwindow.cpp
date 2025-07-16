@@ -4,58 +4,68 @@
 #include "chesstabhost.h"
 #include "databaselibrary.h"
 #include "chessqsettings.h"
+
 #include "mainwindow.h"
+#include "settingsdialog.h"
+
+#include <QToolBar>
+#include <QAction>
 
 MainWindow::MainWindow()
 {
-    /*
-    m_tabWidget = new ChessTabHost(this);
-
-    if (size > 0) {
-        for (int i = 0; i < size; i++) {
-            DatabaseLibrary *dbLibrary = new DatabaseLibrary;
-            m_tabWidget->addNewTab(dbLibrary, tabNameList[i]);
-        }
-        m_tabWidget->setActiveTab(0);
-    } else
-        m_tabWidget->addNewTab(new DatabaseLibrary, "");
-
-    m_tabWidget->setWindowState(Qt::WindowMaximized);
-    */
 
     m_dbLibrary = new DatabaseLibrary(this);
 
     setStatusBar(new QStatusBar);
-
     setCentralWidget(m_dbLibrary);
-    createMenus();
-
+    setupSidebar();
     setMinimumSize(800,600);
 }
 
 
-void MainWindow::createMenus() {
+void MainWindow::setupSidebar() {
+    QToolBar* sidebar = new QToolBar(this);
+    sidebar->setOrientation(Qt::Vertical);
+    sidebar->setMovable(false);
+    sidebar->setFloatable(false);
+    sidebar->setIconSize(QSize(32, 32));
+    sidebar->setFixedWidth(48);
 
-    m_menuBar = menuBar();
-
-    QMenu *addNewGame = new QMenu("&Databases");
-    QAction* addGameAct = new QAction(tr("&Add New Database"), this);
-
-    addNewGame->addAction(addGameAct);
-
-    connect(addGameAct, &QAction::triggered, this, &MainWindow::onAddGame);
-
-    QMenu *settings = new QMenu("&Settings");
-    QAction* selectEngineFile = new QAction(tr("&Select Engine File"), this);
-    settings->addAction(selectEngineFile);
-
+    // engine 
+    QMenu* engineMenu = new QMenu(this);
+    QAction* selectEngineFile = new QAction(tr("Select Engine File"), this);
+    engineMenu->addAction(selectEngineFile);
     connect(selectEngineFile, &QAction::triggered, this, &MainWindow::onSelectEngineFile);
+    QToolButton* engineButton = new QToolButton(this);
+    engineButton->setIcon(QIcon(":/resource/img/engine.png"));
+    engineButton->setToolTip(tr("Engine"));
+    engineButton->setMenu(engineMenu);
+    engineButton->setPopupMode(QToolButton::InstantPopup);
+    engineButton->setIconSize(QSize(32, 32));
+    engineButton->setStyleSheet("QToolButton::menu-indicator { image: none; }");
+    sidebar->addWidget(engineButton);
 
+    //spacer to put settings at bottom
+    QWidget* spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    sidebar->addWidget(spacer);
 
-    m_menuBar->addMenu(addNewGame);
-    m_menuBar->addMenu(settings);
+    // settings 
+    QMenu* settingsMenu = new QMenu(this);
+    QAction* settingsAct = new QAction(tr("Settings"), this);
+    settingsMenu->addAction(settingsAct);
+    connect(settingsAct, &QAction::triggered, this, &MainWindow::onSettings);
+    QToolButton* settingsButton = new QToolButton(this);
+    settingsButton->setIcon(QIcon(":/resource/img/settings.png"));
+    settingsButton->setToolTip(tr("Settings"));
+    settingsButton->setMenu(settingsMenu);
+    settingsButton->setPopupMode(QToolButton::InstantPopup);
+    settingsButton->setIconSize(QSize(32, 32));
+    settingsButton->setStyleSheet("QToolButton::menu-indicator { image: none; }");
+    sidebar->addWidget(settingsButton);
 
-    setMenuBar(m_menuBar);
+    // add sidebar to the left
+    addToolBar(Qt::LeftToolBarArea, sidebar);
 }
 
 void MainWindow::showEvent(QShowEvent *ev)
@@ -87,6 +97,11 @@ void MainWindow::onSelectEngineFile()
 
     m_settings->setEngineFile(file_name);
     m_settings->saveSettings();
+}
+
+void MainWindow::onSettings(){
+    SettingsDialog dlg(this);
+    dlg.exec();
 }
 
 

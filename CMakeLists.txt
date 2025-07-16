@@ -70,6 +70,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         enginelinewidget.h enginelinewidget.cpp
         openingviewer.h openingviewer.cpp
         pgnsavedialog.h pgnsavedialog.cpp
+        img/engine.png
+        settingsdialog.h settingsdialog.cpp
 
 
 
