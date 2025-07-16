@@ -160,6 +160,7 @@ void ChessGameWindow::engineSetup()
 void ChessGameWindow::openingSetup()
 {
     m_openingViewer = new OpeningViewer(this);
+    m_openingViewer->updatePosition(QVector<QString>());
 
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
     m_openingDock->setWidget(m_openingViewer);
@@ -170,10 +171,16 @@ void ChessGameWindow::openingSetup()
     
     connect(m_notationViewer, &NotationViewer::moveSelected, 
         [this](QSharedPointer<NotationMove> move) {
-            if (!move.isNull() && move->m_position) {
-                //update openingviewer when notation viewer changed
-                m_openingViewer->updatePosition(move->m_position->positionToFEN());
+            //update openingviewer when notation viewer changed
+            QVector<QString> moveSequence;
+            QSharedPointer<NotationMove> currentMove = move;
+            int moveCount = 0;
+            while (currentMove && !currentMove->lanText.isEmpty()) {
+                moveSequence.prepend(currentMove->lanText);
+                currentMove = currentMove->m_previousMove;
+                moveCount++;
             }
+            m_openingViewer->updatePosition(moveSequence);
         });
     
     connect(m_openingViewer, &OpeningViewer::moveClicked,
