@@ -29,6 +29,7 @@ March 18, 2025: File Creation
 // Constructs a ChessGameWindow inside a parent widget
 ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     : QMainWindow{parent}
+    , m_engineDock(nullptr)
 {
     setMinimumSize(1024,768);
     setGeometry(100, 100, 0, 0);
@@ -52,12 +53,14 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
 
     // create and connect keyboard shortcuts
+    QShortcut* saveGame = new QShortcut(QKeySequence("Ctrl+S"), this);
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
     QShortcut* nextMove = new QShortcut(QKeySequence(Qt::Key_Right), this);
     QShortcut* delAfter = new QShortcut(QKeySequence(Qt::Key_Delete), this);
     QShortcut* delVariation = new QShortcut(QKeySequence("Ctrl+D"), this);
     QShortcut* promoteVariation = new QShortcut(QKeySequence("Ctrl+Up"), this);
 
+    connect(saveGame, &QShortcut::activated, this, &ChessGameWindow::onSavePgnClicked);
     connect(prevMove, &QShortcut::activated, this, &ChessGameWindow::onPrevMoveShortcut);
     connect(nextMove, &QShortcut::activated, this, &ChessGameWindow::onNextMoveShortcut);
     connect(delAfter, &QShortcut::activated, this, &ChessGameWindow::onDeleteAfterShortcut);
@@ -67,7 +70,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
 
 void ChessGameWindow::closeEvent(QCloseEvent *event)
 {
-    if (m_isPreview) {
+    if (m_isPreview || !m_notationViewer->m_isEdited) {
         QMainWindow::closeEvent(event);
         return;
     }
@@ -76,7 +79,7 @@ void ChessGameWindow::closeEvent(QCloseEvent *event)
     message.setIcon(QMessageBox::Question);
     message.setWindowTitle(tr("Save changes?"));
     message.setText(tr("Do you want to save your changes to this game?"));
-    auto saveBtn   = message.addButton(tr("Yes"),   QMessageBox::AcceptRole);
+    auto saveBtn   = message.addButton(tr("Yes"), QMessageBox::AcceptRole);
     auto noSaveBtn = message.addButton(tr("No"), QMessageBox::DestructiveRole);
     auto cancelBtn = message.addButton(tr("Cancel"), QMessageBox::RejectRole);
     message.setDefaultButton(saveBtn);
@@ -101,8 +104,28 @@ void ChessGameWindow::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-void ChessGameWindow::saveGame(){
+// Configures ChessGameWindow for complete analysis
+void ChessGameWindow::mainSetup(){
+    m_isPreview = false;
+    notationSetup();
+    // notationToolbarSetup();
+    toolbarSetup();
+    // engineSetup();
+    updateEngineActions();
+    resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
+}
 
+// Configures ChessGameWindow for previewing
+void ChessGameWindow::previewSetup()
+{
+    m_isPreview = true;
+    notationSetup();
+    addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
+    m_notationDock->show();
+}
+
+void ChessGameWindow::saveGame(){
+    m_notationViewer->m_isEdited = false;
     emit PGNGameUpdated(m_notationViewer->m_game);
 }
 
@@ -125,15 +148,30 @@ void ChessGameWindow::notationSetup()
 void ChessGameWindow::toolbarSetup()
 {
     m_Toolbar = new QToolBar;
-    QAction* pAction;
+    m_Toolbar->setIconSize(QSize(32,32));
+    m_Toolbar->setFloatable(false);
+    m_Toolbar->setMovable(false);
+    m_Toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-    pAction = m_Toolbar->addAction("Back");
-    pAction->setIcon(QIcon(":/resource/img/arrow-left.png"));
-    connect(pAction, &QAction::triggered, this, &ChessGameWindow::onPrevMoveShortcut);
+    QAction* back = m_Toolbar->addAction("Back (Left Arrow)");
+    back->setIcon(QIcon(":/resource/img/arrow-left.png"));
+    connect(back, &QAction::triggered, this, &ChessGameWindow::onPrevMoveShortcut);
 
-    pAction = m_Toolbar->addAction("Forward");
-    pAction->setIcon(QIcon(":/resource/img/arrow-right.png"));
-    connect(pAction, &QAction::triggered, this, &ChessGameWindow::onNextMoveShortcut);
+    QAction* forward = m_Toolbar->addAction("Forward (Right Arrow)");
+    forward->setIcon(QIcon(":/resource/img/arrow-right.png"));
+    connect(forward, &QAction::triggered, this, &ChessGameWindow::onNextMoveShortcut);
+
+    QAction* save = m_Toolbar->addAction("Save (Ctrl+S)");
+    save->setIcon(QIcon(":/resource/img/savegame.png"));
+    connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
+
+    m_startEngineAction = m_Toolbar->addAction("Start Engine");
+    m_startEngineAction->setIcon(QIcon(":/resource/img/engine-start.png"));
+    connect(m_startEngineAction, &QAction::triggered, this, &ChessGameWindow::engineSetup);
+
+    m_stopEngineAction = m_Toolbar->addAction("Stop engine");
+    m_stopEngineAction->setIcon(QIcon(":/resource/img/engine-stop.png"));
+    connect(m_stopEngineAction, &QAction::triggered, this, &ChessGameWindow::engineTeardown);
 
     addToolBar(m_Toolbar);
 }
@@ -141,12 +179,24 @@ void ChessGameWindow::toolbarSetup()
 // Builds the engine dockable panel
 void ChessGameWindow::engineSetup()
 {
+    if (m_engineDock){
+        return;
+    }
+
     // create the engine dockable panel
     m_engineViewer = new EngineWidget(this);
     m_engineDock = new QDockWidget(tr("Engine"), this);
     m_engineDock->setWidget(m_engineViewer);
     m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
+    if (m_notationDock){
+        splitDockWidget(m_notationDock, m_engineDock, Qt::Vertical);
+    }
+
+    QTimer::singleShot(0, this, [this](){
+        if (!m_notationDock || !m_engineDock) return;
+        resizeDocks({m_notationDock, m_engineDock}, {2, 1}, Qt::Vertical);
+    });
 
     // update engine and board display when position changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
@@ -155,6 +205,32 @@ void ChessGameWindow::engineSetup()
     connect(m_engineViewer, &EngineWidget::engineMoveClicked, m_notationViewer, &NotationViewer::onEngineMoveClicked);
     connect(m_engineViewer, &EngineWidget::moveHovered, this, &ChessGameWindow::onMoveHovered);
     connect(m_engineViewer, &EngineWidget::engineEvalScoreChanged, this, &ChessGameWindow::onEvalScoreChanged);
+
+    updateEngineActions();
+}
+
+// Destroys the engine dockable panel
+void ChessGameWindow::engineTeardown()
+{
+    if (!m_engineDock){
+        return;
+    }
+
+    removeDockWidget(m_engineDock);
+    m_engineDock->setWidget(nullptr);
+    m_engineViewer->deleteLater();
+    m_engineDock->deleteLater();
+    m_engineViewer = nullptr;
+    m_engineDock = nullptr;
+
+    updateEngineActions();
+}
+
+void ChessGameWindow::updateEngineActions()
+{
+    bool hasEngine = (m_engineDock != nullptr);
+    m_startEngineAction->setEnabled(!hasEngine);
+    m_stopEngineAction->setEnabled(hasEngine);
 }
 
 void ChessGameWindow::openingSetup()
@@ -265,30 +341,6 @@ void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)
     emit m_positionViewer->boardDataChanged();
 }
 
-// Configures ChessGameWindow for complete analysis
-void ChessGameWindow::mainSetup(){
-    m_isPreview = false;
-    notationSetup();
-    notationToolbarSetup();
-    toolbarSetup();
-    engineSetup();
-    openingSetup();
-    setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-    setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-
-    resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
-}
-
-// Configures ChessGameWindow for previewing
-void ChessGameWindow::previewSetup()
-{
-    m_isPreview = true;
-    notationSetup();
-    toolbarSetup();
-    addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
-    m_notationDock->show();
-}
-
 QString buildMoveText(const QSharedPointer<NotationMove>& move)
 {
     QString fullMoveText;
@@ -328,6 +380,7 @@ void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int 
 // Slot for when a new move is made on the board
 void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move)
 {
+    m_notationViewer->m_isEdited = true;
     linkMoves(m_notationViewer->m_selectedMove, move);
     m_notationViewer->m_selectedMove = move;
     emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
@@ -393,16 +446,16 @@ void ChessGameWindow::onResetBoardClicked()
 
 void ChessGameWindow::onSavePgnClicked()
 {
-    QString result;
-    QTextStream out(&result);
-    int plyCount = 0;
-
+    PGNSaveDialog dialog(this);
+    dialog.setHeaders(m_notationViewer->m_game);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+    dialog.applyTo(m_notationViewer->m_game);
+    QString result; QTextStream out(&result); int plyCount = 0;
     writeMoves(m_notationViewer->getRootMove(), out, plyCount);
     m_notationViewer->m_game.bodyText = result.trimmed();
-
     saveGame();
-
-    // qDebug() << result.trimmed();
 }
 
 void ChessGameWindow::showEvent(QShowEvent *ev)

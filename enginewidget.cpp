@@ -16,6 +16,7 @@ April 11, 2025: File Creation
 #include <QFileDialog>
 #include <QThread>
 #include <QOperatingSystemVersion>
+#include <QCoreApplication>
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
@@ -160,13 +161,19 @@ EngineWidget::EngineWidget(QWidget *parent)
 void EngineWidget::onConfigEngineClicked()
 {
     QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-
     QString binary;
+    QString exeDir = QCoreApplication::applicationDirPath();
+    QDir dir(exeDir);
+    if (dir.cd("engine")) {
+        // path is "<parent_of_exe>/engine"
+    } else {
+        dir = QDir(exeDir);
+    }
 
     if (osVersion.type() == QOperatingSystemVersion::Windows)
-        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*.exe)"));
     else
-        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*)"));
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*)"));
     if (binary.isEmpty()) return;
 
     ChessQSettings s;
