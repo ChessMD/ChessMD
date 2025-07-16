@@ -10,6 +10,7 @@ March 18, 2025: File Creation
 #include "enginewidget.h"
 #include "chessposition.h"
 #include "pgngamedata.h"
+#include "openingviewer.h"
 
 #include <QQuickWidget>
 #include <QMainWindow>
@@ -17,26 +18,6 @@ March 18, 2025: File Creation
 #include <QDockWidget>
 #include <QCloseEvent>
 #include <QMessageBox>
-
-class HeaderEditDialog : public QDialog {
-    Q_OBJECT
-public:
-    explicit HeaderEditDialog(QWidget* parent = nullptr)
-        : QDialog(parent)
-    {
-        setWindowTitle(tr("Edit PGN Headers"));
-        auto *layout = new QVBoxLayout(this);
-        layout->addWidget(new QLabel(tr("Here you will edit your PGN headers…"), this));
-
-        auto *buttons = new QDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-            Qt::Horizontal, this
-            );
-        layout->addWidget(buttons);
-        connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
-        connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
-    }
-};
 
 // Main window that displays a chessboard, an engine, a notation viewer, and an opening viewer
 class ChessGameWindow  : public QMainWindow
@@ -48,6 +29,7 @@ public:
     void notationSetup();
     void notationToolbarSetup();
     void toolbarSetup();
+    void openingSetup();
 
     void mainSetup();
     void previewSetup();
@@ -72,12 +54,15 @@ private:
     void updateEngineActions();
 
     NotationViewer* m_notationViewer;
+    OpeningViewer* m_openingViewer;
     EngineWidget* m_engineViewer;
     ChessPosition* m_positionViewer;
     QToolBar* m_Toolbar;
 
+
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
+    QDockWidget* m_openingDock;
 
     QAction* m_startEngineAction;
     QAction* m_stopEngineAction;

@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
     qt_add_executable(ChessMD
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
@@ -66,6 +68,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         user-guide.md
         screenshots/Figure_2.1.1a.png screenshots/Figure_2.1a.png screenshots/Figure_2.1b.png screenshots/Figure_2.1c.png screenshots/Figure_2.2.3a.png screenshots/Figure_2.2.4a.png screenshots/Figure_2.3.3a.png screenshots/Figure_2.3.7a.png
         enginelinewidget.h enginelinewidget.cpp
+        openingviewer.h openingviewer.cpp
         pgnsavedialog.h pgnsavedialog.cpp
 
 
@@ -90,6 +93,7 @@ else()
 endif()
 
 target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql)
+target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
