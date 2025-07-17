@@ -33,6 +33,8 @@ public:
     void startInfiniteSearch(int maxMultiPV = 1);
     void stopSearch();
 
+    void goMovetime(int milliseconds);
+
 signals:
     void commandSent(const QString &cmd);
     void infoReceived(const QString &rawInfo);

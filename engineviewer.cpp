@@ -2,7 +2,7 @@
 April 11, 2025: File Creation
 */
 
-#include "enginewidget.h"
+#include "engineviewer.h"
 #include "chessposition.h"
 #include "chessqsettings.h"
 

@@ -192,8 +192,27 @@ void DatabaseViewer::onPGNGameUpdated(PGNGame &game)
         }
     }
 
+    for (int i = 0; i < game.headerInfo.size(); ++i) {
+        int col = DATA_ORDER[i];
+        if (col < 0) continue;
+        const auto &kv = game.headerInfo[i];
+        QModelIndex idx = dbModel->index(game.dbIndex, col);
+        dbModel->setData(idx, kv.second, Qt::EditRole);
+    }
+
+    QModelIndex top = dbModel->index(game.dbIndex, 0);
+    QModelIndex bot = dbModel->index(game.dbIndex, dbModel->columnCount() - 1);
+    emit dbModel->dataChanged(top, bot);
+
     exportPGN();
-    // qDebug() << "Received updated PGNGame:" << game.bodyText;
+}
+
+QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, const QString& notFound = QStringLiteral("?"))
+{
+    for (auto &kv : hdr) {
+        if (kv.first == tag) return kv.second;
+    }
+    return notFound;
 }
 
 // Handle game opened in table
@@ -209,7 +228,10 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     PGNGame game;
     // copy game to allow user to make temporary changes
     game.copyFrom(dbGame);
-    QString title = QString("%1,  \"%2\" vs \"%3\"").arg(game.headerInfo[6].second, game.headerInfo[4].second, game.headerInfo[5].second);
+    QString event = findTag(game.headerInfo, QStringLiteral("Event"));
+    QString white = findTag(game.headerInfo, QStringLiteral("White"));
+    QString black = findTag(game.headerInfo, QStringLiteral("Black"));
+    QString title = QString("%1,  \"%2\" vs \"%3\"").arg(event, white, black);
 
     if(!host->tabExists(title)){
         // create new tab for game

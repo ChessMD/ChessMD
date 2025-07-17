@@ -7,7 +7,7 @@ March 18, 2025: File Creation
 #include "notationviewer.h"
 #include "streamparser.h"
 #include "chessposition.h"
-#include "enginewidget.h"
+#include "engineviewer.h"
 #include "pgnsavedialog.h"
 
 #include <QDebug>
@@ -110,7 +110,9 @@ void ChessGameWindow::mainSetup(){
     notationSetup();
     // notationToolbarSetup();
     toolbarSetup();
+    // openingSetup();
     // engineSetup();
+    gameReviewSetup();
     updateEngineActions();
     resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
 }
@@ -165,6 +167,12 @@ void ChessGameWindow::toolbarSetup()
     save->setIcon(QIcon(":/resource/img/savegame.png"));
     connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
 
+    QAction* review = m_Toolbar->addAction("Game Review");
+    review->setIcon(QIcon(":/resource/img/sparkles.png"));
+    connect(review, &QAction::triggered, this, [this]() {
+        m_gameReviewViewer->reviewGame(m_notationViewer->getRootMove());
+    });
+
     m_startEngineAction = m_Toolbar->addAction("Start Engine");
     m_startEngineAction->setIcon(QIcon(":/resource/img/engine-start.png"));
     connect(m_startEngineAction, &QAction::triggered, this, &ChessGameWindow::engineSetup);
@@ -188,6 +196,7 @@ void ChessGameWindow::engineSetup()
     m_engineDock = new QDockWidget(tr("Engine"), this);
     m_engineDock->setWidget(m_engineViewer);
     m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_engineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
     if (m_notationDock){
         splitDockWidget(m_notationDock, m_engineDock, Qt::Vertical);
@@ -224,6 +233,15 @@ void ChessGameWindow::engineTeardown()
     m_engineDock = nullptr;
 
     updateEngineActions();
+}
+
+void ChessGameWindow::gameReviewSetup()
+{
+    m_gameReviewViewer = new GameReviewViewer(this);
+    m_gameReviewDock = new QDockWidget(tr("Game Review"), this);
+    m_gameReviewDock->setWidget(m_gameReviewViewer);
+    m_gameReviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    addDockWidget(Qt::BottomDockWidgetArea, m_gameReviewDock);
 }
 
 void ChessGameWindow::updateEngineActions()

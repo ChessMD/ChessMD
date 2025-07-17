@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql Charts)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql Charts)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -21,7 +21,7 @@ set(PROJECT_SOURCES
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
 
     qt_add_executable(ChessMD
         MANUAL_FINALIZATION
@@ -55,7 +55,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png
         resource.qrc
         uciengine.h uciengine.cpp
-        enginewidget.h enginewidget.cpp
+        engineviewer.h engineviewer.cpp
         mainwindow.h mainwindow.cpp
         chessqsettings.h chessqsettings.cpp
         chessgametabdialog.h
@@ -70,6 +70,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         enginelinewidget.h enginelinewidget.cpp
         openingviewer.h openingviewer.cpp
         pgnsavedialog.h pgnsavedialog.cpp
+        gamereviewviewer.h gamereviewviewer.cpp
 
 
 
@@ -92,7 +93,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql)
+target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt::Charts)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
