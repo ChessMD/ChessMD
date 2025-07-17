@@ -80,6 +80,10 @@ public:
     explicit OpeningViewer(QWidget *parent = nullptr);
     
     void updatePosition(const QVector<QString>& uciMoves);
+
+    // static helpers
+    static quint16 encodeMove(const QString& uciCode);
+    static QString decodeMove(quint16 code);
     
 signals:
     void moveClicked(const QString& move);
@@ -92,10 +96,6 @@ private:
     // ui
     void addMoveToList(const QString& move, int games, double winPercentage, const QString& score);
 
-    // static helpers
-    static quint16 encodeMove(const QString& uciCode);
-    static QString decodeMove(quint16 code);
-    
     OpeningTree mTree;
 
     QLabel* mPositionLabel;

@@ -112,6 +112,9 @@ void ChessGameWindow::mainSetup(){
     toolbarSetup();
     // engineSetup();
     updateEngineActions();
+    openingSetup();
+    setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
+    setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
     resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
 }
 
