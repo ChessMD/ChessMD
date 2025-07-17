@@ -157,7 +157,6 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         QToolTip::hideText();
         return false;
     }
-    // fall back to default
     return QWidget::eventFilter(watched, event);
 }
 
@@ -196,11 +195,11 @@ std::pair<double,double> gameAccuracy(std::vector<double> winPcts, bool whiteSta
         }
     }
 
-    // 1) window size = clamp(total/10, 2, 8)
+    // window size = clamp(total/10, 2, 8)
     int w = std::clamp(total / 10, 2, 8);
     w = std::min(w, m);
 
-    // 2) build windows: (w-2) copies of the first, then sliding windows
+    // build windows: (w-2) copies of the first, then sliding windows
     int headFill = std::max(w - 2, 0);
     std::vector<std::vector<double>> windows;
     windows.reserve(headFill + (m - w + 1));
@@ -208,12 +207,12 @@ std::pair<double,double> gameAccuracy(std::vector<double> winPcts, bool whiteSta
     for (int i = 0; i < headFill; ++i) windows.push_back(first);
     for (int i = 0; i + w <= m; ++i) windows.emplace_back(winPcts.begin() + i, winPcts.begin() + i + w);
 
-    // 3) per‑move volatilities (clamped [0.5,12])
+    // per‑move volatilities (clamped [0.5,12])
     std::vector<double> vol(total);
     for (int i = 0; i < total; ++i)
         vol[i] = std::clamp(stddev(windows[i]), 0.5, 12.0);
 
-    // 4) compute accuracies & bucket them by color
+    // compute accuracies & bucket them by color
     std::vector<double> accW, accB, wW, wB;
     accW.reserve((total + 1) / 2);
     accB.reserve(total / 2);
@@ -235,7 +234,7 @@ std::pair<double,double> gameAccuracy(std::vector<double> winPcts, bool whiteSta
         }
     }
 
-    // 5) combine = (vol‑weighted mean + harmonic mean) / 2
+    // combine = (vol‑weighted mean + harmonic mean) / 2
     auto combine = [&](const std::vector<double>& A, const std::vector<double>& W) {
         int n = int(A.size());
         if (n == 0) return 100.0;
@@ -257,16 +256,14 @@ std::pair<double,double> gameAccuracy(std::vector<double> winPcts, bool whiteSta
 void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
 {
 
-    // Build the main‐line FEN list
+    // build the main‐line FEN list
     QVector<QString> fens;
     QVector<QString> sans;
 
-    // The root move's position *is* the starting position
     if (!root || !root->m_position) return;
     fens.append(root->m_position->positionToFEN());
     sans.append(tr("start"));
 
-    // Walk down m_nextMoves[0]
     auto cur = root;
     while (cur && !cur->m_nextMoves.isEmpty()) {
         auto nxt = cur->m_nextMoves.front();
@@ -284,7 +281,6 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
 
     std::vector<double> winPercentages, evals;
 
-    // For each half‐move i: fenBefore = fens[i], fenAfter = fens[i+1]
     for (int i = 0; i < moves; i++) {
         double cpBefore = evaluateFen(fens[i]);
         double cpAfter = -evaluateFen(fens[i+1]);

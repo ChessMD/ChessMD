@@ -52,7 +52,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         variationdialogue.h variationdialogue.cpp
         chessposition.h chessposition.cpp
         customtitlebar.ui
-        img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png
+        img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png img/engine.png
         resource.qrc
         uciengine.h uciengine.cpp
         engineviewer.h engineviewer.cpp
@@ -71,9 +71,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         openingviewer.h openingviewer.cpp
         pgnsavedialog.h pgnsavedialog.cpp
         gamereviewviewer.h gamereviewviewer.cpp
-
-
-
+        settingsdialog.h settingsdialog.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ChessMD APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -93,7 +91,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt::Charts)
+target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt6::Charts)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

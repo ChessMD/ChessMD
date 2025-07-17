@@ -22,7 +22,7 @@ protected:
 
 private:
 
-    void createMenus();
+    void setupSidebar();
 
     DatabaseLibrary *m_dbLibrary;
     QMenuBar * m_menuBar;
@@ -32,6 +32,7 @@ private slots:
 
     void onAddGame();
     void onSelectEngineFile();
+    void onSettings();
 
 
 signals:
