@@ -26,7 +26,7 @@ public:
     void reviewGame(const QSharedPointer<NotationMove>& root);
 
 signals:
-    void moveSelected(QSharedPointer<NotationMove> move);
+    void moveSelected(QSharedPointer<NotationMove> &move);
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
@@ -38,19 +38,20 @@ private:
     QTableWidget *m_table;
     QLabel *m_whiteLabel;
     QLabel *m_blackLabel;
-    int m_movetimeMs = 50;  // per‐position think time
+    int m_movetimeMs = 50;
 
-    QChartView*   m_chartView;
-    QChart*       m_chart;
-    QLineSeries*  m_lineSeries;
-    QLineSeries*   m_zeroSeries;
-    QScatterSeries*   m_pointSeries;
+    QVector<QSharedPointer<NotationMove>> m_moves;
+    QChartView* m_chartView;
+    QChart* m_chart;
+    QLineSeries* m_lineSeries;
+    QLineSeries* m_zeroSeries;
+    QScatterSeries* m_pointSeries;
     QGraphicsEllipseItem* m_hoverMarker;
-    QScatterSeries*  m_hoverPoint;
+    QScatterSeries* m_hoverPoint;
     QGraphicsLineItem* m_vLine;
     QVector<QAreaSeries*> m_areaSeries;
-    QValueAxis*   m_axisX;
-    QValueAxis*   m_axisY;
+    QValueAxis* m_axisX;
+    QValueAxis* m_axisY;
     std::vector<EvalPt> m_origPts;
     std::vector<EvalPt> m_areaPts;
 };

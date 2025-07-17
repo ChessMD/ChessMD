@@ -91,22 +91,6 @@ GameReviewViewer::GameReviewViewer(QWidget *parent)
     m_table->horizontalHeader()->setStretchLastSection(true);
     lay->addWidget(m_table);
 
-    connect(m_pointSeries, &QScatterSeries::hovered, this, [this](const QPointF &pt, bool entered){
-        if (entered) {
-            QPointF chartPt = m_chart->mapToPosition(pt, m_pointSeries);
-            QPointF scenePt = m_chartView->mapToScene(chartPt.toPoint());
-            QString text = QString("Eval: %1").arg(pt.y(), 0, 'f', 2);
-            m_hoverMarker->setToolTip(text);
-            m_hoverMarker->setPos(scenePt.x() - R/2, scenePt.y() - R/2);
-            m_hoverMarker->setVisible(true);
-        } else {
-            m_hoverMarker->setVisible(false);
-        }
-    });
-
-    connect(m_pointSeries, &QScatterSeries::clicked, this, [this](const QPointF &pt){
-        // emit moveSelected(int(pt.x()));
-    });
 
     // m_table->setVisible(false);
 }
@@ -117,14 +101,20 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         if (m_origPts.empty() || m_axisX->min() >= m_axisX->max() || m_axisY->min() >= m_axisY->max()) {
             return false;
         }
-        auto *me = static_cast<QMouseEvent*>(event);
-        QPointF dataPt = m_chart->mapToValue(me->pos(), m_lineSeries);
-        if (!std::isfinite(dataPt.x())) {
+        QMouseEvent  *me = static_cast<QMouseEvent*>(event);
+        QRectF plotArea = m_chart->plotArea();
+        m_chartView->viewport()->setCursor(Qt::PointingHandCursor);
+        if (!plotArea.contains(me->pos())) {
+            m_hoverMarker->setVisible(false);
+            m_vLine->setVisible(false);
+            QToolTip::hideText();
+            m_chartView->viewport()->unsetCursor();
             return false;
         }
-        int idx = int(std::round(dataPt.x()));
-        idx = std::clamp(idx, 0, int(m_origPts.size()) - 1);
-        auto p = m_origPts[idx];
+        qreal relX = (me->pos().x() - plotArea.left()) / plotArea.width();
+        int maxIdx = int(m_origPts.size()) - 1;
+        int idx = std::clamp(qRound(relX * maxIdx), 0, maxIdx);
+        EvalPt p = m_origPts[idx];
 
         // compute scene‐pos of the data‐point
         QPointF chartPt = m_chart->mapToPosition({p.x,p.y}, m_pointSeries);
@@ -138,7 +128,8 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         // tooltip at point
         QPoint vpPt = m_chartView->mapFromScene(scenePt);
         QPoint glPt = m_chartView->viewport()->mapToGlobal(vpPt);
-        QString tip = QString("Move %1\nEval %2").arg(idx).arg(p.y,0,'f',2);
+
+        QString tip = QString("%1\nEvaluation: %2").arg((m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : "Starting Position")).arg(p.y,0,'f',2);
         QToolTip::showText(glPt, tip, m_chartView);
 
         // vertical line
@@ -150,12 +141,20 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
 
         return true;
     }
-    // hide on leave
-    if (watched == m_chartView->viewport() && event->type() == QEvent::Leave) {
-        m_hoverMarker->setVisible(false);
-        m_vLine->setVisible(false);
-        QToolTip::hideText();
-        return false;
+    if (watched == m_chartView->viewport() && event->type() == QEvent::MouseButtonPress){
+        QMouseEvent  *me = static_cast<QMouseEvent*>(event);
+        QRectF plotArea = m_chart->plotArea();
+        m_chartView->viewport()->setCursor(Qt::PointingHandCursor);
+        if (!plotArea.contains(me->pos())) {
+            m_chartView->viewport()->unsetCursor();
+            return false;
+        }
+        qreal relX = (me->pos().x() - plotArea.left()) / plotArea.width();
+        int maxIdx = int(m_origPts.size()) - 1;
+        int idx = std::clamp(qRound(relX * maxIdx), 0, maxIdx);
+
+        QSharedPointer<NotationMove> selectedMove = m_moves[idx];
+        emit moveSelected(selectedMove);
     }
     return QWidget::eventFilter(watched, event);
 }
@@ -189,7 +188,7 @@ std::pair<double,double> gameAccuracy(std::vector<double> winPcts, bool whiteSta
     if (total <= 0) return {100.0, 100.0};
 
     // alternate win percentages with white and black perspectives
-    for (int i = 0; i <= m; i++){
+    for (int i = 0; i < m; i++){
         if (i % 2 == 1){
             winPcts[i] = 1.0 - winPcts[i];
         }
@@ -264,12 +263,14 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     fens.append(root->m_position->positionToFEN());
     sans.append(tr("start"));
 
-    auto cur = root;
+    QSharedPointer<NotationMove> cur = root;
+    m_moves.append(cur);
     while (cur && !cur->m_nextMoves.isEmpty()) {
         auto nxt = cur->m_nextMoves.front();
         if (!nxt->m_position) break;
         fens.append(nxt->m_position->positionToFEN());
         sans.append(nxt->moveText);
+        m_moves.append(nxt);
         cur = nxt;
     }
 
@@ -287,6 +288,14 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
         double wb = winProb(cpBefore);
         double wa = winProb(cpAfter);
         double acc = moveAccuracy(wb, wa);
+
+        double drop = std::abs(wb - wa);
+        qDebug() << drop;
+        QSharedPointer<NotationMove> move = m_moves[i+1];
+        if (drop >= 0.30) move->annotation1 = "??";
+        else if (drop >= 0.20) move->annotation1 = "?";
+        else if (drop >= 0.10) move->annotation1 = "?!";
+        else move->annotation1.clear();
 
         if (i % 2 == 0) {
             sumWhite += acc;
@@ -312,7 +321,7 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     }
 
     // adjust evaluation to be white's perspective
-    for (int i = 0; i <= moves; i++){
+    for (int i = 0; i <= evals.size(); i++){
         if (i % 2 == 1){
             evals[i] = -evals[i];
         }

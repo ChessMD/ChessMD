@@ -242,6 +242,8 @@ void ChessGameWindow::gameReviewSetup()
     m_gameReviewDock->setWidget(m_gameReviewViewer);
     m_gameReviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_gameReviewDock);
+
+    connect(m_gameReviewViewer, &GameReviewViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
 }
 
 void ChessGameWindow::updateEngineActions()
@@ -409,12 +411,11 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move)
 void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove> move)
 {
     if (!move.isNull() && move->m_position) {
-
+        m_notationViewer->m_selectedMove = move;
         m_positionViewer->copyFrom(*move->m_position);
         m_positionViewer->setIsPreview(false);
         emit m_positionViewer->boardDataChanged();
         emit m_positionViewer->lastMoveChanged();
-
     }
 }
 
