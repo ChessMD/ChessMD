@@ -217,7 +217,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
 {   
     //load opening book
-    mOpeningBookLoaded = mTree.load("./openings.bin");
+    mOpeningBookLoaded = mTree.load("./opening/openings.bin");
 
     //
     //ui
@@ -339,7 +339,7 @@ void OpeningViewer::updateGamesList()
     
     QVector<int> gameIds = mTree.getIds();
     
-    const int MAX_GAMES_TO_SHOW = 100;
+    const int MAX_GAMES_TO_SHOW = 1000;
     mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIds.size(), MAX_GAMES_TO_SHOW)).arg(gameIds.size()));
     
     // no sorting while loading
@@ -347,7 +347,7 @@ void OpeningViewer::updateGamesList()
     
     // add games
     for (int i = 0; i < qMin(gameIds.size(), MAX_GAMES_TO_SHOW); i++) {
-        PGNGame game = PGNGame::loadGameHeader("./openings.headers", gameIds[i]);
+        PGNGame game = PGNGame::loadGameHeader("./opening/openings.headers", gameIds[i]);
         
         QString white, whiteElo, black, blackElo, result, date, event;
         for (const auto& header : game.headerInfo) {

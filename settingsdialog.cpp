@@ -101,9 +101,9 @@ void SettingsDialog::onLoadPgnClicked() {
         mOpeningsPathLabel->setText(tr("Serializing database..."));
         QApplication::processEvents();
         
-        tree.serialize("./openings.bin");
+        tree.serialize("./opening/openings.bin");
         
-        PGNGame::serializeHeaderData("./openings.headers", database);
+        PGNGame::serializeHeaderData("./opening/openings.headers", database);
         
         progressBar->deleteLater();
         mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));

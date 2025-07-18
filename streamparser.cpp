@@ -5,14 +5,12 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 
 #include <string>
 #include <regex>
-
 #include <QDebug>
+#include <QRegularExpression>
 
 #include "streamparser.h"
 #include "pgngamedata.h"
 #include "chessposition.h"
-
-#include <QString>
 
 // Ignore extra whitespace
 void skipWhitespace(std::istream &streamBuffer){
@@ -130,5 +128,74 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
     }
 
     return database;
+}
+
+// Fast move extraction for simple PGN without variations
+void StreamParser::parseSimplifiedBodyText(const QString& bodyText, QVector<QString>& moves) {
+    moves.clear();
+    
+    // Simple regex to extract moves - matches algebraic notation
+    QRegularExpression moveRegex(R"([NBRQK]?[a-h]?[1-8]?x?[a-h][1-8](?:=[NBRQK])?[+#]?|O-O(?:-O)?[+#]?)");
+    
+    QRegularExpressionMatchIterator it = moveRegex.globalMatch(bodyText);
+    while (it.hasNext()) {
+        QRegularExpressionMatch match = it.next();
+        QString move = match.captured(0);
+        
+        // Skip move numbers and results
+        if (!move.contains(QRegularExpression(R"(\d+\.|\*|1-0|0-1|1/2-1/2)"))) {
+            moves.append(move);
+        }
+    }
+}
+
+// Parse a single game from the stream
+bool StreamParser::parseNextGame(PGNGame& game) {
+    game.headerInfo.clear();
+    game.bodyText.clear();
+    game.result.clear();
+    
+    std::string line;
+    char c;
+    
+    // Skip to next game or EOF
+    while ((c = streamBuffer.peek()) != EOF && c != '[') {
+        streamBuffer.get();
+    }
+    
+    if (streamBuffer.eof()) {
+        return false;
+    }
+    
+    // Parse headers
+    while ((c = streamBuffer.peek()) != EOF && c == '[') {
+        std::getline(streamBuffer, line);
+        
+        // Fast header parsing
+        size_t spacePos = line.find(' ');
+        size_t firstQuote = line.find('"', spacePos);
+        size_t lastQuote = line.rfind('"');
+        
+        if (spacePos != std::string::npos && firstQuote != std::string::npos && lastQuote != std::string::npos) {
+            QString tag = QString::fromStdString(line.substr(1, spacePos - 1));
+            QString value = QString::fromStdString(line.substr(firstQuote + 1, lastQuote - firstQuote - 1));
+            
+            if (tag == "Result") {
+                game.result = value;
+            }
+            
+            game.headerInfo.push_back({tag, value});
+        }
+    }
+    
+    // Parse body text until next game or EOF
+    std::string bodyText;
+    while ((c = streamBuffer.peek()) != EOF && c != '[') {
+        std::getline(streamBuffer, line);
+        bodyText += line + " ";
+    }
+    
+    game.bodyText = QString::fromStdString(bodyText);
+    return true;
 }
 
