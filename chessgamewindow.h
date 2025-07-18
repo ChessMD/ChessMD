@@ -21,7 +21,7 @@ March 18, 2025: File Creation
 #include <QMessageBox>
 
 // Main window that displays a chessboard, an engine, a notation viewer, and an opening viewer
-class ChessGameWindow  : public QMainWindow
+class ChessGameWindow : public QMainWindow
 {
     Q_OBJECT
 public:

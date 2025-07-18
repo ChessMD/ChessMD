@@ -51,6 +51,7 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     dbView->setModel(proxyModel);
     dbView->setSortingEnabled(true);
+    proxyModel->sort(0, Qt::AscendingOrder);
 
     // signals and slots
     connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
@@ -117,6 +118,14 @@ void DatabaseViewer::filter(){
     }
 }
 
+QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, const QString& notFound = QStringLiteral("?"))
+{
+    for (auto &kv : hdr) {
+        if (kv.first == tag) return kv.second;
+    }
+    return notFound;
+}
+
 // Adds game to database given PGN
 void DatabaseViewer::importPGN()
 {
@@ -127,27 +136,34 @@ void DatabaseViewer::importPGN()
     StreamParser parser(file);
 
     std::vector<PGNGame> database = parser.parseDatabase();
+    static const QMap<QString,int> tagToCol = {
+        {"Number",   0 },
+        {"White",    1 },
+        {"WhiteElo", 2 },
+        {"Black",    3 },
+        {"BlackElo", 4 },
+        {"Result",   5 },
+        {"Moves",    6 },
+        {"Event",    7 },
+        {"Date",     8 }
+    };
 
     // iterate through parsed pgn
     for(auto &game: database){
-
         if(game.headerInfo.size() > 0){
             // add to model
             int row = dbModel->rowCount();
             game.dbIndex = row;
             dbModel->insertRow(row);
             dbModel->addGame(game);
-
-
-            for(int h = 0; h < game.headerInfo.size(); h++){
-                // add to dbModel
-                if(DATA_ORDER[h] > -1){
-                    QModelIndex index = dbModel->index(row, DATA_ORDER[h]);
-                    dbModel->setData(index, game.headerInfo[h].second);
-                }
+            for (auto it = tagToCol.constBegin(); it != tagToCol.constEnd(); ++it) {
+                const QString &tag = it.key();
+                int column = it.value();
+                QString value = findTag(game.headerInfo, tag, "");
+                QModelIndex idx = dbModel->index(row, column);
+                dbModel->setData(idx, value);
             }
-
-
+            dbModel->setData(dbModel->index(row, 0), row+1);
         } else {
             qDebug() << "Error: no game found!";
         }
@@ -205,14 +221,6 @@ void DatabaseViewer::onPGNGameUpdated(PGNGame &game)
     emit dbModel->dataChanged(top, bot);
 
     exportPGN();
-}
-
-QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, const QString& notFound = QStringLiteral("?"))
-{
-    for (auto &kv : hdr) {
-        if (kv.first == tag) return kv.second;
-    }
-    return notFound;
 }
 
 // Handle game opened in table

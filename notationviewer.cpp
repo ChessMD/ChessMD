@@ -118,7 +118,7 @@ void drawManuallyWrappedText(QPainter &painter, const QString &text, int indent,
             x = indent;
             y += lineHeight;
         }
-        painter.setPen(Qt::green);
+        painter.setPen(QColor(126,158,126));
         painter.drawText(x, y + fm.ascent(), tok + ' ');
         x += tokWidth;
     }
@@ -161,10 +161,11 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
     QPen oldPen = painter.pen();
     QPen colorPen = oldPen;
     if (currentMove->annotation1 == "?!")  colorPen.setColor(QColor(247,198,49));
-    else if (currentMove->annotation1 == "?")  colorPen.setColor(QColor(255,164,89));
-    else if (currentMove->annotation1 == "??")   colorPen.setColor(QColor(250,65,45));
+    else if (currentMove->annotation1 == "?") colorPen.setColor(QColor(255,164,89));
+    else if (currentMove->annotation1 == "??") colorPen.setColor(QColor(250,65,45));
+    else if (currentMove->annotation1 == "!!") colorPen.setColor(QColor(38,194,163));
+    else if (currentMove->annotation1 == "!") colorPen.setColor(QColor(116,155,191));
     painter.setPen(colorPen);
-
 
     painter.drawText(x, y + fm.ascent(), moveStr + ' ');
 

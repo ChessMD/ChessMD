@@ -122,9 +122,10 @@ void EngineLineWidget::paintEvent(QPaintEvent *event) {
     }
 
     if (m_hoveredSegment) {
-        QPen pen(Qt::blue, 2);
+        QColor col(255, 255, 0, 100);
+        QPen pen(Qt::black, 1);
         p.setPen(pen);
-        p.setBrush(Qt::NoBrush);
+        p.setBrush(col);
         QRect r = m_hoveredSegment->rect.adjusted(-1,0,1,0);
         p.drawRect(r);
     }
