@@ -54,6 +54,25 @@ void MainWindow::setupSidebar() {
     spacer->setMinimumHeight(10); 
     sidebar->addWidget(spacer);
 
+    QAction* aboutAct = new QAction(tr("About"), this);
+    QToolButton* aboutButton = new QToolButton(this);
+    // you can supply your own about.png in your resource file
+    aboutButton->setIcon(QIcon(":/resource/img/about.png"));
+    aboutButton->setToolTip(tr("About ChessMD"));
+    aboutButton->setIconSize(QSize(32,32));
+    aboutButton->setDefaultAction(aboutAct);
+    connect(aboutAct, &QAction::triggered, this, [this](){
+        QMessageBox::about(this,
+                           tr("About ChessMD"),
+                           tr("<h3>ChessMD</h3>"
+                              "<p>Version %1</p>"
+                              "<p>© 2025 Your Name or Company</p>"
+                              "<p>A lightweight PGN database viewer and analysis tool.</p>")
+                               .arg("Beta 1.0")
+                           );
+    });
+    sidebar->addWidget(aboutButton);
+
     // settings 
     QMenu* settingsMenu = new QMenu(this);
     QAction* settingsAct = new QAction(tr("Settings"), this);
