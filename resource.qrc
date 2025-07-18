@@ -18,5 +18,6 @@
         <file>img/sparkles.png</file>
         <file>img/engine.png</file>
         <file>img/settings.png</file>
+        <file>img/app_ico.o</file>
     </qresource>
 </RCC>

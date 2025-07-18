@@ -52,7 +52,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         variationdialogue.h variationdialogue.cpp
         chessposition.h chessposition.cpp
         customtitlebar.ui
-        img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png img/engine.png img/app_ico.o
+        img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png img/engine.png
         resource.qrc
         uciengine.h uciengine.cpp
         engineviewer.h engineviewer.cpp
@@ -72,7 +72,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         pgnsavedialog.h pgnsavedialog.cpp
         gamereviewviewer.h gamereviewviewer.cpp
         settingsdialog.h settingsdialog.cpp
-
+		app_res.o
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ChessMD APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -119,3 +119,4 @@ install(TARGETS ChessMD
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ChessMD)
 endif()
+
