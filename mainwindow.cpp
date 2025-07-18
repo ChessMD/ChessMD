@@ -15,12 +15,16 @@ MainWindow::MainWindow()
 {
 
     m_dbLibrary = new DatabaseLibrary(this);
-
+    setStatusBar(new QStatusBar);
     setCentralWidget(m_dbLibrary);
     setupSidebar();
     setMinimumSize(800,600);
 }
 
+void MainWindow::setStatusBarText(const QString &text)
+{
+    statusBar()->showMessage(text);
+}
 
 void MainWindow::setupSidebar() {
     QToolBar* sidebar = new QToolBar(this);
@@ -85,8 +89,6 @@ void MainWindow::onAddGame()
 
     m_dbLibrary->AddNewGame(file_name);
 }
-
-
 
 void MainWindow::onSettings(){
     SettingsDialog dlg(this);

@@ -15,9 +15,10 @@ class MainWindow  : public QMainWindow
 public:
     MainWindow();
 
+    void setStatusBarText(const QString &text);
 
 protected:
-    void showEvent(QShowEvent *ev);
+    void showEvent(QShowEvent *ev) override;
 
 private:
 
@@ -25,7 +26,6 @@ private:
 
     DatabaseLibrary *m_dbLibrary;
     QMenuBar * m_menuBar;
-
 
 private slots:
 

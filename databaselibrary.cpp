@@ -17,7 +17,6 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     , ui(new Ui::DatabaseLibrary)
 {
 
-
     //
     // setup ui
     //
@@ -82,11 +81,15 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
         DatabaseViewer * databaseViewer = new DatabaseViewer(fileName);
         databaseViewer->setWindowTitle(fileName);
 
-
+        ((MainWindow *) parent())->setStatusBarText("Loading ...");
+        QApplication::processEvents();
 
         databaseViewer->importPGN();
 
         host->addNewTab(databaseViewer, fileName);
+
+        ((MainWindow *) parent())->setStatusBarText("");
+        QApplication::processEvents();
 
     } else {
         // Direct to previously opened window
