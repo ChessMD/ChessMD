@@ -54,37 +54,28 @@ void MainWindow::setupSidebar() {
     spacer->setMinimumHeight(10); 
     sidebar->addWidget(spacer);
 
-    QAction* aboutAct = new QAction(tr("About"), this);
     QToolButton* aboutButton = new QToolButton(this);
-    // you can supply your own about.png in your resource file
-    aboutButton->setIcon(QIcon(":/resource/img/about.png"));
+    aboutButton->setIcon(QIcon(":/resource/img/help-circle.png"));
     aboutButton->setToolTip(tr("About ChessMD"));
     aboutButton->setIconSize(QSize(32,32));
-    aboutButton->setDefaultAction(aboutAct);
-    connect(aboutAct, &QAction::triggered, this, [this](){
-        QMessageBox::about(this,
-                           tr("About ChessMD"),
-                           tr("<h3>ChessMD</h3>"
-                              "<p>Version %1</p>"
-                              "<p>© 2025 Your Name or Company</p>"
-                              "<p>A lightweight PGN database viewer and analysis tool.</p>")
-                               .arg("Beta 1.0")
-                           );
+    connect(aboutButton, &QToolButton::clicked, this, [this](){
+        QMessageBox::about(this, tr("About ChessMD"),
+        tr("<h3>ChessMD</h3>"
+          "<p>Version %1</p>"
+          "<p>© 2025 ChessMD</p>"
+          "<p>A lightweight PGN database viewer and analysis tool.</p>")
+           .arg("v1.0-beta")
+        );
     });
     sidebar->addWidget(aboutButton);
 
-    // settings 
-    QMenu* settingsMenu = new QMenu(this);
-    QAction* settingsAct = new QAction(tr("Settings"), this);
-    settingsMenu->addAction(settingsAct);
-    connect(settingsAct, &QAction::triggered, this, &MainWindow::onSettings);
+    // settings
     QToolButton* settingsButton = new QToolButton(this);
     settingsButton->setIcon(QIcon(":/resource/img/settings.png"));
     settingsButton->setToolTip(tr("Settings"));
-    settingsButton->setMenu(settingsMenu);
-    settingsButton->setPopupMode(QToolButton::InstantPopup);
-    settingsButton->setIconSize(QSize(32, 32));
-    settingsButton->setStyleSheet("QToolButton::menu-indicator { image: none; }");
+    settingsButton->setIconSize(QSize(32,32));
+    settingsButton->setAutoRaise(true);
+    connect(settingsButton, &QToolButton::clicked, this, &MainWindow::onSettings);
     sidebar->addWidget(settingsButton);
 
     // bottom spacer
