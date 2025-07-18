@@ -20,6 +20,8 @@ protected:
 private:
     QMap<QString, QRegularExpression> textFilters;
     QMap<QString, QPair<int,int>> rangeFilters;
+
+    
 };
 
 #endif // DATABASEFILTERPROXYMODEL_H

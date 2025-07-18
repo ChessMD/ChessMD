@@ -16,6 +16,8 @@ Jan 15, 2025 - Program Creation
 
 int main(int argc, char *argv[])
 {
+
+    qputenv("QT_QPA_PLATFORM", "windows:darkmode=0");
     QApplication app(argc, argv);
 
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));

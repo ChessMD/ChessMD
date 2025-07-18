@@ -16,7 +16,6 @@ MainWindow::MainWindow()
 
     m_dbLibrary = new DatabaseLibrary(this);
 
-    setStatusBar(new QStatusBar);
     setCentralWidget(m_dbLibrary);
     setupSidebar();
     setMinimumSize(800,600);
@@ -30,6 +29,24 @@ void MainWindow::setupSidebar() {
     sidebar->setFloatable(false);
     sidebar->setIconSize(QSize(32, 32));
     sidebar->setFixedWidth(48);
+    
+    sidebar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+
+
+    //center icons
+    sidebar->setStyleSheet(R"(
+        QToolBar {
+            padding: 0px;
+            margin: 0px;
+        }
+        QToolButton {
+            padding: 8px;
+        }
+    )");
+
+    QWidget* topSpacer = new QWidget(this);
+    topSpacer->setFixedHeight(5);  
+    sidebar->addWidget(topSpacer);
 
     // engine 
     QMenu* engineMenu = new QMenu(this);
@@ -47,7 +64,8 @@ void MainWindow::setupSidebar() {
 
     //spacer to put settings at bottom
     QWidget* spacer = new QWidget(this);
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    spacer->setMinimumHeight(10); 
     sidebar->addWidget(spacer);
 
     // settings 
@@ -63,6 +81,11 @@ void MainWindow::setupSidebar() {
     settingsButton->setIconSize(QSize(32, 32));
     settingsButton->setStyleSheet("QToolButton::menu-indicator { image: none; }");
     sidebar->addWidget(settingsButton);
+
+    // bottom spacer
+    QWidget* bottomSpacer = new QWidget(this);
+    bottomSpacer->setFixedHeight(5);
+    sidebar->addWidget(bottomSpacer);
 
     // add sidebar to the left
     addToolBar(Qt::LeftToolBarArea, sidebar);
@@ -102,10 +125,4 @@ void MainWindow::onSelectEngineFile()
 void MainWindow::onSettings(){
     SettingsDialog dlg(this);
     dlg.exec();
-}
-
-
-void MainWindow::setStatusBarText(const QString &text)
-{
-    statusBar()->showMessage(text);
 }

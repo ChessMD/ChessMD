@@ -15,7 +15,6 @@ class MainWindow  : public QMainWindow
 public:
     MainWindow();
 
-    void setStatusBarText(const QString &text);
 
 protected:
     void showEvent(QShowEvent *ev);
