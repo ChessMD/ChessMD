@@ -44,24 +44,6 @@ void MainWindow::setupSidebar() {
         }
     )");
 
-    QWidget* topSpacer = new QWidget(this);
-    topSpacer->setFixedHeight(5);  
-    sidebar->addWidget(topSpacer);
-
-    // engine 
-    QMenu* engineMenu = new QMenu(this);
-    QAction* selectEngineFile = new QAction(tr("Select Engine File"), this);
-    engineMenu->addAction(selectEngineFile);
-    connect(selectEngineFile, &QAction::triggered, this, &MainWindow::onSelectEngineFile);
-    QToolButton* engineButton = new QToolButton(this);
-    engineButton->setIcon(QIcon(":/resource/img/engine.png"));
-    engineButton->setToolTip(tr("Engine"));
-    engineButton->setMenu(engineMenu);
-    engineButton->setPopupMode(QToolButton::InstantPopup);
-    engineButton->setIconSize(QSize(32, 32));
-    engineButton->setStyleSheet("QToolButton::menu-indicator { image: none; }");
-    sidebar->addWidget(engineButton);
-
     //spacer to put settings at bottom
     QWidget* spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -105,22 +87,6 @@ void MainWindow::onAddGame()
 }
 
 
-void MainWindow::onSelectEngineFile()
-{
-    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-
-    QString file_name;
-
-    if (osVersion.type() == QOperatingSystemVersion::Windows)
-        file_name =  QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*.exe)"));
-    else
-        file_name =  QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("(*)"));
-
-    ChessQSettings * m_settings = new ChessQSettings();
-
-    m_settings->setEngineFile(file_name);
-    m_settings->saveSettings();
-}
 
 void MainWindow::onSettings(){
     SettingsDialog dlg(this);

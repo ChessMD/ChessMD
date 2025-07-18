@@ -1,6 +1,7 @@
 #include "settingsdialog.h"
 #include "streamparser.h"
 #include "openingviewer.h"
+#include "chessqsettings.h"
 
 #include <QListWidget>
 #include <QStackedWidget>
@@ -11,6 +12,7 @@
 #include <QFileDialog>
 #include <QProgressBar>
 #include <QApplication>
+#include <QOperatingSystemVersion>
 #include <fstream>
 
 
@@ -23,11 +25,24 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
 
     mCategoryList = new QListWidget(this);
-    mCategoryList->addItem(tr("Openings"));
+    mCategoryList->addItem(tr("Engine"));     
+    mCategoryList->addItem(tr("Openings"));   
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
     mStackedWidget = new QStackedWidget(this);
+    
+    // engine page 
+    QWidget* enginePage = new QWidget(this);
+    QVBoxLayout* engineLayout = new QVBoxLayout(enginePage);
+    mEnginePathLabel = new QLabel(tr("Current engine: None"), enginePage);
+    QPushButton* selectEngineBtn = new QPushButton(tr("Select Engine..."), enginePage);
+    engineLayout->addWidget(mEnginePathLabel);
+    engineLayout->addWidget(selectEngineBtn);
+    engineLayout->addStretch();
+    mStackedWidget->addWidget(enginePage);
+    
+    // openings page 
     QWidget* openingsPage = new QWidget(this);
     QVBoxLayout* openingsLayout = new QVBoxLayout(openingsPage);
     mOpeningsPathLabel = new QLabel(tr("Current opening database: None"), openingsPage);
@@ -36,11 +51,41 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     openingsLayout->addWidget(loadPgnBtn);
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
+    
     mainLayout->addWidget(mStackedWidget);
 
     connect(mCategoryList, &QListWidget::currentRowChanged, mStackedWidget, &QStackedWidget::setCurrentIndex);
     mCategoryList->setCurrentRow(0);
     connect(loadPgnBtn, &QPushButton::clicked, this, &SettingsDialog::onLoadPgnClicked);
+    connect(selectEngineBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectEngineClicked);
+    
+    ChessQSettings settings;
+    QString enginePath = settings.getEngineFile();
+    if (!enginePath.isEmpty()) {
+        QFileInfo engineInfo(enginePath);
+        mEnginePathLabel->setText(tr("Current engine: %1").arg(engineInfo.fileName()));
+    }
+}
+
+void SettingsDialog::onSelectEngineClicked() {
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    
+    QString file_name;
+    
+    if (osVersion.type() == QOperatingSystemVersion::Windows) {
+        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("Executable files (*.exe)"));
+    } else {
+        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("All files (*)"));
+    }
+    
+    if (!file_name.isEmpty()) {
+        ChessQSettings settings;
+        settings.setEngineFile(file_name);
+        settings.saveSettings();
+        
+        QFileInfo engineInfo(file_name);
+        mEnginePathLabel->setText(tr("Current engine: %1").arg(engineInfo.fileName()));
+    }
 }
 
 void SettingsDialog::onLoadPgnClicked() {

@@ -30,7 +30,6 @@ private:
 private slots:
 
     void onAddGame();
-    void onSelectEngineFile();
     void onSettings();
 
 

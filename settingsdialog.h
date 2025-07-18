@@ -17,11 +17,13 @@ public:
 
 private slots:
     void onLoadPgnClicked();
+    void onSelectEngineClicked();
 
 private:
     QListWidget* mCategoryList;
     QStackedWidget* mStackedWidget;
     QLabel* mOpeningsPathLabel;
+    QLabel* mEnginePathLabel;
     QString mOpeningsPath;
 };
 
