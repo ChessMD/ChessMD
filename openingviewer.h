@@ -14,6 +14,30 @@
 #include <QByteArray>
 #include <QTableWidget>
 
+// for sorting purposes
+class MoveListItem : public QTreeWidgetItem {
+public:
+    MoveListItem(QTreeWidget* parent) : QTreeWidgetItem(parent) {}
+    
+    bool operator<(const QTreeWidgetItem &other) const override {
+        int column = treeWidget()->sortColumn();
+        
+        if (column == 0) {
+            return text(column) < other.text(column);
+        } 
+        else if (column == 1) {
+            // games count
+            return data(column, Qt::UserRole).toInt() < other.data(column, Qt::UserRole).toInt();
+        }
+        else if (column == 2) {
+            // win % 
+            return data(column, Qt::UserRole).toFloat() < other.data(column, Qt::UserRole).toFloat();
+        }
+        
+        return QTreeWidgetItem::operator<(other);
+    }
+};
+
 //using quint16 etc. so its ez to count space for mmap offset
 
 struct Continuation {
@@ -103,6 +127,7 @@ public:
 signals:
     void moveClicked(const QString& move);
     void gameSelected(int gameId); 
+
     
 private slots:
     void onMoveSelected(QTreeWidgetItem* item, int column);

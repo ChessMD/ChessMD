@@ -381,7 +381,7 @@ void OpeningViewer::updateGamesList()
 //helper
 void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct)
 {
-    QTreeWidgetItem* item = new QTreeWidgetItem(mMovesList);
+    MoveListItem* item = new MoveListItem(mMovesList);
     
     item->setText(0, move);
     item->setText(1, QString::number(games));
@@ -395,9 +395,7 @@ void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct
     // data for sorting
     item->setData(0, Qt::UserRole, move);
     item->setData(1, Qt::UserRole, games);
-    item->setData(2, Qt::UserRole, whitePct);  
-    
-
+    item->setData(2, Qt::UserRole, whitePct);
 }
 
 void OpeningViewer::onMoveSelected(QTreeWidgetItem* item, int column)
