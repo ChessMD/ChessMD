@@ -54,6 +54,7 @@ compile_commands.json
 *_qmlcache.qrc
 
 build/*
+release/*
 
 # QtCreator/Qt autosave‐backup files:
 *.autosave.*

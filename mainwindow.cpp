@@ -59,15 +59,29 @@ void MainWindow::setupSidebar() {
     aboutButton->setToolTip(tr("About ChessMD"));
     aboutButton->setIconSize(QSize(32,32));
     connect(aboutButton, &QToolButton::clicked, this, [this](){
-        QMessageBox::about(this, tr("About ChessMD"),
-        tr("<h3>ChessMD</h3>"
-          "<p>Version %1</p>"
-          "<p>© 2025 ChessMD</p>"
-          "<p>A lightweight PGN database viewer and analysis tool.</p>")
-           .arg("v1.0-beta")
-        );
+        QMessageBox msg(this);
+        msg.setWindowTitle(tr("About ChessMD"));
+        msg.setTextFormat(Qt::RichText);
+        // allow the user to click links
+        msg.setTextInteractionFlags(Qt::TextBrowserInteraction);
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.setText(tr(
+                        "<h3>ChessMD</h3>"
+                        "<p>Version %1</p>"
+                        "<p>© 2025 ChessMD</p>"
+                        "<p>A lightweight PGN database viewer and analysis tool.</p>"
+                        "<p>Visit our <a href=\"https://chessmd.org/\">website</a> for more info.</p>"
+                        ).arg("v1.0-beta"));
+
+        // find the internal QLabel and enable external link opening
+        if (auto *label = msg.findChild<QLabel*>("qt_msgbox_label")) {
+            label->setOpenExternalLinks(true);
+        }
+
+        msg.exec();
     });
     sidebar->addWidget(aboutButton);
+
 
     // settings
     QToolButton* settingsButton = new QToolButton(this);

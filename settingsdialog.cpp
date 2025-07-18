@@ -32,23 +32,31 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
     mStackedWidget = new QStackedWidget(this);
     
-    // engine page 
+
+    ChessQSettings s; s.loadSettings();
+
+    // engine page
+    QString engineSaved = s.getEngineFile();
     QWidget* enginePage = new QWidget(this);
     QVBoxLayout* engineLayout = new QVBoxLayout(enginePage);
-    mEnginePathLabel = new QLabel(tr("Current engine: None"), enginePage);
+    QString engineText = "Current engine: " + ((!engineSaved.isEmpty() && QFileInfo::exists(engineSaved)) ? engineSaved : "None");
+    mEnginePathLabel = new QLabel(engineText, enginePage);
     QPushButton* selectEngineBtn = new QPushButton(tr("Select Engine..."), enginePage);
     engineLayout->addWidget(mEnginePathLabel);
     engineLayout->addWidget(selectEngineBtn);
     engineLayout->addStretch();
     mStackedWidget->addWidget(enginePage);
     
-    // openings page 
+    // openings page
     QWidget* openingsPage = new QWidget(this);
     QVBoxLayout* openingsLayout = new QVBoxLayout(openingsPage);
-    mOpeningsPathLabel = new QLabel(tr("Current opening database: None"), openingsPage);
+    QString openingText = QString("Current opening database: ") + ( (QFileInfo::exists("./opening/openings.bin") && QFileInfo::exists("./opening/openings.headers") ) ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
+    mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);
+    QLabel* info = new QLabel(tr("Warning! In v1.0-beta, 1 GB of memory (RAM) is required for every 3 MB of a PGN database."), openingsPage);
     openingsLayout->addWidget(mOpeningsPathLabel);
     openingsLayout->addWidget(loadPgnBtn);
+    openingsLayout->addWidget(info);
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
     
