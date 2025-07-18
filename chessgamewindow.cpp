@@ -170,7 +170,8 @@ void ChessGameWindow::toolbarSetup()
     QAction* review = m_Toolbar->addAction("Game Review");
     review->setIcon(QIcon(":/resource/img/sparkles.png"));
     connect(review, &QAction::triggered, this, [this]() {
-        m_gameReviewViewer->reviewGame(m_notationViewer->getRootMove());
+        bool visible = m_gameReviewDock->isVisible();
+        m_gameReviewDock->setVisible(!visible);
     });
 
     m_startEngineAction = m_Toolbar->addAction("Start Engine");
@@ -237,13 +238,17 @@ void ChessGameWindow::engineTeardown()
 
 void ChessGameWindow::gameReviewSetup()
 {
-    m_gameReviewViewer = new GameReviewViewer(this);
+    m_gameReviewViewer = new GameReviewViewer(m_notationViewer->getRootMove(), this);
     m_gameReviewDock = new QDockWidget(tr("Game Review"), this);
     m_gameReviewDock->setWidget(m_gameReviewViewer);
     m_gameReviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-    addDockWidget(Qt::BottomDockWidgetArea, m_gameReviewDock);
+    m_gameReviewDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    m_gameReviewDock->setMinimumSize(300, 300);
+
+    addDockWidget(Qt::RightDockWidgetArea, m_gameReviewDock);
 
     connect(m_gameReviewViewer, &GameReviewViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
+    connect(m_gameReviewViewer, &GameReviewViewer::reviewCompleted, this, [this](){m_notationViewer->refresh();});
 }
 
 void ChessGameWindow::updateEngineActions()

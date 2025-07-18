@@ -8,16 +8,17 @@
 #include <vector>
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
-#include <QEventLoop>
 #include <QTimer>
 #include <QHeaderView>
 #include <QToolTip>
 #include <QMouseEvent>
 #include <QCursor>
 
-GameReviewViewer::GameReviewViewer(QWidget *parent)
+GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent)
     : QWidget(parent)
+    , m_rootMove(rootMove)
 {
     ChessQSettings s; s.loadSettings();
     m_engine = new UciEngine(this);
@@ -26,8 +27,36 @@ GameReviewViewer::GameReviewViewer(QWidget *parent)
     auto *lay = new QVBoxLayout(this);
     m_whiteLabel = new QLabel(tr("White accuracy: –"), this);
     m_blackLabel = new QLabel(tr("Black accuracy: –"), this);
-    lay->addWidget(m_whiteLabel);
-    lay->addWidget(m_blackLabel);
+    m_whiteLabel->setStyleSheet(R"(
+        QLabel {
+            background: white;
+            color: black;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    )");
+        m_blackLabel->setStyleSheet(R"(
+        QLabel {
+            background: #333;
+            color: white;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    )");
+    auto *hLay = new QHBoxLayout;
+    hLay->addWidget(m_whiteLabel);
+    hLay->addWidget(m_blackLabel);
+    lay->addLayout(hLay);
+
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setVisible(false);
+    lay->addWidget(m_progressBar);
 
     m_chart = new QChart;
     m_lineSeries = new QLineSeries;
@@ -62,6 +91,24 @@ GameReviewViewer::GameReviewViewer(QWidget *parent)
     m_chart->setBackgroundRoundness(0);
     m_chart->setBackgroundBrush(QBrush(QColor(230, 230, 230)));
 
+    m_inaccuracySeries = new QScatterSeries;
+    m_mistakeSeries = new QScatterSeries;
+    m_blunderSeries = new QScatterSeries;
+
+    QColor outlineColor = m_lineSeries->pen().color();
+    QPen outlinePen(outlineColor);
+    outlinePen.setWidth(1);
+
+    for (QScatterSeries* s : { m_inaccuracySeries, m_mistakeSeries, m_blunderSeries}){
+        s->setMarkerSize(8);
+        s->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+        s->setPen(outlinePen);
+    }
+
+    m_inaccuracySeries->setBrush(QBrush(QColor(247,198,49)));
+    m_mistakeSeries->setBrush(QBrush(QColor(255,164,89)));
+    m_blunderSeries->setBrush(QBrush(QColor(250, 65, 45)));
+
     m_chartView = new QChartView(m_chart, this);
     m_chartView->setRenderHint(QPainter::Antialiasing);
     m_chartView->setMouseTracking(true);
@@ -91,8 +138,36 @@ GameReviewViewer::GameReviewViewer(QWidget *parent)
     m_table->horizontalHeader()->setStretchLastSection(true);
     lay->addWidget(m_table);
 
+    m_reviewBtn = new QPushButton(tr("Game Review"), this);
+    m_reviewBtn->setIcon(QIcon(":/resource/img/sparkles.png"));
+    m_reviewBtn->setIconSize(QSize(48,48));
+    m_reviewBtn->setMinimumHeight(100);
+    m_reviewBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_reviewBtn->setStyleSheet(
+        "font-size: 28px; "
+        "padding: 20px 40px;"
+    );
 
-    // m_table->setVisible(false);
+    lay->addWidget(m_reviewBtn);
+
+
+
+    // hide UI until game review is clicked
+    m_progressBar->setVisible(false);
+    m_chartView->setVisible(false);
+    m_table->setVisible(false);
+    m_whiteLabel->setVisible(false);
+    m_blackLabel->setVisible(false);
+
+    connect(m_reviewBtn, &QPushButton::clicked, this, [this]() {
+        m_reviewBtn->hide();
+        m_progressBar->setVisible(true);
+        m_chartView->setVisible(true);
+        m_table->setVisible(true);
+        m_whiteLabel->setVisible(true);
+        m_blackLabel->setVisible(true);
+        reviewGame(m_rootMove);
+    });
 }
 
 bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
@@ -252,58 +327,104 @@ std::pair<double,double> gameAccuracy(std::vector<double> winPcts, bool whiteSta
     return { combine(accW, wW), combine(accB, wB) };
 }
 
+void GameReviewViewer::startNextEval()
+{
+    if (!m_isReviewing) return;
+
+    if (m_pending.isEmpty()) {
+        finalizeReview();
+        return;
+    }
+
+    auto pe = m_pending.dequeue();
+    m_currentEvalIndex = pe.index;
+    m_lastCp = 0.0;
+
+    m_progressBar->setValue(m_currentEvalIndex);
+
+    // position + go
+    m_engine->setPosition(pe.fen);
+    m_engine->goMovetime(m_movetimeMs);
+}
+
+void GameReviewViewer::onInfoReceived(const QString& line)
+{
+    if (!m_isReviewing) return;
+    if (line.startsWith("info") && line.contains(" score cp ")) {
+        // parse cp token
+        auto toks = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+        int idx = toks.indexOf("cp");
+        if (idx >= 0 && idx+1 < toks.size())
+            m_lastCp = toks[idx+1].toDouble();
+    }
+}
+
+void GameReviewViewer::onBestMove(const QString& bestMove)
+{
+    if (!m_isReviewing) return;
+    // store and continue
+    m_results[m_currentEvalIndex] = m_lastCp;
+    startNextEval();
+}
+
 void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
 {
-
-    // build the main‐line FEN list
     QVector<QString> fens;
-    QVector<QString> sans;
-
+    m_moves.clear();
     if (!root || !root->m_position) return;
     fens.append(root->m_position->positionToFEN());
-    sans.append(tr("start"));
-
-    QSharedPointer<NotationMove> cur = root;
-    m_moves.append(cur);
+    m_moves.append(root);
+    auto cur = root;
     while (cur && !cur->m_nextMoves.isEmpty()) {
         auto nxt = cur->m_nextMoves.front();
         if (!nxt->m_position) break;
         fens.append(nxt->m_position->positionToFEN());
-        sans.append(nxt->moveText);
         m_moves.append(nxt);
         cur = nxt;
     }
 
-    int moves = fens.size() - 1;
-    m_table->setRowCount(moves);
+    m_totalEvals = fens.size();
+    m_progressBar->setRange(0, m_totalEvals - 1);
+    m_progressBar->setValue(0);
+    m_progressBar->setVisible(true);
 
-    double sumWhite = 0.0, sumBlack = 0.0;
-    int cntWhite = 0, cntBlack = 0;
+    m_pending.clear();
+    int N = fens.size();
+    for (int i = 0; i < N; ++i)
+        m_pending.enqueue({fens[i], i});
+    m_results.assign(N, 0.0);
+    m_isReviewing = true;
+
+    connect(m_engine, &UciEngine::infoReceived, this, &GameReviewViewer::onInfoReceived);
+    connect(m_engine, &UciEngine::bestMove, this, &GameReviewViewer::onBestMove);
+
+    startNextEval();
+}
+
+void GameReviewViewer::finalizeReview()
+{
+    // clean up
+    m_isReviewing = false;
+    disconnect(m_engine, nullptr, this, nullptr);
+    m_progressBar->setVisible(false);
 
     std::vector<double> winPercentages, evals;
-
+    int moves = m_results.size() - 1;
+    m_table->setRowCount(moves);
     for (int i = 0; i < moves; i++) {
-        double cpBefore = evaluateFen(fens[i]);
-        double cpAfter = -evaluateFen(fens[i+1]);
+        double cpBefore = m_results[i];
+        double cpAfter = -m_results[i+1];
         double wb = winProb(cpBefore);
         double wa = winProb(cpAfter);
         double acc = moveAccuracy(wb, wa);
 
         double drop = std::abs(wb - wa);
-        qDebug() << drop;
         QSharedPointer<NotationMove> move = m_moves[i+1];
-        if (drop >= 0.30) move->annotation1 = "??";
-        else if (drop >= 0.20) move->annotation1 = "?";
-        else if (drop >= 0.10) move->annotation1 = "?!";
+        qDebug() << cpBefore << cpAfter << drop << move->moveText;
+        if (drop >= 0.18) move->annotation1 = "??";
+        else if (drop >= 0.12) move->annotation1 = "?";
+        else if (drop >= 0.06) move->annotation1 = "?!";
         else move->annotation1.clear();
-
-        if (i % 2 == 0) {
-            sumWhite += acc;
-            ++cntWhite;
-        } else {
-            sumBlack += acc;
-            ++cntBlack;
-        }
 
         winPercentages.push_back(wb);
         evals.push_back(cpBefore/100.0);
@@ -314,7 +435,7 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
 
         int row = i;
         m_table->setItem(row, 0, new QTableWidgetItem(QString::number(i+1)));
-        m_table->setItem(row, 1, new QTableWidgetItem(sans[i+1]));
+        m_table->setItem(row, 1, new QTableWidgetItem(move->moveText));
         m_table->setItem(row, 2, new QTableWidgetItem(QString::number(wb, 'f', 3)));
         m_table->setItem(row, 3, new QTableWidgetItem(QString::number(wa, 'f', 3)));
         m_table->setItem(row, 4, new QTableWidgetItem(QString::number(acc, 'f', 1)));
@@ -331,6 +452,7 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     m_whiteLabel->setText(tr("White accuracy: %1 %").arg(QString::number(avgW, 'f', 1)));
     m_blackLabel->setText(tr("Black accuracy: %1 %").arg(QString::number(avgB, 'f', 1)));
 
+
     m_origPts.clear();
     m_areaPts.clear();
     int N = int(evals.size());
@@ -338,9 +460,9 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     for (int i = 0; i < N; ++i) {
         qreal y0 = std::clamp<qreal>(evals[i], -6.00, 6.00);
         // original
-        m_origPts.push_back({ (qreal)i, y0 });
+        m_origPts.push_back({(qreal)i, y0});
         // area base
-        m_areaPts.push_back({ (qreal)i, y0 });
+        m_areaPts.push_back({(qreal)i, y0});
 
         // insert zero‑crossing if sign changes next
         if (i+1 < N) {
@@ -351,19 +473,18 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
             }
         }
     }
-
     for (auto *ser : m_areaSeries) {
         m_chart->removeSeries(ser);
         delete ser;
     }
     m_areaSeries.clear();
 
-    auto* posLine  = new QLineSeries;
-    auto* negLine  = new QLineSeries;
+    auto* posLine = new QLineSeries;
+    auto* negLine = new QLineSeries;
     auto* zeroLine = new QLineSeries;
     for (auto &p : m_areaPts) {
-        posLine ->append(p.x, std::max<qreal>(p.y, 0.0));
-        negLine ->append(p.x, std::min<qreal>(p.y, 0.0));
+        posLine->append(p.x, std::max<qreal>(p.y, 0.0));
+        negLine->append(p.x, std::min<qreal>(p.y, 0.0));
         zeroLine->append(p.x, 0.0);
     }
 
@@ -405,45 +526,29 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
         s->attachAxis(m_axisY);
     }
 
+    m_inaccuracySeries->clear();
+    m_mistakeSeries->clear();
+    m_blunderSeries->clear();
+
+    for (int i = 0; i < m_origPts.size(); ++i) {
+        const EvalPt &pt = m_origPts[i];
+        auto mv = m_moves[i];
+        if (! mv) continue;  // skip index 0 "start"
+
+        QString ann = mv->annotation1;
+        if (ann == "?!") m_inaccuracySeries->append(pt.x, pt.y);
+        else if (ann == "?")  m_mistakeSeries->append(pt.x, pt.y);
+        else if (ann == "??") m_blunderSeries->append(pt.x, pt.y);
+    }
+
+    for (QScatterSeries* s : {m_inaccuracySeries, m_mistakeSeries, m_blunderSeries}){
+        m_chart->removeSeries(s);
+        m_chart->addSeries(s);
+        s->attachAxis(m_axisX);
+        s->attachAxis(m_axisY);
+    }
+
     m_axisX->setRange(0, m_areaPts.back().x);
     m_engine->quitEngine();
-    delete m_engine;
-}
-
-// blocking evaluation
-double GameReviewViewer::evaluateFen(const QString& fen)
-{
-    double lastCp = 0.0;
-    QEventLoop loop;
-
-    // catch info cp
-    QMetaObject::Connection infoConn = connect(
-        m_engine, &UciEngine::infoReceived,
-        this, [&](const QString &line) {
-            if (line.startsWith("info") && line.contains(" score cp ")) {
-                auto toks = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-                int idx = toks.indexOf("cp");
-                if (idx >= 0 && idx+1 < toks.size())
-                    lastCp = toks[idx+1].toDouble();
-            }
-        }
-    );
-
-    // exit on bestmove
-    QMetaObject::Connection bestConn = connect(
-        m_engine, &UciEngine::bestMove,
-        &loop,  &QEventLoop::quit
-    );
-
-    // fail‐safe after movetime+20ms
-    QTimer::singleShot(m_movetimeMs + 20, &loop, &QEventLoop::quit);
-
-    m_engine->setPosition(fen);
-    m_engine->goMovetime(m_movetimeMs);
-
-    loop.exec();
-
-    disconnect(infoConn);
-    disconnect(bestConn);
-    return lastCp;
+    emit reviewCompleted();
 }
