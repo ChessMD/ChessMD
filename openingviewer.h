@@ -12,14 +12,43 @@
 #include <QFile>
 #include <QVector>
 #include <QByteArray>
+#include <QTableWidget>
+
+// for sorting purposes
+class MoveListItem : public QTreeWidgetItem {
+public:
+    MoveListItem(QTreeWidget* parent) : QTreeWidgetItem(parent) {}
+    
+    bool operator<(const QTreeWidgetItem &other) const override {
+        int column = treeWidget()->sortColumn();
+        
+        if (column == 0) {
+            return text(column) < other.text(column);
+        } 
+        else if (column == 1) {
+            // games count
+            return data(column, Qt::UserRole).toInt() < other.data(column, Qt::UserRole).toInt();
+        }
+        else if (column == 2) {
+            // win % 
+            return data(column, Qt::UserRole).toFloat() < other.data(column, Qt::UserRole).toFloat();
+        }
+        
+        return QTreeWidgetItem::operator<(other);
+    }
+};
 
 //using quint16 etc. so its ez to count space for mmap offset
 
 struct Continuation {
-    //optimal space
     quint16 moveCode;
     quint32 count;
+    float whitePct;
+    float drawPct;
+    float blackPct;
 };
+
+enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
 
 
 
@@ -28,7 +57,7 @@ public:
     OpeningTree();
     ~OpeningTree();
 
-    void insertGame(const QVector<quint16>& moves);
+    void insertGame(const QVector<quint16>& moves, int gameID, GameResult result);
 
     bool serialize(const QString& path);
 
@@ -37,24 +66,33 @@ public:
     bool play(quint16 moveCode);
     quint32 gamesReached() const;
     QVector<Continuation> continuations() const;
+    QVector<int> getIds() const;
+
 
 private:
     struct BuildNode {
         quint32 gamesReached = 0;
+        quint32 whiteWins = 0;
+        quint32 draws = 0;
         QVector<QPair<quint16, BuildNode*>> children;
+        QVector<int> gameIds;
     };
 
     //pack so it is strictly 14 bytes
     #pragma pack(push,1)
     struct ChildEntry {
         quint16 moveCode;  
-        quint32 count;    
+        quint32 count;
+        quint32 whiteWins;
+        quint32 draws;    
         quint64 offset;   
     };
     #pragma pack(pop)
     struct NodeView{
         quint32 gamesReached;
-        quint32 childCount;
+        quint32 whiteWins;
+        quint32 draws;
+        quint8 childCount;
         const ChildEntry* children;
     };
 
@@ -70,6 +108,7 @@ private:
     //helpers
     void deleteSubtree(BuildNode*);
     void assignOffsets();
+    void collectGameIds(quint64 nodeOffset, QVector<int>& ids) const;
     NodeView readNode(quint64 offset) const;
 };
 
@@ -80,27 +119,34 @@ public:
     explicit OpeningViewer(QWidget *parent = nullptr);
     
     void updatePosition(const QVector<QString>& uciMoves);
-    
-signals:
-    void moveClicked(const QString& move);
-    
-private slots:
-    void onMoveSelected(QTreeWidgetItem* item, int column);
-    
-private:
-    bool mOpeningBookLoaded = false;
-    // ui
-    void addMoveToList(const QString& move, int games, double winPercentage, const QString& score);
 
     // static helpers
     static quint16 encodeMove(const QString& uciCode);
     static QString decodeMove(quint16 code);
     
+signals:
+    void moveClicked(const QString& move);
+    void gameSelected(int gameId); 
+
+    
+private slots:
+    void onMoveSelected(QTreeWidgetItem* item, int column);
+    void onGameSelected(int row, int column);  
+
+    
+private:
+    bool mOpeningBookLoaded = false;
+    // ui
+    void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct);
+    void updateGamesList();
+
     OpeningTree mTree;
 
     QLabel* mPositionLabel;
     QLabel* mStatsLabel;
-    QTreeWidget* mMovesList;  
+    QLabel* mGamesLabel;  
+    QTreeWidget* mMovesList;
+    QTableWidget* mGamesList;  
     
     QString mCurrentPosition;
     int mTotalGames = 0;
