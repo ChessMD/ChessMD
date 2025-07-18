@@ -1,4 +1,5 @@
 #include "openingviewer.h"
+#include "pgngamedata.h"
 
 #include <algorithm>   
 #include <cstring>  
@@ -18,25 +19,41 @@ OpeningTree::~OpeningTree() {
     deleteSubtree(mRoot);
 }
 
-void OpeningTree::insertGame(const QVector<quint16>& moves){
+void OpeningTree::insertGame(const QVector<quint16>& moves, int gameID, GameResult result){
     BuildNode* node = mRoot;
     node->gamesReached++;
-    for (quint16 m: moves){
+
+    if (result == WHITE_WIN) node->whiteWins++;
+    else if (result == DRAW) node->draws++;
+
+    for (int i = 0; i < moves.size(); i++){
+        quint16 m = moves[i];
         // find move in trie
         auto it = std::find_if(node->children.begin(), node->children.end(), [=](auto &pr){return pr.first ==m;});
         if(it == node->children.end()){
             //not alreaqy exist
             auto* child = new BuildNode;
             child->gamesReached = 1;
+
+            if (result == WHITE_WIN) child->whiteWins = 1;
+            else if (result == DRAW) child->draws = 1;
+
             node->children.append(qMakePair(m, child));
             node = child;
         }
         else{
             //increment gamesreached if already there
             it->second->gamesReached++;
+
+            if (result == WHITE_WIN) it->second->whiteWins++;
+            else if (result == DRAW) it->second->draws++;
+            
             node = it->second;
         }
 
+        if(i == moves.size() - 1){
+            node->gameIds.append(gameID);
+        }
     }
 }
 
@@ -54,17 +71,28 @@ bool OpeningTree::serialize(const QString& path){
         quint64 off = mOffsets[node];
         f.seek(off);
         out << node->gamesReached;
-        quint32 cc = node->children.size();
+        out << node->whiteWins;
+        out << node->draws;
+        quint8 cc = node->children.size();
         out << cc;
         for(auto& pr: node->children){
             quint16 mv = pr.first;
             BuildNode* ch = pr.second;
             quint32 cnt = ch->gamesReached;
+            quint32 ww = ch->whiteWins;
+            quint32 dd = ch->draws;
             quint64 chOff = mOffsets[ch];
-            out << mv << cnt << chOff;
+            out << mv << cnt << ww << dd << chOff;
+        }
+        quint8 gameIdCount = node->gameIds.size();
+        out << gameIdCount;
+        for(int id : node->gameIds) {
+            out << id;
         }
     }
-    return 1;
+
+    
+    return true;
 
 }
 
@@ -111,9 +139,45 @@ QVector<Continuation> OpeningTree::continuations() const {
     QVector<Continuation> out;
     out.reserve(nv.childCount);
     for (int i = 0; i < nv.childCount; i++){
-        out.append({nv.children[i].moveCode, nv.children[i].count});
+        quint32 count = nv.children[i].count;
+        quint32 whiteWins = nv.children[i].whiteWins;
+        quint32 draws = nv.children[i].draws;
+        quint32 blackWins = count - whiteWins - draws;  
+        
+        float whitePct = (count > 0) ? (float)whiteWins / count * 100.0f : 0.0f;
+        float drawPct = (count > 0) ? (float)draws / count * 100.0f : 0.0f;
+        float blackPct = (count > 0) ? (float)blackWins / count * 100.0f : 0.0f;
+            
+        out.append({nv.children[i].moveCode,  count, whitePct, drawPct, blackPct});
     }
     return out;
+}
+
+QVector<int> OpeningTree::getIds() const {
+    QVector<int> result;
+    collectGameIds(mCurOffset, result);
+    return result;
+}
+
+void OpeningTree::collectGameIds(quint64 nodeOffset, QVector<int>& ids) const {
+    NodeView nv = readNode(nodeOffset);
+    
+    const char* p = reinterpret_cast<const char*>(nv.children) + (nv.childCount * sizeof(ChildEntry));
+    quint8 gameIdCount;
+    std::memcpy(&gameIdCount, p, 1); p += 1;
+    
+    for (int i = 0; i < gameIdCount; i++) {
+        int gameId;
+        std::memcpy(&gameId, p, 4); p += 4;
+        if (!ids.contains(gameId)) {
+            ids.append(gameId);
+        }
+    }
+    
+    // recursively check
+    for (int i = 0; i < nv.childCount; i++) {
+        collectGameIds(nv.children[i].offset, ids);
+    }
 }
 
 void OpeningTree::deleteSubtree(BuildNode* n) {
@@ -130,7 +194,7 @@ void OpeningTree::assignOffsets(){
     for(int i = 0; i < mBfsOrder.size(); i++){
         BuildNode* n = mBfsOrder[i];
         mOffsets[n] = nextOff;
-        quint64 size = 4 + 4 + quint64(n->children.size()) * (2+4+8);
+        quint64 size = 4 + 4 + 4 + 1 + quint64(n->children.size()) * (2+4+4+4+8) + 1 + quint64(n->gameIds.size()) * 4;
         nextOff += size;
         for(auto& pr: n -> children) mBfsOrder.append(pr.second);
     }
@@ -140,7 +204,9 @@ OpeningTree::NodeView OpeningTree::readNode(quint64 off) const {
     const char* p = static_cast<const char*>(mMappedBase) + off;
     NodeView nv;
     std::memcpy(&nv.gamesReached, p, 4);  p += 4;
-    std::memcpy(&nv.childCount,   p, 4);  p += 4;
+    std::memcpy(&nv.whiteWins, p, 4);   p += 4;
+    std::memcpy(&nv.draws, p, 4);       p += 4;
+    std::memcpy(&nv.childCount, p, 1);  p += 1;
     nv.children = reinterpret_cast<const ChildEntry*>(p);
 
     return nv;
@@ -150,7 +216,6 @@ OpeningTree::NodeView OpeningTree::readNode(quint64 off) const {
 OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
 {   
-
     //load opening book
     mOpeningBookLoaded = mTree.load("./openings.bin");
 
@@ -158,9 +223,10 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     //ui
     //
 
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(6, 6, 6, 6);
-    mainLayout->setSpacing(4);
+    QHBoxLayout* mainLayout = new QHBoxLayout();
+
+    //moves list side
+    QVBoxLayout* listsLayout = new QVBoxLayout();
 
     mPositionLabel = new QLabel("Starting Position");
     mPositionLabel->setStyleSheet("font-weight: bold; font-size: 13px;");
@@ -169,47 +235,67 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mStatsLabel->setStyleSheet("font-size: 12px;"); 
 
     mMovesList = new QTreeWidget();
-    mMovesList->setHeaderLabels(QStringList() << "Move" << "Games" << "Win %" << "Score");
+    mMovesList->setHeaderLabels(QStringList() << "Move" << "Games" << "Win %");
     mMovesList->setRootIsDecorated(false);
     mMovesList->setAlternatingRowColors(true);
     mMovesList->setSortingEnabled(true);
     mMovesList->sortByColumn(1, Qt::DescendingOrder);
     mMovesList->setMinimumHeight(150);
 
-    QHeaderView* header = mMovesList->header();
-    header->setSectionResizeMode(QHeaderView::ResizeToContents);
-    header->setStretchLastSection(true);
-    header->setMinimumSectionSize(70);
-    header->resizeSection(0, 70);   
-    header->resizeSection(1, 70);   
-    header->resizeSection(2, 70);   
-    header->resizeSection(3, 70);   
+    listsLayout->addWidget(mPositionLabel);
+    listsLayout->addWidget(mStatsLabel);
+    listsLayout->addWidget(mMovesList);
+    mainLayout->addLayout(listsLayout);
+    
+    
+    //games list side
+    mGamesLabel = new QLabel(tr("Games"));
+    mGamesLabel->setStyleSheet("font-weight: bold; font-size: 12px;");
+    
+    mGamesList = new QTableWidget();
+    mGamesList->setColumnCount(7);  
+    mGamesList->setHorizontalHeaderLabels(QStringList() << "White" << "WhiteElo" << "Black" << "BlackElo" << "Result" << "Date" << "Event");
+    mGamesList->setAlternatingRowColors(true);
+    mGamesList->setSelectionBehavior(QAbstractItemView::SelectRows);
+    mGamesList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    mGamesList->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    mGamesList->horizontalHeader()->setStretchLastSection(true);
+    mGamesList->setMinimumHeight(150);
+    mGamesList->setMinimumWidth(400);
+    
+    QVBoxLayout* gamesLayout = new QVBoxLayout();
+    gamesLayout->addWidget(mGamesLabel);
+    gamesLayout->addWidget(mGamesList);
+    mainLayout->addLayout(gamesLayout); 
+    
+    setLayout(mainLayout);
+    
     
     //styles
-    mMovesList->setStyleSheet(R"(
-        QTreeWidget {
+    QString styleSheet = R"(
+        QTreeWidget, QTableWidget {
             border: 1px solid palette(mid);
             border-radius: 3px;
         }
-        QTreeWidget::item {
-            height: 22px; /* Consistent row height */
+        QTreeWidget::item, QTableWidget::item {
+            height: 22px;
         }
-        QTreeWidget::item:hover {
+        QTreeWidget::item:hover, QTableWidget::item:hover {
             background: palette(highlight);
             color: palette(highlighted-text);
             opacity: 0.5;
         }
-        QTreeWidget::item:selected {
+        QTreeWidget::item:selected, QTableWidget::item:selected {
             background: palette(highlight);
             color: palette(highlighted-text);
         }
-    )");
+    )";
     
-    mainLayout->addWidget(mPositionLabel);
-    mainLayout->addWidget(mStatsLabel);
-    mainLayout->addWidget(mMovesList);
+    mMovesList->setStyleSheet(styleSheet);
+    mGamesList->setStyleSheet(styleSheet);
     
     connect(mMovesList, &QTreeWidget::itemDoubleClicked, this, &OpeningViewer::onMoveSelected);
+    connect(mGamesList, &QTableWidget::cellDoubleClicked, this, &OpeningViewer::onGameSelected);
 }
 
 void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
@@ -218,6 +304,7 @@ void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
         mPositionLabel->setText(tr("No opening database loaded"));
         mStatsLabel->setText(tr(""));
         mMovesList->clear();
+        mGamesList->clear();
         return;
     }
 
@@ -227,6 +314,8 @@ void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
         if(!mTree.play(code)){
             //no games
             mMovesList->clear();
+            mGamesList->setRowCount(0);
+            mGamesLabel->setText("Games: 0 of 0 shown");
             mStatsLabel->setText(tr("0 Games"));
             return;
         }
@@ -236,25 +325,77 @@ void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
     mStatsLabel->setText(tr("%1 Games").arg(total));
 
     mMovesList->clear();
-    for(auto cont: mTree.continuations()){
+    for(auto cont: mTree.continuations()) {
         QString uci = decodeMove(cont.moveCode);
-        addMoveToList(uci, cont.count, 0, "0");
+        addMoveToList(uci, cont.count, cont.whitePct, cont.drawPct, cont.blackPct);
     }
+    
+    updateGamesList();
 }
 
+void OpeningViewer::updateGamesList()
+{
+    mGamesList->setRowCount(0);  
+    
+    QVector<int> gameIds = mTree.getIds();
+    
+    const int MAX_GAMES_TO_SHOW = 100;
+    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIds.size(), MAX_GAMES_TO_SHOW)).arg(gameIds.size()));
+    
+    // no sorting while loading
+    mGamesList->setSortingEnabled(false);
+    
+    // add games
+    for (int i = 0; i < qMin(gameIds.size(), MAX_GAMES_TO_SHOW); i++) {
+        PGNGame game = PGNGame::loadGameHeader("./openings.headers", gameIds[i]);
+        
+        QString white, whiteElo, black, blackElo, result, date, event;
+        for (const auto& header : game.headerInfo) {
+            if (header.first == "White") white = header.second;
+            else if (header.first == "WhiteElo") whiteElo = header.second;
+            else if (header.first == "Black") black = header.second;
+            else if (header.first == "BlackElo") blackElo = header.second;
+            else if (header.first == "Date") date = header.second;
+            else if (header.first == "Event") event = header.second;
+        }
+        result = game.result;
+        
+        int row = mGamesList->rowCount();
+        mGamesList->insertRow(row);
+        
+        mGamesList->setItem(row, 0, new QTableWidgetItem(white));
+        mGamesList->setItem(row, 1, new QTableWidgetItem(whiteElo));
+        mGamesList->setItem(row, 2, new QTableWidgetItem(black));
+        mGamesList->setItem(row, 3, new QTableWidgetItem(blackElo));
+        mGamesList->setItem(row, 4, new QTableWidgetItem(result));
+        mGamesList->setItem(row, 5, new QTableWidgetItem(date));
+        mGamesList->setItem(row, 6, new QTableWidgetItem(event));
+        
+        mGamesList->item(row, 0)->setData(Qt::UserRole, gameIds[i]);
+    }
+    
+    mGamesList->setSortingEnabled(true);
+    
+}
 
 //helper
-void OpeningViewer::addMoveToList(const QString& move, int games, double winPercentage, const QString& score)
+void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct)
 {
     QTreeWidgetItem* item = new QTreeWidgetItem(mMovesList);
     
     item->setText(0, move);
     item->setText(1, QString::number(games));
-    item->setText(2, QString::number(winPercentage, 'f', 1) + "%");
-    item->setText(3, score);
+
+    //colour bars
+    QString percentText = QString("%1% / %2% / %3%").arg(whitePct, 0, 'f', 1).arg(drawPct, 0, 'f', 1).arg(blackPct, 0, 'f', 1);
+
+    item->setText(2, percentText);
+
     
-    // store move
+    // data for sorting
     item->setData(0, Qt::UserRole, move);
+    item->setData(1, Qt::UserRole, games);
+    item->setData(2, Qt::UserRole, whitePct);  
     
 
 }
@@ -265,6 +406,14 @@ void OpeningViewer::onMoveSelected(QTreeWidgetItem* item, int column)
     
     QString move = item->data(0, Qt::UserRole).toString();
     emit moveClicked(move);
+}
+
+void OpeningViewer::onGameSelected(int row, int column)
+{
+    if (row < 0 || row >= mGamesList->rowCount()) return;
+    
+    int gameId = mGamesList->item(row, 0)->data(Qt::UserRole).toInt();
+    emit gameSelected(gameId);
 }
 
 

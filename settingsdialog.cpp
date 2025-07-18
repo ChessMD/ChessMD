@@ -69,7 +69,7 @@ void SettingsDialog::onLoadPgnClicked() {
 
         OpeningTree tree;
 
-        for (int i = 0; i < database.size(); ++i) {
+        for (int i = 0; i < database.size(); i++) {
             auto &game = database[i];
             
             // every 100 games update bar
@@ -89,7 +89,12 @@ void SettingsDialog::onLoadPgnClicked() {
                 move = move->m_nextMoves.front();
                 moveCodes.push_back(OpeningViewer::encodeMove(move->lanText));
             }
-            tree.insertGame(moveCodes);
+
+            GameResult result = UNKNOWN;
+            if (game.result == "1-0") result = WHITE_WIN;
+            else if (game.result == "0-1") result = BLACK_WIN;
+            else if (game.result == "1/2-1/2") result = DRAW;
+            tree.insertGame(moveCodes, i, result);
         }
         
         progressBar->setValue(database.size());
@@ -98,7 +103,8 @@ void SettingsDialog::onLoadPgnClicked() {
         
         tree.serialize("./openings.bin");
         
-        // Remove progress bar and update final status
+        PGNGame::serializeHeaderData("./openings.headers", database);
+        
         progressBar->deleteLater();
         mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));
     }
