@@ -2,8 +2,8 @@
 April 11, 2025: File Creation
 */
 
-#ifndef ENGINEWIDGET_H
-#define ENGINEWIDGET_H
+#ifndef ENGINEVIEWER_H
+#define ENGINEVIEWER_H
 
 #include "uciengine.h"
 #include "notation.h"
@@ -70,4 +70,4 @@ private:
     int m_multiPv;
 };
 
-#endif // ENGINEWIDGET_H
+#endif // ENGINEVIEWER_H

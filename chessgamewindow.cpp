@@ -7,7 +7,7 @@ March 18, 2025: File Creation
 #include "notationviewer.h"
 #include "streamparser.h"
 #include "chessposition.h"
-#include "enginewidget.h"
+#include "engineviewer.h"
 #include "pgnsavedialog.h"
 
 #include <QDebug>
@@ -110,7 +110,9 @@ void ChessGameWindow::mainSetup(){
     notationSetup();
     // notationToolbarSetup();
     toolbarSetup();
+    // openingSetup();
     // engineSetup();
+    gameReviewSetup();
     updateEngineActions();
     openingSetup();
     setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
@@ -168,6 +170,13 @@ void ChessGameWindow::toolbarSetup()
     save->setIcon(QIcon(":/resource/img/savegame.png"));
     connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
 
+    QAction* review = m_Toolbar->addAction("Game Review");
+    review->setIcon(QIcon(":/resource/img/sparkles.png"));
+    connect(review, &QAction::triggered, this, [this]() {
+        bool visible = m_gameReviewDock->isVisible();
+        m_gameReviewDock->setVisible(!visible);
+    });
+
     m_startEngineAction = m_Toolbar->addAction("Start Engine");
     m_startEngineAction->setIcon(QIcon(":/resource/img/engine-start.png"));
     connect(m_startEngineAction, &QAction::triggered, this, &ChessGameWindow::engineSetup);
@@ -191,6 +200,7 @@ void ChessGameWindow::engineSetup()
     m_engineDock = new QDockWidget(tr("Engine"), this);
     m_engineDock->setWidget(m_engineViewer);
     m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_engineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
     if (m_notationDock){
         splitDockWidget(m_notationDock, m_engineDock, Qt::Vertical);
@@ -227,6 +237,21 @@ void ChessGameWindow::engineTeardown()
     m_engineDock = nullptr;
 
     updateEngineActions();
+}
+
+void ChessGameWindow::gameReviewSetup()
+{
+    m_gameReviewViewer = new GameReviewViewer(m_notationViewer->getRootMove(), this);
+    m_gameReviewDock = new QDockWidget(tr("Game Review"), this);
+    m_gameReviewDock->setWidget(m_gameReviewViewer);
+    m_gameReviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_gameReviewDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    m_gameReviewDock->setMinimumSize(300, 300);
+
+    addDockWidget(Qt::RightDockWidgetArea, m_gameReviewDock);
+
+    connect(m_gameReviewViewer, &GameReviewViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
+    connect(m_gameReviewViewer, &GameReviewViewer::reviewCompleted, this, [this](){m_notationViewer->refresh();});
 }
 
 void ChessGameWindow::updateEngineActions()
@@ -394,12 +419,11 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move)
 void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove> move)
 {
     if (!move.isNull() && move->m_position) {
-
+        m_notationViewer->m_selectedMove = move;
         m_positionViewer->copyFrom(*move->m_position);
         m_positionViewer->setIsPreview(false);
         emit m_positionViewer->boardDataChanged();
         emit m_positionViewer->lastMoveChanged();
-
     }
 }
 

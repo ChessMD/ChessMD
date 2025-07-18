@@ -15,6 +15,7 @@
         <file>img/engine-start.png</file>
         <file>img/engine-stop.png</file>
         <file>img/logo.png</file>
+        <file>img/sparkles.png</file>
         <file>img/engine.png</file>
         <file>img/settings.png</file>
     </qresource>

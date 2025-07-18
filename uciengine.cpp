@@ -16,7 +16,9 @@ UciEngine::UciEngine(QObject *parent)
 
 UciEngine::~UciEngine() {
     blockSignals(true);
-    if (m_proc->state() != QProcess::NotRunning) {
+    disconnect(this, nullptr, nullptr, nullptr);
+    if (m_proc && m_proc->state() != QProcess::NotRunning) {
+        m_proc->blockSignals(true);
         sendCommand("quit\n");
         m_proc->waitForFinished(500);
     }
@@ -57,6 +59,12 @@ void UciEngine::startInfiniteSearch(int maxMultiPV) {
 
 void UciEngine::stopSearch() {
     sendCommand("stop\n");
+}
+
+
+void UciEngine::goMovetime(int milliseconds) {
+    requestReady();
+    sendCommand(QString("go movetime %1\n").arg(milliseconds));
 }
 
 void UciEngine::handleReadyRead() {

@@ -151,14 +151,23 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
     QString postComment = currentMove->commentAfter;
     QString fullMove = preComment + moveStr + postComment + " ";
 
-
     drawManuallyWrappedText(painter, preComment, indent, x, y, availWidth, m_lineSpacing);
 
     if (x - indent + fm.horizontalAdvance(moveStr + ' ') > availWidth) {
         x = indent;
         y += lineHeight;
     }
+
+    QPen oldPen = painter.pen();
+    QPen colorPen = oldPen;
+    if (currentMove->annotation1 == "?!")  colorPen.setColor(QColor(247,198,49));
+    else if (currentMove->annotation1 == "?")  colorPen.setColor(QColor(255,164,89));
+    else if (currentMove->annotation1 == "??")   colorPen.setColor(QColor(250,65,45));
+    painter.setPen(colorPen);
+
+
     painter.drawText(x, y + fm.ascent(), moveStr + ' ');
+
     // Store all segments to use when highlighting moves
     MoveSegment seg = {QRect(x, y, fm.horizontalAdvance(moveStr + ' '), lineHeight), currentMove};
     m_moveSegments.append({seg});
