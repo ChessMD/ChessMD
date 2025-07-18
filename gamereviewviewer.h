@@ -3,6 +3,7 @@
 
 #include "uciengine.h"
 #include "notation.h"
+#include "chessqsettings.h"
 
 #include <QLabel>
 #include <QWidget>
@@ -10,6 +11,7 @@
 #include <QQueue>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QFileDialog>
 
 #include <QRegularExpression>
 #include <QtCharts/QChartView>
@@ -46,6 +48,8 @@ private:
     void startNextEval();
     void finalizeReview();
 
+    ChessQSettings m_settings;
+
     QLabel *m_whiteLabel;
     QLabel *m_blackLabel;
     QTableWidget *m_table;
@@ -65,6 +69,8 @@ private:
     QValueAxis* m_axisX;
     QValueAxis* m_axisY;
     QProgressBar *m_progressBar;
+    QLabel* m_engineLabel;
+    QPushButton* m_selectEngineBtn;
 
     UciEngine* m_engine;
     QQueue<PendingEval> m_pending;

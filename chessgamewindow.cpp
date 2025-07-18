@@ -248,7 +248,12 @@ void ChessGameWindow::gameReviewSetup()
     addDockWidget(Qt::RightDockWidgetArea, m_gameReviewDock);
 
     connect(m_gameReviewViewer, &GameReviewViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
-    connect(m_gameReviewViewer, &GameReviewViewer::reviewCompleted, this, [this](){m_notationViewer->refresh();});
+    connect(m_gameReviewViewer, &GameReviewViewer::reviewCompleted, this, [this](){
+        m_notationViewer->m_isEdited = true;
+        m_notationViewer->refresh();
+    });
+
+    m_gameReviewDock->setVisible(false);
 }
 
 void ChessGameWindow::updateEngineActions()

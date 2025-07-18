@@ -182,7 +182,7 @@ Rectangle {
                     anchors.fill: parent
                     color: {
                         if (!chessPosition) return "00000000";
-                        return chessPosition.isPreview ? "blue" : "yellow"
+                        return chessPosition.isPreview ? "yellow" : "blue"
                     }
                     opacity: 0.2
 

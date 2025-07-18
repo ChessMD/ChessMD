@@ -15,15 +15,12 @@
 #include <QToolTip>
 #include <QMouseEvent>
 #include <QCursor>
+#include <QOperatingSystemVersion>
 
 GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent)
     : QWidget(parent)
     , m_rootMove(rootMove)
 {
-    ChessQSettings s; s.loadSettings();
-    m_engine = new UciEngine(this);
-    m_engine->startEngine(s.getEngineFile());
-
     auto *lay = new QVBoxLayout(this);
     m_whiteLabel = new QLabel(tr("White accuracy: –"), this);
     m_blackLabel = new QLabel(tr("Black accuracy: –"), this);
@@ -72,7 +69,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_axisX->setLineVisible(false);
     m_axisY->setLabelsVisible(false);
     m_axisY->setLineVisible(false);
-    m_axisY->setRange(-6.10, 6.10);
+    m_axisY->setRange(-6.30, 6.30);
 
     m_chart->addSeries(m_lineSeries);
     m_chart->addSeries(m_pointSeries);
@@ -138,7 +135,14 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_table->horizontalHeader()->setStretchLastSection(true);
     lay->addWidget(m_table);
 
-    m_reviewBtn = new QPushButton(tr("Game Review"), this);
+    auto *engineSelectLayout = new QHBoxLayout;
+    m_engineLabel      = new QLabel(tr("Engine: <none>"), this);
+    m_selectEngineBtn  = new QPushButton(tr("Select Engine…"), this);
+    engineSelectLayout->addWidget(m_engineLabel);
+    engineSelectLayout->addWidget(m_selectEngineBtn);
+    lay->addLayout(engineSelectLayout);
+
+    m_reviewBtn = new QPushButton(tr("Start Game Review"), this);
     m_reviewBtn->setIcon(QIcon(":/resource/img/sparkles.png"));
     m_reviewBtn->setIconSize(QSize(48,48));
     m_reviewBtn->setMinimumHeight(100);
@@ -147,9 +151,54 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         "font-size: 28px; "
         "padding: 20px 40px;"
     );
-
+    m_reviewBtn->setEnabled(false);
     lay->addWidget(m_reviewBtn);
 
+    m_settings.loadSettings();
+    QString saved = m_settings.getEngineFile();
+    if (!saved.isEmpty() && QFileInfo(saved).exists()) {
+        // auto-start
+        m_engine = new UciEngine(this);
+        m_engine->startEngine(saved);
+        m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(saved).fileName()));
+        m_reviewBtn->setEnabled(true);
+    } else {
+        // no engine yet
+        m_engine = nullptr;
+        m_engineLabel->setText(tr("Engine: <none>"));
+        m_reviewBtn->setEnabled(false);
+    }
+
+    connect(m_selectEngineBtn, &QPushButton::clicked, this, [this]() {
+        QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+        QString binary;
+        QString exeDir = QCoreApplication::applicationDirPath();
+        QDir dir(exeDir);
+        if (dir.cd("engine")) {
+            // path is "<parent_of_exe>/engine"
+        } else {
+            dir = QDir(exeDir);
+        }
+
+        if (osVersion.type() == QOperatingSystemVersion::Windows)
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*.exe)"));
+        else
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*)"));
+
+        m_settings.loadSettings();
+        m_settings.setEngineFile(binary);
+        m_settings.saveSettings();
+
+        // start or restart the engine
+        if (m_engine) {
+            m_engine->quitEngine();
+        }
+        m_engine = new UciEngine(this);
+        m_engine->startEngine(binary);
+
+        m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(binary).fileName()));
+        m_reviewBtn->setEnabled(true);
+    });
 
 
     // hide UI until game review is clicked
@@ -166,6 +215,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         m_table->setVisible(true);
         m_whiteLabel->setVisible(true);
         m_blackLabel->setVisible(true);
+        m_selectEngineBtn->setVisible(false);
         reviewGame(m_rootMove);
     });
 }
@@ -225,7 +275,7 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
             return false;
         }
         qreal relX = (me->pos().x() - plotArea.left()) / plotArea.width();
-        int maxIdx = int(m_origPts.size()) - 1;
+        int maxIdx = int(m_moves.size()) - 1;
         int idx = std::clamp(qRound(relX * maxIdx), 0, maxIdx);
 
         QSharedPointer<NotationMove> selectedMove = m_moves[idx];
