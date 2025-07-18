@@ -103,7 +103,7 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
             }
 
             // Get header value
-            c++;
+            if (c != line.end()) c++;
             while (c != line.end() && *c != '"'){
                 value += *c;
                 c++;
