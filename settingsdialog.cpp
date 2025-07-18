@@ -25,8 +25,8 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
 
     mCategoryList = new QListWidget(this);
-    mCategoryList->addItem(tr("Engine"));     
-    mCategoryList->addItem(tr("Openings"));   
+    mCategoryList->addItem(tr("Engine"));
+    mCategoryList->addItem(tr("Opening"));
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
