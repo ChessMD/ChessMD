@@ -131,7 +131,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
 
     m_table = new QTableWidget(this);
     m_table->setColumnCount(5);
-    m_table->setHorizontalHeaderLabels({tr("Move #"), tr("SAN"), tr("Win% before"), tr("Win% after"), tr("Accuracy")});
+    m_table->setHorizontalHeaderLabels({tr("Move #"), tr("SAN"), tr("Win before"), tr("Win after"), tr("Accuracy")});
     m_table->horizontalHeader()->setStretchLastSection(true);
     lay->addWidget(m_table);
 
@@ -486,9 +486,9 @@ void GameReviewViewer::finalizeReview()
         int row = i;
         m_table->setItem(row, 0, new QTableWidgetItem(QString::number(i+1)));
         m_table->setItem(row, 1, new QTableWidgetItem(move->moveText));
-        m_table->setItem(row, 2, new QTableWidgetItem(QString::number(wb, 'f', 3)));
-        m_table->setItem(row, 3, new QTableWidgetItem(QString::number(wa, 'f', 3)));
-        m_table->setItem(row, 4, new QTableWidgetItem(QString::number(acc, 'f', 1)));
+        m_table->setItem(row, 2, new QTableWidgetItem((QString::number(wb*100, 'f', 3))+"%"));
+        m_table->setItem(row, 3, new QTableWidgetItem((QString::number(wa*100, 'f', 3))+"%"));
+        m_table->setItem(row, 4, new QTableWidgetItem((QString::number(acc, 'f', 1))+"%"));
     }
 
     // adjust evaluation to be white's perspective

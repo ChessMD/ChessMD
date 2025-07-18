@@ -30,7 +30,6 @@ public:
     void notationSetup();
     void notationToolbarSetup();
     void toolbarSetup();
-    void openingSetup();
 
     void mainSetup();
     void previewSetup();
@@ -48,12 +47,15 @@ protected:
 public slots:
     void engineSetup();
     void engineTeardown();
+    void openingSetup();
+    void openingTeardown();
     void gameReviewSetup();
 
     void onMoveHovered(QSharedPointer<NotationMove> move);
 
 private:
     void updateEngineActions();
+    void updateOpeningActions();
 
     NotationViewer* m_notationViewer;
     OpeningViewer* m_openingViewer;
@@ -69,6 +71,9 @@ private:
 
     QAction* m_startEngineAction;
     QAction* m_stopEngineAction;
+
+    QAction* m_openOpeningExplorerAction;
+    QAction* m_closeOpeningExplorerAction;
 
     bool m_isPreview;
 

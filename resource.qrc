@@ -19,5 +19,7 @@
         <file>img/engine.png</file>
         <file>img/settings.png</file>
         <file>img/help-circle.png</file>
+        <file>img/book.png</file>
+        <file>img/book-off.png</file>
     </qresource>
 </RCC>

@@ -30,6 +30,7 @@ March 18, 2025: File Creation
 ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     : QMainWindow{parent}
     , m_engineDock(nullptr)
+    , m_openingDock(nullptr)
 {
     setMinimumSize(1024,768);
     setGeometry(100, 100, 0, 0);
@@ -110,11 +111,11 @@ void ChessGameWindow::mainSetup(){
     notationSetup();
     // notationToolbarSetup();
     toolbarSetup();
-    // openingSetup();
     // engineSetup();
-    gameReviewSetup();
     updateEngineActions();
-    openingSetup();
+    gameReviewSetup();
+    // openingSetup();
+    updateOpeningActions();
     setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
     resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
@@ -173,6 +174,7 @@ void ChessGameWindow::toolbarSetup()
     QAction* review = m_Toolbar->addAction("Game Review");
     review->setIcon(QIcon(":/resource/img/sparkles.png"));
     connect(review, &QAction::triggered, this, [this]() {
+        if (!m_gameReviewDock) return;
         bool visible = m_gameReviewDock->isVisible();
         m_gameReviewDock->setVisible(!visible);
     });
@@ -185,6 +187,13 @@ void ChessGameWindow::toolbarSetup()
     m_stopEngineAction->setIcon(QIcon(":/resource/img/engine-stop.png"));
     connect(m_stopEngineAction, &QAction::triggered, this, &ChessGameWindow::engineTeardown);
 
+    m_openOpeningExplorerAction = m_Toolbar->addAction("Open Opening Explorer");
+    m_openOpeningExplorerAction->setIcon(QIcon(":/resource/img/book.png"));
+    connect(m_openOpeningExplorerAction, &QAction::triggered, this, &ChessGameWindow::openingSetup);
+
+    m_closeOpeningExplorerAction = m_Toolbar->addAction("Close Opening Explorer");
+    m_closeOpeningExplorerAction->setIcon(QIcon(":/resource/img/book-off.png"));
+    connect(m_closeOpeningExplorerAction, &QAction::triggered, this, &ChessGameWindow::openingTeardown);
     addToolBar(m_Toolbar);
 }
 
@@ -239,6 +248,13 @@ void ChessGameWindow::engineTeardown()
     updateEngineActions();
 }
 
+void ChessGameWindow::updateEngineActions()
+{
+    bool hasEngine = (m_engineDock != nullptr);
+    m_startEngineAction->setEnabled(!hasEngine);
+    m_stopEngineAction->setEnabled(hasEngine);
+}
+
 void ChessGameWindow::gameReviewSetup()
 {
     m_gameReviewViewer = new GameReviewViewer(m_notationViewer->getRootMove(), this);
@@ -259,23 +275,18 @@ void ChessGameWindow::gameReviewSetup()
     m_gameReviewDock->setVisible(false);
 }
 
-void ChessGameWindow::updateEngineActions()
-{
-    bool hasEngine = (m_engineDock != nullptr);
-    m_startEngineAction->setEnabled(!hasEngine);
-    m_stopEngineAction->setEnabled(hasEngine);
-}
-
 void ChessGameWindow::openingSetup()
 {
+    if (m_openingViewer){
+        return;
+    }
+
     m_openingViewer = new OpeningViewer(this);
     m_openingViewer->updatePosition(QVector<QString>());
-
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
     m_openingDock->setWidget(m_openingViewer);
     m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
     m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    
     addDockWidget(Qt::BottomDockWidgetArea, m_openingDock);
     
     connect(m_notationViewer, &NotationViewer::moveSelected, 
@@ -300,7 +311,33 @@ void ChessGameWindow::openingSetup()
             }
         });
 
+    updateOpeningActions();
+}
 
+
+void ChessGameWindow::openingTeardown()
+{
+    if (!m_openingViewer){
+        return;
+    }
+
+    disconnect(m_notationViewer, &NotationViewer::moveSelected, nullptr, nullptr);
+    disconnect(m_openingViewer,  &OpeningViewer::moveClicked, nullptr, nullptr);
+
+    removeDockWidget(m_openingDock);
+    m_openingDock->setWidget(nullptr);
+    delete m_openingDock;
+    m_openingDock = nullptr;
+    m_openingViewer = nullptr;
+
+    updateOpeningActions();
+}
+
+void ChessGameWindow::updateOpeningActions()
+{
+    bool hasOpening = (m_openingDock != nullptr);
+    m_openOpeningExplorerAction->setEnabled(!hasOpening);
+    m_closeOpeningExplorerAction->setEnabled(hasOpening);
 }
 
 // Builds the notation toolbar with notation controls
