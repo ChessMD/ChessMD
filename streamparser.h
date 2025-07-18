@@ -18,11 +18,9 @@ public:
     std::vector<PGNGame> parseDatabase();
     
     bool parseNextGame(PGNGame& game);
-    void parseSimplifiedBodyText(const QString& bodyText, QVector<QString>& moves);
 
 private:
     std::istream &streamBuffer;
-    // bool skipToNextGame();
 };
 
 void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove);

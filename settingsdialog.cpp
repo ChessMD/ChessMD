@@ -52,7 +52,7 @@ void SettingsDialog::onLoadPgnClicked() {
         // progress bar
         QProgressBar* progressBar = new QProgressBar(this);
         QVBoxLayout* openingsLayout = qobject_cast<QVBoxLayout*>(mStackedWidget->currentWidget()->layout());
-        openingsLayout->insertWidget(2, progressBar); // Insert before the stretch
+        openingsLayout->insertWidget(2, progressBar); 
         
         std::ifstream ss(file.toStdString());
         if(ss.fail()) {

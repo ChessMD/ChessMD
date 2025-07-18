@@ -130,26 +130,7 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
     return database;
 }
 
-// Fast move extraction for simple PGN without variations
-void StreamParser::parseSimplifiedBodyText(const QString& bodyText, QVector<QString>& moves) {
-    moves.clear();
-    
-    // Simple regex to extract moves - matches algebraic notation
-    QRegularExpression moveRegex(R"([NBRQK]?[a-h]?[1-8]?x?[a-h][1-8](?:=[NBRQK])?[+#]?|O-O(?:-O)?[+#]?)");
-    
-    QRegularExpressionMatchIterator it = moveRegex.globalMatch(bodyText);
-    while (it.hasNext()) {
-        QRegularExpressionMatch match = it.next();
-        QString move = match.captured(0);
-        
-        // Skip move numbers and results
-        if (!move.contains(QRegularExpression(R"(\d+\.|\*|1-0|0-1|1/2-1/2)"))) {
-            moves.append(move);
-        }
-    }
-}
-
-// Parse a single game from the stream
+// Parse a single game from the stream 
 bool StreamParser::parseNextGame(PGNGame& game) {
     game.headerInfo.clear();
     game.bodyText.clear();
@@ -196,6 +177,13 @@ bool StreamParser::parseNextGame(PGNGame& game) {
     }
     
     game.bodyText = QString::fromStdString(bodyText);
+    
+    // Parse the body text into the notation tree structure
+    if (!game.bodyText.isEmpty()) {
+        parseBodyText(game.bodyText, game.rootMove);
+        game.isParsed = true;
+    }
+    
     return true;
 }
 
