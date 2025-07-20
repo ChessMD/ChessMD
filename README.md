@@ -1,6 +1,6 @@
 # Chess Database Viewer
 
-A Qt-based chess game and database viewer. This application allows users to browse, manage, and analyze chess games stored in `.pgn` files, offering features such as search, filtering, variation tracking, and engine analysis.
+A Qt-based chess game and database viewer. This application allows users to browse, manage, and analyze chess games stored in `.pgn` files, offering features such as filtering, opening analysis, variation tracking, engine analysis, and game review.
 
 ![Figure 2.1b](screenshots/Figure_2.1b.png)
 ![Figure 2.1c](screenshots/Figure_2.1c.png)
@@ -11,18 +11,26 @@ A Qt-based chess game and database viewer. This application allows users to brow
 - Visual game preview and board interaction
 - Add, delete, and navigate moves & variations
 - UCI engine support for real-time position analysis
+- Explore openings and statistics from an opening database
+- Game review including accuracy and move evaluation
 - Multi-tab navigation for parallel games and databases
 
 ## User Guide
 
 For detailed instructions on how to use the software, see the [User Guide](./user-guide.md).
 
-## Requirements
+## Download Link
+
+Download from [chessmd.org](https://chessmd.org/download)
+
+## Building Locally
+
+### Requirements
 
 - Qt 6.5 or higher
 - C++17
 
-## Building
+### Building
 
 To build the project:
 
