@@ -14,12 +14,12 @@ This is the database library, the main menu of the software which consists of a 
 **Figure 2.1b**: Database menu  
 ![Figure 2.1b](screenshots/Figure_2.1b.png)
 
-In the database menu, each row on the left corresponds to a chess game and each column displays basic information about each game. On the right, there is a game preview of the currently selected game. Moreover, the user may open any chess game in the database by double-clicking any row, where a new window will appear containing the chess game:
+In the database menu, each row on the left corresponds to a chess game and each column displays basic information about each game. On the right, there is a game preview of the currently selected game which can be navigated through the notation viewer or the arrow keys. Moreover, the user may open any chess game in the database by double-clicking any row, where a new window will appear containing the chess game:
 
 **Figure 2.1c**: Game menu  
 ![Figure 2.1c](screenshots/Figure_2.1c.png)
 
-In the game menu, the user is greeted by a chess board, a notation viewer, and an engine analysis tool.
+In the game menu, the user is greeted by a chess board, a notation viewer, and options to open the Engine, Opening Explorer, and Game Review tools.
 
 ### 2.1.1 Tab System
 
@@ -41,7 +41,7 @@ The database menu displays the list of chess games in a database. It provides co
 
 ### 2.2.1 Adding Databases
 
-The user can add a new database by navigating to the main window of the program and clicking on “Add Database”, selecting a `.PGN` file from the user’s file system. Alternatively, the user can add a new database through the menu bar by selecting `Databases -> Add New Database`.  
+The user can add a new database by navigating to the main window of the program and clicking on “Add Database”, selecting a `.PGN` file from the user’s file system.
 (See **Figure 2.1a**)
 
 ### 2.2.2 Game Preview
@@ -59,7 +59,6 @@ The user may click on a column header to sort the games based on that column. Th
 ### 2.2.4 Filtering Games
 
 The user may click on the “Filter” button which will open a dialogue with filtering options. Once applied, only games that match the selected criteria will be displayed in the list.  
-The user may also click on the “Reset” button to remove all active filters.
 
 **Figure 2.2.4a**: Filter dialogue with game information  
 ![Figure 2.2.4a](screenshots/Figure_2.2.4a.png)
@@ -68,16 +67,16 @@ The user may also click on the “Reset” button to remove all active filters.
 
 ## 2.3 Board Menu
 
-The board menu provides the interface for interacting with the currently loaded chess game. It allows the user to make and navigate moves, analyze positions with engines, and view game data through the notation panel.  
+The board menu provides the interface for interacting with the currently loaded chess game. It allows the user to make and navigate moves, analyze positions with engines, explore openings through an opening database, and access the game review tool.
 (**Figure 2.1c**)
 
 ### 2.3.1 Navigating Moves
 
 The user can navigate through the moves of a game using the arrow buttons in the toolbar or the left/right keyboard shortcuts. All moves in the game tree are displayed in the notation panel, where users can also click on specific moves to jump to them directly.
 
-### 2.3.2 Exporting PGN and FEN
+### 2.3.2 Saving Edits
 
-Users can copy the current game as a PGN string by clicking “Copy PGN” or the current board as an FEN string by clicking “Copy FEN”.
+The user may save any edits to a game into its PGN file through the button in the toolbar or the shortcut `Ctrl + S`.
 
 ### 2.3.3 Making Moves and Variations
 
@@ -88,21 +87,39 @@ Additionally, if a move is made from a position that already has a continuation,
 **Figure 2.3.3a**: Variation dialogue with move selection  
 ![Figure 2.3.3a](screenshots/Figure_2.3.3a.png)
 
-### 2.3.6 Deleting Moves and Variations
+### 2.3.4 Deleting Moves and Variations
 
 The user can delete all moves after the current position including variations by clicking the toolbar button or the keyboard shortcut `]`.  
 Additionally, the user can remove the current variation by clicking the toolbar button or the keyboard shortcut `Ctrl + D`.
 
-### 2.3.7 Analyzing Positions
+### 2.3.5 Adding Comments and Annotations
 
-The active position can be analyzed using a chess engine. Upon changing a position, the engine panel will automatically provide a chess evaluation of the position along with the best move.  
-The user may also manually click the “Analyse” button to trigger an engine evaluation.
+The user can add comments and annotate moves through the right-click menu on a given move in the notation viewer.
 
-The depth of the engine can be customized for speed and strength.
+**Figure 2.3.5a**: Move annotation menu
+![Figure 2.3.5a](screenshots/Figure_2.3.5a.png)
+
+### 2.3.6 Game Review Tool
+
+The user may review their game using the Game Review tool, featuring a position evaluation graph, accuracy ratings, and win percentages after given moves.
+
+Each move represented on the graph may be quickly navigated to by left-clicking on the given move.
+
+**Figure 2.3.6a**: Game review tool
+![Figure 2.3.6a](screenshots/Figure_2.3.6a.png)
+
+### 2.3.7 Engine Analysis
+
+The active position can be analyzed using a chess engine. Upon changing a position, the engine panel will automatically provide a chess evaluation of the position along with the best move. The user can preview a given move by hovering over the move in the engine line.
+
+The user can upload an external UCI-compatible chess engine of their choice by navigating to the main window and selecting `Settings -> Select Engine File`.
 
 **Figure 2.3.7a**: Engine panel with evaluation and move suggestion  
 ![Figure 2.3.7a](screenshots/Figure_2.3.7a.png)
 
-### 2.3.8 Uploading Engines
+### 2.3.8 Opening Explorer Tool
 
-The user can upload an external UCI-compatible chess engine of their choice by navigating to the main window and selecting `Settings -> Select Engine File`.
+The user can review games achieving a given position and statistics through the opening explorer tool, which takes games from an uploaded opening database. An opening database can be uploaded by navigating to the main window and selecting `Settings -> Openings -> Upload Opening Database`.
+
+**Figure 2.3.8a**: Engine panel with evaluation and move suggestion  
+![Figure 2.3.8a](screenshots/Figure_2.3.8a.png)

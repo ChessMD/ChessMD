@@ -6,6 +6,7 @@ DatabaseFilter::DatabaseFilter(QWidget *parent)
     , ui(new Ui::DatabaseFilter)
 {
     ui->setupUi(this);
+    ui->WinsOnly->setEnabled(false);
 
 }
 
