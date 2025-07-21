@@ -20,6 +20,12 @@ set(PROJECT_SOURCES
 
 )
 
+if (WIN32)
+SET(PROJECT_SOURCES ${PROJECT_SOURCES}
+    app_ico.o
+)
+endif()
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
 
@@ -72,7 +78,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         pgnsavedialog.h pgnsavedialog.cpp
         gamereviewviewer.h gamereviewviewer.cpp
         settingsdialog.h settingsdialog.cpp
-        app_ico.o
 
     )
 # Define target properties for Android with Qt 6 as:
