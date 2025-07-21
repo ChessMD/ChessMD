@@ -20,6 +20,7 @@ March 18, 2025 - Program Creation
 #include <vector>
 #include <QResizeEvent>
 #include <QFile>
+#include <QMenu>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -44,6 +45,8 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
 
     dbView->setSelectionBehavior(QAbstractItemView::SelectRows);
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
+    dbView->setContextMenuPolicy(Qt::CustomContextMenu);
+
 
     dbModel = new DatabaseViewerModel(this);
     proxyModel = new DatabaseFilterProxyModel(parent);
@@ -55,9 +58,11 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
 
     // signals and slots
     connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
+    connect(ui->AddGameButton, &QPushButton::released, this, &DatabaseViewer::addGame);
     connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
     connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
+    connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
@@ -118,12 +123,44 @@ void DatabaseViewer::filter(){
     }
 }
 
+
 QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, const QString& notFound = QStringLiteral("?"))
 {
     for (auto &kv : hdr) {
         if (kv.first == tag) return kv.second;
     }
     return notFound;
+}
+
+void DatabaseViewer::addGame(){
+    PGNGame game; int row = dbModel->rowCount();
+    game.dbIndex = row;
+    game.headerInfo.push_back({QString("Number"), QString::number(row+1)});
+    dbModel->insertRows(row, 1);
+    dbModel->addGame(game);
+    static const QMap<QString,int> tagToCol = {
+        {"Number",   0 },
+        {"White",    1 },
+        {"WhiteElo", 2 },
+        {"Black",    3 },
+        {"BlackElo", 4 },
+        {"Result",   5 },
+        {"Moves",    6 },
+        {"Event",    7 },
+        {"Date",     8 }
+    };
+
+    for (auto it = tagToCol.constBegin(); it != tagToCol.constEnd(); ++it) {
+        const QString &tag = it.key();
+        int column = it.value();
+        QString value = findTag(game.headerInfo, tag, "");
+        QModelIndex idx = dbModel->index(row, column);
+        dbModel->setData(idx, value);
+    }
+
+    QModelIndex sourceIndex = dbModel->index(row, 0);
+    QModelIndex proxyIndex = proxyModel->mapFromSource(sourceIndex);
+    onDoubleSelected(proxyIndex);
 }
 
 // Adds game to database given PGN
@@ -280,6 +317,39 @@ void clearPreview(QWidget* container) {
         delete item;
     }
     delete oldLayout;
+}
+
+void DatabaseViewer::onContextMenu(const QPoint &pos)
+{
+    QModelIndex proxyIndex = dbView->indexAt(pos);
+    if (!proxyIndex.isValid()) return;
+
+    QMenu menu(this);
+    QAction *del = menu.addAction(tr("Delete Game"));
+    QAction *act = menu.exec(dbView->viewport()->mapToGlobal(pos));
+    if (act == del) {
+        QModelIndex srcIdx = proxyModel->mapToSource(proxyIndex);
+        int row = srcIdx.row();
+        if (dbModel->removeGame(row, QModelIndex())) {
+            // update dbView selection
+            proxyModel->invalidate();
+            dbView->clearSelection();
+
+            for (int i = row; i < dbModel->rowCount(); i++){
+                PGNGame &dbGame = dbModel->getGame(i);
+                dbGame.dbIndex--;
+                for (auto &[tag, value]: dbGame.headerInfo){
+                    if (tag == "Number"){
+                        value = QString::number(value.toInt()+1);
+                    }
+                }
+                QModelIndex idx = dbModel->index(i, 0);
+                dbModel->setData(idx, i+1);
+            }
+        }
+
+        exportPGN();
+    }
 }
 
 // Handles game preview

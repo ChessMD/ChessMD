@@ -109,8 +109,22 @@ QVariant DatabaseViewerModel::headerData(int section, Qt::Orientation orientatio
 
 
 
-void DatabaseViewerModel::addGame(const PGNGame& game) {
+void DatabaseViewerModel::addGame(const PGNGame& game)
+{
     m_gameData.append(game);
+}
+
+bool DatabaseViewerModel::removeGame(const int row, const QModelIndex &parent)
+{
+    if (row < 0 || row >= m_gameData.size()){
+        return false;
+    }
+
+    beginRemoveRows(parent, row, row);
+    m_gameData.remove(row);
+    m_data.erase(m_data.begin() + row);
+    endRemoveRows();
+    return true;
 }
 
 PGNGame& DatabaseViewerModel::getGame(int row) {

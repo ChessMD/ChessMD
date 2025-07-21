@@ -40,12 +40,14 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private slots:
+    void filter();
+    void addGame();
     void onPGNGameUpdated(PGNGame &game);
     void onDoubleSelected(const QModelIndex &proxyIndex);
     void onSingleSelected(const QModelIndex &current, const QModelIndex &previous);
+    void onContextMenu(const QPoint &pos);
 
 private:
-    void filter();
     void resizeTable();
 
     int DATA_ORDER[13] = {7, -1, 8, -1, 1, 3, 5, -1, 2, 4, 6, -1, -1};

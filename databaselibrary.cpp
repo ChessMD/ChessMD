@@ -37,12 +37,19 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     // setup model
     model = new QStandardItemModel(this);
 
-    QStandardItem *item = new QStandardItem;
-    item->setIcon(QIcon(":/resource/img/addfile.png"));
-    item->setText(QString("Add Database"));
-    item->setTextAlignment(Qt::AlignCenter);
-    item->setEditable(false);
-    model->appendRow(item);
+    QStandardItem *addDbItem = new QStandardItem;
+    addDbItem->setIcon(QIcon(":/resource/img/database-add-icon.png"));
+    addDbItem->setText(QString("Add Database"));
+    addDbItem->setTextAlignment(Qt::AlignCenter);
+    addDbItem->setEditable(false);
+    model->appendRow(addDbItem);
+
+    QStandardItem *createGameItem = new QStandardItem;
+    createGameItem->setIcon(QIcon(":/resource/img/addfile.png"));
+    createGameItem->setText(QString("New Game"));
+    createGameItem->setTextAlignment(Qt::AlignCenter);
+    createGameItem->setEditable(false);
+    model->appendRow(createGameItem);
 
     LoadGamesList();
 
@@ -96,8 +103,6 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
         host->activateTabByLabel(fileName);
     }
 
-    host->move(50, 50);
-
     // set focus to new window
     // source: https://stackoverflow.com/questions/6087887/bring-window-to-front-raise-show-activatewindow-don-t-work
     host->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
@@ -112,19 +117,63 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 void DatabaseLibrary::onClick(const QModelIndex &index)
 {
     if (index.row() == 0 && index.column() == 0) {
-
         QString file_name = QFileDialog::getOpenFileName(this, "Select a chess PGN file", "", "PGN files (*.pgn)");
-
         int row = getFileNameRow(file_name);
         if (row > 0) { // already exist
             listView->setCurrentIndex(model->index(row, 0));
             return;
         }
 
-
         AddNewGame(file_name);
         return;
+    } else if (index.row() == 1 && index.column() == 0) {
+
+        PGNGame emptyGame;
+        ChessGameWindow *gameWin = new ChessGameWindow(nullptr, emptyGame);
+        gameWin->mainSetup();
+        gameWin->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+        gameWin->show();
+
+        // Optionally connect save signal to prompt database append
+        connect(gameWin, &ChessGameWindow::PGNGameUpdated, this, [this, gameWin](PGNGame &game) {
+            QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files (*.pgn)"));
+            if (savePath.isEmpty()) {
+                return;
+            }
+
+            QFile file(savePath);
+            if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                QMessageBox::warning(this, tr("Save Error"), tr("Unable to open file for writing."));
+                return;
+            }
+
+            QTextStream out(&file);
+            out << game.serializePGN();
+            file.close();
+            AddNewGame(savePath);
+            gameWin->close();
+
+            if (!host->tabExists(savePath)) {
+                DatabaseViewer *databaseViewer = new DatabaseViewer(savePath);
+                databaseViewer->setWindowTitle(savePath);
+                ((MainWindow *)parent())->setStatusBarText(tr("Loading ..."));
+                QApplication::processEvents();
+                databaseViewer->importPGN();
+                host->addNewTab(databaseViewer, savePath);
+                ((MainWindow *)parent())->setStatusBarText("");
+                QApplication::processEvents();
+            } else {
+                host->activateTabByLabel(savePath);
+            }
+
+            host->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+            host->raise();
+            host->activateWindow(); // for Windows
+            host->show();
+        });
+        return;
     }
+
 
     QString fileName = index.data(Qt::ToolTipRole).toString();
     host->activateTabByLabel(fileName);

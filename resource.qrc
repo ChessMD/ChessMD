@@ -21,5 +21,6 @@
         <file>img/help-circle.png</file>
         <file>img/book.png</file>
         <file>img/book-off.png</file>
+        <file>img/database-add-icon.png</file>
     </qresource>
 </RCC>

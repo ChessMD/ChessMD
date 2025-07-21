@@ -26,8 +26,8 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
     void addGame(const PGNGame& game);
+    bool removeGame(const int row, const QModelIndex &parent);
     PGNGame& getGame(int row);
-    
 
 private:
     std::vector<std::vector<QString>> m_data;

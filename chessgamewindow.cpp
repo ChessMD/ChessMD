@@ -80,7 +80,7 @@ void ChessGameWindow::closeEvent(QCloseEvent *event)
     message.setIcon(QMessageBox::Question);
     message.setWindowTitle(tr("Save changes?"));
     message.setText(tr("Do you want to save your changes to this game?"));
-    auto saveBtn   = message.addButton(tr("Yes"), QMessageBox::AcceptRole);
+    auto saveBtn = message.addButton(tr("Yes"), QMessageBox::AcceptRole);
     auto noSaveBtn = message.addButton(tr("No"), QMessageBox::DestructiveRole);
     auto cancelBtn = message.addButton(tr("Cancel"), QMessageBox::RejectRole);
     message.setDefaultButton(saveBtn);
@@ -138,8 +138,36 @@ void ChessGameWindow::saveGame(){
 // Builds a dockable notation panelw
 void ChessGameWindow::notationSetup()
 {
+    QWidget *container = new QWidget(this);
+    QVBoxLayout *vlay = new QVBoxLayout(container);
+    vlay->setContentsMargins(0,0,0,0);
+    vlay->setSpacing(2);
+
+    QString white, whiteElo, black, blackElo, result, date, event;
+    for (const auto& header : m_notationViewer->m_game.headerInfo) {
+        if (header.first == "White") white = header.second;
+        else if (header.first == "WhiteElo") whiteElo = header.second;
+        else if (header.first == "Black") black = header.second;
+        else if (header.first == "BlackElo") blackElo = header.second;
+        else if (header.first == "Date") date = header.second;
+        else if (header.first == "Event") event = header.second;
+    }
+
+    QLabel *header = new QLabel(this);
+    header->setText(QString("%1 %2 vs %3 %4 %5 \n %6 %7").arg(white).arg(whiteElo).arg(black).arg(blackElo).arg(result).arg(event).arg(date));
+    header->setStyleSheet("background: #fff; font-weight: bold; font-size: 16pt; padding:4px;");
+    header->setAlignment(Qt::AlignCenter);
+    vlay->addWidget(header, 0);
+
+    QFrame *sep = new QFrame(container);
+    sep->setFrameShape(QFrame::NoFrame);
+    sep->setFrameShadow(QFrame::Sunken);
+    vlay->addWidget(sep, 0);
+
+    vlay->addWidget(m_notationViewer, 1);
+
     m_notationDock = new QDockWidget(tr("Notation"), this);
-    m_notationDock->setWidget(m_notationViewer);
+    m_notationDock->setWidget(container);
     m_notationDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_notationDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     m_notationDock->setMinimumSize(100, 0);
