@@ -17,8 +17,9 @@ Jan 15, 2025 - Program Creation
 
 int main(int argc, char *argv[])
 {
-
+#ifdef Q_OS_WIN
     qputenv("QT_QPA_PLATFORM", "windows:darkmode=0");
+#endif
     QApplication app(argc, argv);
 
     QDir dir;
