@@ -14,7 +14,7 @@ int DatabaseViewerModel::rowCount(const QModelIndex &parent) const {
 
 // Returns the number of columns
 int DatabaseViewerModel::columnCount(const QModelIndex &parent) const {
-    return m_data.empty() ? 10 : static_cast<int>(m_data[0].size());
+    return m_data.empty() ? 9 : static_cast<int>(m_data[0].size());
 }
 
 

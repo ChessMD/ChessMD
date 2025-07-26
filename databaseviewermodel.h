@@ -32,7 +32,7 @@ public:
 private:
     std::vector<std::vector<QString>> m_data;
     QVector<PGNGame> m_gameData;
-    QString headers[10] = {"Number", "White", "Elo", "Black", "Elo", "Result", "Moves", "Event", "Date"};
+    QString headers[9] = {"#", "White", "Elo", "Black", "Elo", "Result", "Moves", "Event", "Date"};
 
 
 };

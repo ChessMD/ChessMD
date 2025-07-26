@@ -46,6 +46,7 @@ private slots:
     void onDoubleSelected(const QModelIndex &proxyIndex);
     void onSingleSelected(const QModelIndex &current, const QModelIndex &previous);
     void onContextMenu(const QPoint &pos);
+    void onHeaderContextMenu(const QPoint &pos);
 
 private:
     void resizeTable();

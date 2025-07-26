@@ -21,6 +21,8 @@ March 18, 2025 - Program Creation
 #include <QResizeEvent>
 #include <QFile>
 #include <QMenu>
+#include <QCheckBox>
+#include <QVBoxLayout>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -47,6 +49,8 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
     dbView->setContextMenuPolicy(Qt::CustomContextMenu);
 
+    QHeaderView* header = dbView->horizontalHeader();
+    header->setContextMenuPolicy(Qt::CustomContextMenu);
 
     dbModel = new DatabaseViewerModel(this);
     proxyModel = new DatabaseFilterProxyModel(parent);
@@ -63,6 +67,7 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
     connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
+    connect(header, &QHeaderView::customContextMenuRequested, this, &DatabaseViewer::onHeaderContextMenu);
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
@@ -100,11 +105,11 @@ void DatabaseViewer::showEvent(QShowEvent *event) {
 
 // Custom table resizer
 void DatabaseViewer::resizeTable(){
-    const float widths[9] = {0.1, 0.15, 0.1, 0.15, 0.1, 0.1, 0.05, 0.15, 0.1};
-    QList window_width = this->ui->ContentLayout->sizes();
-
+    const float widths[9] = {0.07, 0.15, 0.1, 0.15, 0.1, 0.1, 0.08, 0.15, 0.1};
+    // QList window_width = this->ui->ContentLayout->sizes();
+    int totalWidth = dbView->viewport()->width();
     for(int i = 0; i < 9; i++){
-        dbView->setColumnWidth(i, window_width.front()*widths[i]);
+        dbView->setColumnWidth(i, totalWidth*widths[i]);
     }
 }
 
@@ -350,6 +355,45 @@ void DatabaseViewer::onContextMenu(const QPoint &pos)
 
         exportPGN();
     }
+}
+
+// Right click table header menu for updating shown headers
+void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
+    int col = dbView->horizontalHeader()->logicalIndexAt(pos);
+    if(col < 0) return;
+
+    QMenu menu(this);
+    QAction* config = menu.addAction(tr("Configure Columns"));
+
+    QAction* selected = menu.exec(dbView->horizontalHeader()->mapToGlobal(pos));
+    if(selected == config){
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Configure Columns"));
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+        QVector<QCheckBox*> boxes;
+        for(int i = 1; i < dbView->model()->columnCount(); i++){
+            QString colName = dbView->model()->headerData(i, Qt::Horizontal).toString();
+            QCheckBox* box = new QCheckBox(colName, &dialog);
+            box->setChecked(!dbView->isColumnHidden(i));
+            layout->addWidget(box);
+            boxes.append(box);
+        }
+
+        QPushButton* okBtn = new QPushButton(tr("OK"), &dialog);
+        layout->addWidget(okBtn);
+        connect(okBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+        if(dialog.exec() == QDialog::Accepted){
+            for (int i = 1; i < boxes.size() + 1; i++) {
+                dbView->setColumnHidden(i, !boxes[i-1]->isChecked());
+            }
+        }
+
+
+    }
+
+
 }
 
 // Handles game preview
