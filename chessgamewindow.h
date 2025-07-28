@@ -19,6 +19,10 @@ March 18, 2025: File Creation
 #include <QDockWidget>
 #include <QCloseEvent>
 #include <QMessageBox>
+#include <QStackedWidget>
+#include <QToolButton>
+#include <QFormLayout>
+#include <QGroupBox>
 
 // Main window that displays a chessboard, an engine, a notation viewer, and an opening viewer
 class ChessGameWindow : public QMainWindow
@@ -57,6 +61,10 @@ private:
     void updateEngineActions();
     void updateOpeningActions();
 
+    void toggleEditMode();
+    void refreshHeader();
+    void adjustFieldWidth(QLineEdit* e, int buffer = 5);
+
     NotationViewer* m_notationViewer;
     OpeningViewer* m_openingViewer;
     EngineWidget* m_engineViewer;
@@ -76,6 +84,18 @@ private:
     QAction* m_closeOpeningExplorerAction;
 
     bool m_isPreview;
+
+    QLineEdit* m_whiteField;
+    QLineEdit* m_whiteEloField;
+    QLineEdit* m_blackField;
+    QLineEdit* m_blackEloField;
+    QLineEdit* m_resultField;
+    QLineEdit* m_eventField;
+    QLineEdit* m_roundField;
+    QLineEdit* m_dateField;
+    QToolButton* m_toggleEditBtn;
+    bool m_inEditMode = false;
+
 
 private slots:
     void onMoveMade(QSharedPointer<NotationMove> move);

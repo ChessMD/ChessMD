@@ -39,7 +39,7 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
 
     QStandardItem *addDbItem = new QStandardItem;
     addDbItem->setIcon(QIcon(":/resource/img/database-add-icon.png"));
-    addDbItem->setText(QString("Add Database"));
+    addDbItem->setText(QString("Import Game"));
     addDbItem->setTextAlignment(Qt::AlignCenter);
     addDbItem->setEditable(false);
     model->appendRow(addDbItem);

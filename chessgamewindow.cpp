@@ -132,38 +132,212 @@ void ChessGameWindow::previewSetup()
 
 void ChessGameWindow::saveGame(){
     m_notationViewer->m_isEdited = false;
+    refreshHeader();
     emit PGNGameUpdated(m_notationViewer->m_game);
 }
 
-// Builds a dockable notation panelw
+void ChessGameWindow::refreshHeader() {
+    QString white, whiteElo, black, blackElo, result, round, event, date;
+    for (auto &hdr : m_notationViewer->m_game.headerInfo) {
+        if (hdr.first == "White") white = hdr.second;
+        else if (hdr.first == "WhiteElo") whiteElo = hdr.second;
+        else if (hdr.first == "Black") black = hdr.second;
+        else if (hdr.first == "BlackElo") blackElo = hdr.second;
+        else if (hdr.first == "Result") result = hdr.second;
+        else if (hdr.first == "Round") round = hdr.second;
+        else if (hdr.first == "Event") event = hdr.second;
+        else if (hdr.first == "Date") date = hdr.second;
+    }
+    m_whiteField->setText(white);
+    m_whiteEloField->setText(whiteElo);
+    m_blackField->setText(black);
+    m_blackEloField->setText(blackElo);
+    m_resultField->setText(result);
+    m_eventField->setText(event);
+    m_roundField->setText(round);
+    m_dateField->setText(date);
+    adjustFieldWidth(m_whiteField);
+    adjustFieldWidth(m_whiteEloField);
+    adjustFieldWidth(m_blackField);
+    adjustFieldWidth(m_blackEloField);
+    adjustFieldWidth(m_resultField);
+    adjustFieldWidth(m_eventField);
+    adjustFieldWidth(m_roundField);
+    adjustFieldWidth(m_dateField);
+}
+
+void ChessGameWindow::toggleEditMode() {
+    m_inEditMode = !m_inEditMode;
+    // swap pencil/check icon
+    m_toggleEditBtn->setIcon(QIcon(m_inEditMode ? ":/resource/img/check.png" : ":/resource/img/edit.png"));
+    // toggle each field
+    auto toggleField = [&](QLineEdit* e){
+        e->setProperty("editable", m_inEditMode);
+        e->setReadOnly(!m_inEditMode);
+        e->style()->unpolish(e);
+        e->style()->polish(e);
+        e->setCursor(m_inEditMode ? Qt::IBeamCursor : Qt::ArrowCursor);
+    };
+    toggleField(m_whiteField);
+    toggleField(m_whiteEloField);
+    toggleField(m_blackField);
+    toggleField(m_blackEloField);
+    toggleField(m_resultField);
+    toggleField(m_eventField);
+    toggleField(m_roundField);
+    toggleField(m_dateField);
+
+    if (!m_inEditMode) {
+        m_notationViewer->m_isEdited = true;
+        auto &hdr = m_notationViewer->m_game.headerInfo;
+        auto setOrAppend = [&](QString k, QString v){
+            for (auto &p: hdr)
+                if (p.first==k) { p.second=v; return; }
+            hdr.append({k,v});
+        };
+        setOrAppend("White", m_whiteField->text());
+        setOrAppend("WhiteElo", m_whiteEloField->text());
+        setOrAppend("Black", m_blackField->text());
+        setOrAppend("BlackElo", m_blackEloField->text());
+        setOrAppend("Result", m_resultField->text());
+        setOrAppend("Event", m_eventField->text());
+        setOrAppend("Round", m_roundField->text());
+        setOrAppend("Date", m_dateField->text());
+        refreshHeader();
+    }
+}
+
+void ChessGameWindow::adjustFieldWidth(QLineEdit* e, int buffer) {
+    QString s = e->text().isEmpty() ? e->placeholderText() : e->text();
+    int w = e->fontMetrics().horizontalAdvance(s);
+    QMargins m = e->textMargins();
+    QMargins contentsMargins = e->contentsMargins();
+    int frame = e->style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
+    int totalW = w + m.left() + m.right() + contentsMargins.left() + contentsMargins.right() + frame*2 + buffer;
+    e->setFixedWidth(totalW);
+}
+
+// Builds a dockable notation panel
 void ChessGameWindow::notationSetup()
 {
     QWidget *container = new QWidget(this);
     QVBoxLayout *vlay = new QVBoxLayout(container);
     vlay->setContentsMargins(0,0,0,0);
-    vlay->setSpacing(2);
+    vlay->setSpacing(0);
 
-    QString white, whiteElo, black, blackElo, result, date, event;
-    for (const auto& header : m_notationViewer->m_game.headerInfo) {
-        if (header.first == "White") white = header.second;
-        else if (header.first == "WhiteElo") whiteElo = header.second;
-        else if (header.first == "Black") black = header.second;
-        else if (header.first == "BlackElo") blackElo = header.second;
-        else if (header.first == "Date") date = header.second;
-        else if (header.first == "Event") event = header.second;
-    }
+    QWidget* headerWidget = new QWidget(container);
+    headerWidget->setObjectName("gameInfoHeader");
+    headerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    headerWidget->setStyleSheet(R"(
+        QWidget#gameInfoHeader {
+            background: #fff;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+    )");
+    QVBoxLayout* headerLayout = new QVBoxLayout(headerWidget);
+    headerLayout->setContentsMargins(0,0,0,0);
+    headerLayout->setSpacing(0);
 
-    QLabel *header = new QLabel(this);
-    header->setText(QString("%1 %2 vs %3 %4 %5 \n %6 %7").arg(white).arg(whiteElo).arg(black).arg(blackElo).arg(result).arg(event).arg(date));
-    header->setStyleSheet("background: #fff; font-weight: bold; font-size: 16pt; padding:4px;");
-    header->setAlignment(Qt::AlignCenter);
-    vlay->addWidget(header, 0);
+    QWidget* topRow = new QWidget(headerWidget);
+    QHBoxLayout* topHBox = new QHBoxLayout(topRow);
+    topHBox->setContentsMargins(0,0,0,0);
+    topHBox->setSpacing(0);
 
-    QFrame *sep = new QFrame(container);
-    sep->setFrameShape(QFrame::NoFrame);
-    sep->setFrameShadow(QFrame::Sunken);
-    vlay->addWidget(sep, 0);
+    auto makeSlot = [&](QLineEdit*& edit, const QString& placeholder){
+        edit = new QLineEdit(topRow);
+        edit->setReadOnly(true);
+        edit->setFrame(false);
+        edit->setCursor(Qt::ArrowCursor);
+        edit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        edit->setPlaceholderText(placeholder);
+        edit->setTextMargins(0, 0, 0, 0);
+        QPalette pal = edit->palette();
+        pal.setColor(QPalette::PlaceholderText, QColor(160, 160, 160));
+        edit->setPalette(pal);
+        edit->setStyleSheet(R"(
+            QLineEdit {
+                border: none;
+                font-size: 12pt;
+                font-weight: bold;
+                background: #fff;
+            }
+            QLineEdit[editable="true"] {
+                border: 1px solid #aaa;
+                font-size: 12pt;
+                font-weight: bold;
+                background: #fff;
+            }
+        )");
+        edit->style()->unpolish(edit);
+        edit->style()->polish(edit);
+        return edit;
+    };
 
+    makeSlot(m_whiteField, tr("White"));
+    makeSlot(m_whiteEloField, tr("WhiteElo"));
+    makeSlot(m_blackField, tr("Black"));
+    makeSlot(m_blackEloField, tr("BlackElo"));
+    makeSlot(m_resultField, tr("Result"));
+
+    topHBox->addStretch();
+    topHBox->addWidget(m_whiteField, 2);
+    topHBox->addWidget(m_whiteEloField, 1);
+    QLabel* vsLabel = new QLabel(tr("vs"), topRow);
+    vsLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    vsLabel->setContentsMargins(0, 0, 2, 0);
+    vsLabel->setStyleSheet(R"(
+        QLabel {
+            border: none;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+    )");
+    topHBox->addWidget(vsLabel, 0);
+    topHBox->addWidget(m_blackField, 2);
+    topHBox->addWidget(m_blackEloField, 1);
+    topHBox->addWidget(m_resultField, 1);
+    topHBox->addStretch();
+
+    m_toggleEditBtn = new QToolButton(topRow);
+    m_toggleEditBtn->setIcon(QIcon(":/resource/img/edit.png"));
+    m_toggleEditBtn->setIconSize(QSize(20,20));
+    m_toggleEditBtn->setAutoRaise(true);
+    m_toggleEditBtn->setToolTip(tr("Edit game info"));
+    topHBox->addWidget(m_toggleEditBtn, 0, Qt::AlignRight);
+
+    headerLayout->addWidget(topRow);
+
+    QWidget* bottomRow = new QWidget(headerWidget);
+    QHBoxLayout* botHBox = new QHBoxLayout(bottomRow);
+    botHBox->setContentsMargins(0,0,0,0);
+    botHBox->setSpacing(0);
+
+    makeSlot(m_eventField, tr("Event"));
+    makeSlot(m_roundField, tr("Round"));
+    makeSlot(m_dateField, tr("Date"));
+
+    botHBox->addStretch();
+    botHBox->addWidget(m_eventField, 3);
+    botHBox->addWidget(m_roundField, 1);
+    botHBox->addWidget(m_dateField, 1);
+    botHBox->addStretch();
+
+    headerLayout->addWidget(bottomRow);
+
+    connect(m_toggleEditBtn, &QToolButton::clicked, this, &ChessGameWindow::toggleEditMode);
+    connect(m_whiteField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_whiteField); });
+    connect(m_whiteEloField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_whiteEloField); });
+    connect(m_blackField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_blackField); });
+    connect(m_blackEloField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_blackEloField); });
+    connect(m_resultField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_resultField); });
+    connect(m_eventField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_eventField); });
+    connect(m_roundField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_roundField); });
+    connect(m_dateField, &QLineEdit::textChanged, this, [this](const QString&){ adjustFieldWidth(m_dateField); });
+    refreshHeader();
+
+    // Add headerWidget to main layout
+    vlay->addWidget(headerWidget, 0);
     vlay->addWidget(m_notationViewer, 1);
 
     m_notationDock = new QDockWidget(tr("Notation"), this);

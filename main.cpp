@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
 
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
+
     // render the main window
     MainWindow w;
     w.show();

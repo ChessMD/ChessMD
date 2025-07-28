@@ -22,5 +22,9 @@
         <file>img/book.png</file>
         <file>img/book-off.png</file>
         <file>img/database-add-icon.png</file>
+        <file>img/check.png</file>
+        <file>img/edit.png</file>
+        <file>styles/headerstyle.qss</file>
+        <file>styles/tablestyle.qss</file>
     </qresource>
 </RCC>
