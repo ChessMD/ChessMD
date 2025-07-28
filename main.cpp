@@ -8,6 +8,7 @@ Jan 15, 2025 - Program Creation
 */
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QObject>
 #include <QFile>
 #include <QDir>
@@ -20,7 +21,11 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WIN
     qputenv("QT_QPA_PLATFORM", "windows:darkmode=0");
 #endif
+
+    QCoreApplication::setOrganizationName("ChessMD");
+    QCoreApplication::setApplicationName("ChessMD");
     QApplication app(argc, argv);
+    
 
     QDir dir;
     if (!dir.exists("./opening")) dir.mkdir("./opening");

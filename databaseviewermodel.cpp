@@ -4,17 +4,17 @@
 #include <sstream>
 
 DatabaseViewerModel::DatabaseViewerModel(QObject *parent): QAbstractItemModel{parent} {
-
+    mHeaders << "#" << "White" << "Elo" << "Black" << "Elo" << "Result" << "Moves" << "Event" << "Date";
 }
 
 // Returns the number of rows
 int DatabaseViewerModel::rowCount(const QModelIndex &parent) const {
-    return static_cast<int>(m_data.size());
+    return static_cast<int>(mData.size());
 }
 
 // Returns the number of columns
 int DatabaseViewerModel::columnCount(const QModelIndex &parent) const {
-    return m_data.empty() ? 9 : static_cast<int>(m_data[0].size());
+    return mHeaders.size();
 }
 
 
@@ -27,7 +27,7 @@ QVariant DatabaseViewerModel::data(const QModelIndex &index, int role) const {
         int row = index.row();
         int col = index.column();
         if (row >= 0 && row < rowCount() && col >= 0 && col < columnCount())
-            return m_data[row][col];
+            return mData[row][col];
     }
 
     else if(role == Qt::TextAlignmentRole){
@@ -53,17 +53,17 @@ QModelIndex DatabaseViewerModel::parent(const QModelIndex &child) const{
 
 // Inserts rows given an index and a row count
 bool DatabaseViewerModel::insertRows(int row, int count, const QModelIndex &parent) {
-    if (row < 0 || row > static_cast<int>(m_data.size()))
+    if (row < 0 || row > static_cast<int>(mData.size()))
         return false;
 
     beginInsertRows(parent, row, row + count - 1);
 
     for (int i = 0; i < count; ++i) {
         std::vector<QString> newRow(columnCount());
-        if (row == static_cast<int>(m_data.size())) {
-            m_data.push_back(newRow);
+        if (row == static_cast<int>(mData.size())) {
+            mData.push_back(newRow);
         } else {
-            m_data.insert(m_data.begin() + row, newRow);
+            mData.insert(mData.begin() + row, newRow);
         }
     }
 
@@ -83,7 +83,7 @@ bool DatabaseViewerModel::setData(const QModelIndex &index, const QVariant &valu
     if (row < 0 || row >= rowCount() || col < 0 || col >= columnCount())
         return false;
 
-    m_data[row][col] = value.toString();
+    mData[row][col] = value.toString();
 
     emit dataChanged(index, index);
 
@@ -99,37 +99,51 @@ QVariant DatabaseViewerModel::headerData(int section, Qt::Orientation orientatio
     else if (role != Qt::DisplayRole)
         return QVariant();
 
-    if (orientation == Qt::Horizontal) {
+    if (orientation == Qt::Horizontal && section >= 0 && section <= mHeaders.size()) {
         // Column headers
-        return headers[section];
+        return mHeaders[section];
     }
 
     return QVariant();
+}
+
+int DatabaseViewerModel::headerIndex(const QString& header){
+    return mHeaders.indexOf(header);
+}
+
+void DatabaseViewerModel::addHeader(const QString& header){
+    if(!mHeaders.contains(header)){
+        mHeaders << header;
+        for(auto &row: mData){
+            row.push_back("");
+        }
+        emit headerDataChanged(Qt::Horizontal, mHeaders.size()-1, mHeaders.size()-1);
+    }
 }
 
 
 
 void DatabaseViewerModel::addGame(const PGNGame& game)
 {
-    m_gameData.append(game);
+    mGameData.append(game);
 }
 
 bool DatabaseViewerModel::removeGame(const int row, const QModelIndex &parent)
 {
-    if (row < 0 || row >= m_gameData.size()){
+    if (row < 0 || row >= mGameData.size()){
         return false;
     }
 
     beginRemoveRows(parent, row, row);
-    m_gameData.remove(row);
-    m_data.erase(m_data.begin() + row);
+    mGameData.remove(row);
+    mData.erase(mData.begin() + row);
     endRemoveRows();
     return true;
 }
 
 PGNGame& DatabaseViewerModel::getGame(int row) {
-    if (row >= 0 && row < m_gameData.size()){
-        return m_gameData[row];
+    if (row >= 0 && row < mGameData.size()){
+        return mGameData[row];
     }
     throw std::out_of_range("Invalid row index in getGame()");
 }

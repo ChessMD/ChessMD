@@ -23,6 +23,8 @@ March 18, 2025 - Program Creation
 #include <QMenu>
 #include <QCheckBox>
 #include <QVBoxLayout>
+#include <QLineEdit>
+#include <QSettings>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -59,6 +61,27 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     dbView->setModel(proxyModel);
     dbView->setSortingEnabled(true);
     proxyModel->sort(0, Qt::AscendingOrder);
+
+    {
+    //load header settings    
+    QSettings settings;
+    settings.beginGroup("DBViewHeaders");
+    QStringList allHeaders = settings.value("all").toStringList();
+    QStringList shownHeaders = settings.value("shown").toStringList();
+    settings.endGroup();
+
+    for(const QString& header: allHeaders){
+        dbModel->addHeader(header);
+    }
+
+    if(!shownHeaders.isEmpty()){
+        for(int i = 0; i < dbModel->columnCount(); i++){
+            QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+            dbView->setColumnHidden(i, !shownHeaders.contains(header));
+        }
+    }
+    
+    }
 
     // signals and slots
     connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
@@ -138,28 +161,18 @@ QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, 
 }
 
 void DatabaseViewer::addGame(){
-    PGNGame game; int row = dbModel->rowCount();
+    PGNGame game; 
+    int row = dbModel->rowCount();
     game.dbIndex = row;
     game.headerInfo.push_back({QString("Number"), QString::number(row+1)});
     dbModel->insertRows(row, 1);
     dbModel->addGame(game);
-    static const QMap<QString,int> tagToCol = {
-        {"Number",   0 },
-        {"White",    1 },
-        {"WhiteElo", 2 },
-        {"Black",    3 },
-        {"BlackElo", 4 },
-        {"Result",   5 },
-        {"Moves",    6 },
-        {"Event",    7 },
-        {"Date",     8 }
-    };
+    
 
-    for (auto it = tagToCol.constBegin(); it != tagToCol.constEnd(); ++it) {
-        const QString &tag = it.key();
-        int column = it.value();
+    for (int i = 0; i < dbModel->columnCount(); i++) {
+        QString tag = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
         QString value = findTag(game.headerInfo, tag, "");
-        QModelIndex idx = dbModel->index(row, column);
+        QModelIndex idx = dbModel->index(row, i);
         dbModel->setData(idx, value);
     }
 
@@ -176,19 +189,7 @@ void DatabaseViewer::importPGN()
 
     // parse PGN and get headers
     StreamParser parser(file);
-
     std::vector<PGNGame> database = parser.parseDatabase();
-    static const QMap<QString,int> tagToCol = {
-        {"Number",   0 },
-        {"White",    1 },
-        {"WhiteElo", 2 },
-        {"Black",    3 },
-        {"BlackElo", 4 },
-        {"Result",   5 },
-        {"Moves",    6 },
-        {"Event",    7 },
-        {"Date",     8 }
-    };
 
     // iterate through parsed pgn
     for(auto &game: database){
@@ -198,11 +199,11 @@ void DatabaseViewer::importPGN()
             game.dbIndex = row;
             dbModel->insertRow(row);
             dbModel->addGame(game);
-            for (auto it = tagToCol.constBegin(); it != tagToCol.constEnd(); ++it) {
-                const QString &tag = it.key();
-                int column = it.value();
+
+            for (int i = 0; i < dbModel->columnCount(); i++) {
+                QString tag = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
                 QString value = findTag(game.headerInfo, tag, "");
-                QModelIndex idx = dbModel->index(row, column);
+                QModelIndex idx = dbModel->index(row, i);
                 dbModel->setData(idx, value);
             }
             dbModel->setData(dbModel->index(row, 0), row+1);
@@ -250,10 +251,10 @@ void DatabaseViewer::onPGNGameUpdated(PGNGame &game)
         }
     }
 
-    for (int i = 0; i < game.headerInfo.size(); ++i) {
-        int col = DATA_ORDER[i];
-        if (col < 0) continue;
+    for (int i = 0; i < game.headerInfo.size(); i++) {
         const auto &kv = game.headerInfo[i];
+        int col = dbModel->headerIndex(kv.first);
+        if (col < 0) continue;
         QModelIndex idx = dbModel->index(game.dbIndex, col);
         dbModel->setData(idx, kv.second, Qt::EditRole);
     }
@@ -372,22 +373,60 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
         QVector<QCheckBox*> boxes;
-        for(int i = 1; i < dbView->model()->columnCount(); i++){
-            QString colName = dbView->model()->headerData(i, Qt::Horizontal).toString();
+        for(int i = 1; i < dbModel->columnCount(); i++){
+            QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
             QCheckBox* box = new QCheckBox(colName, &dialog);
             box->setChecked(!dbView->isColumnHidden(i));
             layout->addWidget(box);
             boxes.append(box);
         }
 
+        QHBoxLayout* addLayout = new QHBoxLayout();
+        QLineEdit* addEdit = new QLineEdit(&dialog);
+        QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
+        addLayout->addWidget(addEdit);
+        addLayout->addWidget(addBtn);
+        layout->addLayout(addLayout);
+
         QPushButton* okBtn = new QPushButton(tr("OK"), &dialog);
         layout->addWidget(okBtn);
         connect(okBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+        
+        //lambad to add custom header
+        connect(addBtn, &QPushButton::clicked, [&](){
+            QString newHeader = addEdit->text().trimmed();
+            if(!newHeader.isEmpty()){
+                dbModel->addHeader(newHeader);
+                QCheckBox* box = new QCheckBox(newHeader, &dialog);
+                box->setChecked(true);
+                layout->insertWidget(layout->count()-2, box);
+                boxes.append(box);
+                addEdit->clear();
+            }
+
+        });
 
         if(dialog.exec() == QDialog::Accepted){
             for (int i = 1; i < boxes.size() + 1; i++) {
                 dbView->setColumnHidden(i, !boxes[i-1]->isChecked());
             }
+            //save the new header settings
+            QSettings settings;
+            settings.beginGroup("DBViewHeaders");
+            
+            QStringList allHeaders;
+            QStringList shownHeaders;
+            for(int i = 0; i < dbModel->columnCount(); i++){
+                QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+                allHeaders << header;
+                if(!dbView->isColumnHidden(i)){
+                    shownHeaders << header;
+                }
+
+            }
+            settings.setValue("all", allHeaders);
+            settings.setValue("shown", shownHeaders);
+            settings.endGroup();
         }
 
 
