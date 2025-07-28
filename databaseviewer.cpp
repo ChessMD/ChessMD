@@ -42,7 +42,7 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     ui->gamePreview->setMaximumWidth(800);
 
     dbView->setItemDelegate(new TableDelegate(this));
-    dbView->setStyleSheet(getStyle("styles/tablestyle.qss"));
+    // dbView->setStyleSheet(getStyle(":/resource/styles/tablestyle.qss"));
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
     dbView->setMinimumWidth(500);
