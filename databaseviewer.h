@@ -41,6 +41,7 @@ protected:
 
 private slots:
     void filter();
+    void saveColumnRatios();
     void addGame();
     void onPGNGameUpdated(PGNGame &game);
     void onDoubleSelected(const QModelIndex &proxyIndex);
@@ -57,6 +58,8 @@ private:
     QTableView *dbView;
     DatabaseViewerModel *dbModel;
     DatabaseFilterProxyModel *proxyModel;
+
+    QVector<float> mRatios = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 
     ChessTabHost *host;
 

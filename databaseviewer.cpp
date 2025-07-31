@@ -25,6 +25,7 @@ March 18, 2025 - Program Creation
 #include <QVBoxLayout>
 #include <QLineEdit>
 #include <QSettings>
+#include <QLayoutItem>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -77,7 +78,7 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     if(!shownHeaders.isEmpty()){
         for(int i = 0; i < dbModel->columnCount(); i++){
             QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-            dbView->setColumnHidden(i, !shownHeaders.contains(header));
+            if(!shownHeaders.contains(header)) dbView->setColumnWidth(i, 0);
         }
     }
     
@@ -91,6 +92,7 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
     connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
     connect(header, &QHeaderView::customContextMenuRequested, this, &DatabaseViewer::onHeaderContextMenu);
+    connect(header, &QHeaderView::sectionResized, this, &DatabaseViewer::saveColumnRatios);
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
@@ -128,12 +130,39 @@ void DatabaseViewer::showEvent(QShowEvent *event) {
 
 // Custom table resizer
 void DatabaseViewer::resizeTable(){
-    const float widths[9] = {0.07, 0.15, 0.1, 0.15, 0.1, 0.1, 0.08, 0.15, 0.1};
-    // QList window_width = this->ui->ContentLayout->sizes();
-    int totalWidth = dbView->viewport()->width();
-    for(int i = 0; i < 9; i++){
-        dbView->setColumnWidth(i, totalWidth*widths[i]);
+    // qDebug() << ratios.size();
+    // for(auto i: ratios) qDebug() << i;
+    // if(ratios.size() != dbModel->columnCount()) qDebug() << "ratios no match";
+
+    float sum = 0.0f;
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        if(dbView->columnWidth(i) != 0) sum += mRatios[i];
     }
+
+    int totalWidth = dbView->viewport()->width();
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        if(dbView->columnWidth(i) != 0) dbView->setColumnWidth(i, totalWidth*mRatios[i]/sum);
+    }
+}
+
+void DatabaseViewer::saveColumnRatios(){
+    int cols = dbModel->columnCount();
+    int totalWidth = dbView->viewport()->width();
+    QVector<float> ratios;
+    for(int i = 0; i < cols; i++){
+        if(dbView->columnWidth(i) != 0){        
+            float ratio = float(dbView->columnWidth(i)) / float(totalWidth);
+            ratios.append(ratio);
+        }
+        else{
+            ratios.append(mRatios[i]);
+        }
+    }
+    QSettings settings;
+    settings.beginGroup("DbViewHeaders");
+    settings.setValue("ratios", QVariant::fromValue(ratios));
+    settings.endGroup();
+
 }
 
 // Handles custom filters
@@ -150,7 +179,6 @@ void DatabaseViewer::filter(){
         proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
     }
 }
-
 
 QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, const QString& notFound = QStringLiteral("?"))
 {
@@ -373,14 +401,32 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
         QVector<QCheckBox*> boxes;
-        for(int i = 1; i < dbModel->columnCount(); i++){
-            QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-            QCheckBox* box = new QCheckBox(colName, &dialog);
-            box->setChecked(!dbView->isColumnHidden(i));
-            layout->addWidget(box);
-            boxes.append(box);
-        }
 
+        //lambda to build the checkboxes in proper order
+        auto rebuildBoxes = [&](){
+            QLayoutItem* child;
+            
+            //delete everything
+            while((child = layout -> takeAt(0)) != nullptr){
+                if(child->widget()) delete child->widget();
+                delete child;
+            }
+            boxes.clear();
+
+            //readd in proepr order
+            for(int i = 0; i < dbModel->columnCount(); i++){
+                QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+                QCheckBox* box = new QCheckBox(colName, &dialog);
+                box->setChecked(dbView->columnWidth(i) != 0);
+                layout->addWidget(box);
+                boxes.append(box);
+            }
+
+        };
+
+        rebuildBoxes();
+
+        //ui
         QHBoxLayout* addLayout = new QHBoxLayout();
         QLineEdit* addEdit = new QLineEdit(&dialog);
         QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
@@ -397,19 +443,19 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             QString newHeader = addEdit->text().trimmed();
             if(!newHeader.isEmpty()){
                 dbModel->addHeader(newHeader);
-                QCheckBox* box = new QCheckBox(newHeader, &dialog);
-                box->setChecked(true);
-                layout->insertWidget(layout->count()-2, box);
-                boxes.append(box);
                 addEdit->clear();
+                rebuildBoxes();
             }
 
         });
 
         if(dialog.exec() == QDialog::Accepted){
-            for (int i = 1; i < boxes.size() + 1; i++) {
-                dbView->setColumnHidden(i, !boxes[i-1]->isChecked());
+            for (int i = 0; i < boxes.size(); i++) {
+                if(!boxes[i]->isChecked()) dbView->setColumnWidth(i, 0);
+                else dbView->setColumnWidth(i, 1);
             }
+            resizeTable();
+
             //save the new header settings
             QSettings settings;
             settings.beginGroup("DBViewHeaders");
@@ -419,7 +465,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             for(int i = 0; i < dbModel->columnCount(); i++){
                 QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
                 allHeaders << header;
-                if(!dbView->isColumnHidden(i)){
+                if(dbView->columnWidth(i) != 0){
                     shownHeaders << header;
                 }
 

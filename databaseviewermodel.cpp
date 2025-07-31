@@ -113,10 +113,13 @@ int DatabaseViewerModel::headerIndex(const QString& header){
 
 void DatabaseViewerModel::addHeader(const QString& header){
     if(!mHeaders.contains(header)){
+        int newCol = mHeaders.size();
+        beginInsertColumns(QModelIndex(), newCol, newCol);
         mHeaders << header;
         for(auto &row: mData){
             row.push_back("");
         }
+        endInsertColumns();
         emit headerDataChanged(Qt::Horizontal, mHeaders.size()-1, mHeaders.size()-1);
     }
 }
