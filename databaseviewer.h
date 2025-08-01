@@ -7,6 +7,7 @@
 #include "databaseviewermodel.h"
 #include "databasefilterproxymodel.h"
 #include "pgngamedata.h"
+#include "pgnsaveworker.h"
 
 #include <QTextEdit>
 #include <QSortFilterProxyModel>
@@ -35,6 +36,9 @@ public:
     void exportPGN();
     void setWindowTitle(QString text);
 
+signals:
+    void saveRequested(const QString &filePath, const QVector<PGNGame> &database);
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -61,6 +65,9 @@ private:
     ChessTabHost *host;
 
     QString m_filePath;
+
+    QThread* m_saveThread;
+    PGNSaveWorker* m_saveWorker;
 };
 
 #endif // DATABASEVIEWER_H

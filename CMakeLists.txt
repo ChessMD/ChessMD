@@ -79,6 +79,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         gamereviewviewer.h gamereviewviewer.cpp
         settingsdialog.h settingsdialog.cpp
         styles/headerstyle.qss
+        pgnsaveworker.h pgnsaveworker.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

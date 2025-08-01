@@ -1,23 +1,30 @@
 #include <QFileDialog>
 #include <QOperatingSystemVersion>
 
-#include "chesstabhost.h"
 #include "databaselibrary.h"
-#include "chessqsettings.h"
-
 #include "mainwindow.h"
 #include "settingsdialog.h"
 
 #include <QToolBar>
+#include <QToolButton>
+#include <QLabel>
 #include <QAction>
+#include <QHBoxLayout>
 
 MainWindow::MainWindow()
 {
 
     m_dbLibrary = new DatabaseLibrary(this);
     setStatusBar(new QStatusBar);
-    setCentralWidget(m_dbLibrary);
-    setupSidebar();
+    setupToolbar();
+    QWidget* container = new QWidget(this);
+    QHBoxLayout* h = new QHBoxLayout(container);
+    h->setContentsMargins(0,0,0,0);
+    h->setSpacing(0);
+    QWidget* sidebarWidget = setupSidebar();
+    h->addWidget(sidebarWidget, 0);
+    h->addWidget(m_dbLibrary, 1);
+    setCentralWidget(container);
     setMinimumSize(800,600);
 }
 
@@ -26,16 +33,45 @@ void MainWindow::setStatusBarText(const QString &text)
     statusBar()->showMessage(text);
 }
 
-void MainWindow::setupSidebar() {
-    QToolBar* sidebar = new QToolBar(this);
-    sidebar->setOrientation(Qt::Vertical);
-    sidebar->setMovable(false);
-    sidebar->setFloatable(false);
-    sidebar->setIconSize(QSize(32, 32));
-    sidebar->setFixedWidth(48);
-    
-    sidebar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+void MainWindow::setupToolbar() {
+    QToolBar* toolbar = new QToolBar(this);
+    toolbar->setOrientation(Qt::Horizontal);
+    toolbar->setMovable(false);
+    toolbar->setFloatable(false);
+    toolbar->setIconSize(QSize(32,32));
+    toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
+    QAction* importAct = new QAction(QIcon(":/resource/img/database-upload-icon.png"), tr("Import Database"), this);
+    importAct->setToolTip(tr("Import Database"));
+    connect(importAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::importDatabase);
+    toolbar->addAction(importAct);
+
+    QAction* newDbAct = new QAction(QIcon(":/resource/img/database-add-icon.png"), tr("New Database"), this);
+    newDbAct->setToolTip(tr("New Database"));
+    connect(newDbAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newDatabase);
+    toolbar->addAction(newDbAct);
+
+    QAction* newBoardAct = new QAction(QIcon(":/resource/img/board-icon.png"), tr("New Board"), this);
+    newBoardAct->setToolTip(tr("New Chessboard"));
+    connect(newBoardAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newChessboard);
+    toolbar->addAction(newBoardAct);
+
+    QWidget* spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    toolbar->addWidget(spacer);
+
+    addToolBar(Qt::TopToolBarArea, toolbar);
+}
+
+
+QWidget* MainWindow::setupSidebar() {
+    QWidget* sidebar = new QWidget(this);
+    sidebar->setFixedWidth(48);
+    sidebar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    QVBoxLayout* v = new QVBoxLayout(sidebar);
+    v->setContentsMargins(0,0,0,0);
+    v->setSpacing(0);
+    v->addStretch();
 
     //center icons
     sidebar->setStyleSheet(R"(
@@ -51,13 +87,14 @@ void MainWindow::setupSidebar() {
     //spacer to put settings at bottom
     QWidget* spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    spacer->setMinimumHeight(10); 
-    sidebar->addWidget(spacer);
+    spacer->setMinimumHeight(10);
+    v->addWidget(spacer);
 
     QToolButton* aboutButton = new QToolButton(this);
     aboutButton->setIcon(QIcon(":/resource/img/help-circle.png"));
     aboutButton->setToolTip(tr("About ChessMD"));
     aboutButton->setIconSize(QSize(32,32));
+    aboutButton->setAutoRaise(true);
     connect(aboutButton, &QToolButton::clicked, this, [this](){
         QMessageBox msg(this);
         msg.setWindowTitle(tr("About ChessMD"));
@@ -80,7 +117,7 @@ void MainWindow::setupSidebar() {
 
         msg.exec();
     });
-    sidebar->addWidget(aboutButton);
+    v->addWidget(aboutButton);
 
 
     // settings
@@ -90,15 +127,10 @@ void MainWindow::setupSidebar() {
     settingsButton->setIconSize(QSize(32,32));
     settingsButton->setAutoRaise(true);
     connect(settingsButton, &QToolButton::clicked, this, &MainWindow::onSettings);
-    sidebar->addWidget(settingsButton);
+    v->addWidget(settingsButton);
+    v->addSpacing(5);
 
-    // bottom spacer
-    QWidget* bottomSpacer = new QWidget(this);
-    bottomSpacer->setFixedHeight(5);
-    sidebar->addWidget(bottomSpacer);
-
-    // add sidebar to the left
-    addToolBar(Qt::LeftToolBarArea, sidebar);
+    return sidebar;
 }
 
 void MainWindow::showEvent(QShowEvent *ev)

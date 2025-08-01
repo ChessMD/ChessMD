@@ -21,8 +21,8 @@ protected:
     void showEvent(QShowEvent *ev) override;
 
 private:
-
-    void setupSidebar();
+    void setupToolbar();
+    QWidget* setupSidebar();
 
     DatabaseLibrary *m_dbLibrary;
     QMenuBar * m_menuBar;

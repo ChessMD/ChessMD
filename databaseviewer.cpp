@@ -21,6 +21,7 @@ March 18, 2025 - Program Creation
 #include <QResizeEvent>
 #include <QFile>
 #include <QMenu>
+#include <QThread>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -29,12 +30,12 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     , ui(new Ui::DatabaseViewer)
     , host(new ChessTabHost)
     , m_filePath(filePath)
+    , m_saveThread(new QThread(this))
+    , m_saveWorker(new PGNSaveWorker)
 {
     // connect to ui and initialization
     ui->setupUi(this);
-
     ui->ContentLayout->insertWidget(0, dbView);
-
     ui->gamePreview->setMaximumWidth(800);
 
     dbView->setItemDelegate(new TableDelegate(this));
@@ -42,11 +43,9 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
     dbView->setMinimumWidth(500);
-
     dbView->setSelectionBehavior(QAbstractItemView::SelectRows);
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
     dbView->setContextMenuPolicy(Qt::CustomContextMenu);
-
 
     dbModel = new DatabaseViewerModel(this);
     proxyModel = new DatabaseFilterProxyModel(parent);
@@ -79,11 +78,19 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     containerLayout->addWidget(embed);
     ui->gamePreview->setLayout(containerLayout);
     ui->gamePreview->show();
+
+    m_saveWorker->moveToThread(m_saveThread);
+    connect(m_saveThread, &QThread::finished, m_saveWorker,  &QObject::deleteLater);
+    m_saveThread->start();
+    connect(this, &DatabaseViewer::saveRequested, m_saveWorker, &PGNSaveWorker::requestSave);
 }
 
 // Destructor
 DatabaseViewer::~DatabaseViewer()
 {
+    m_saveWorker->requestCancel();
+    m_saveThread->quit();
+    m_saveThread->wait();
     delete ui;
 }
 
@@ -205,24 +212,18 @@ void DatabaseViewer::importPGN()
             qDebug() << "Error: no game found!";
         }
     }
+
 }
 
 void DatabaseViewer::exportPGN()
 {
-    QFile file(m_filePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, tr("Cannot write PGN"), tr("Unable to open file \"%1\" for writing.").arg(m_filePath));
-        return;
-    }
+    QVector<PGNGame> database;
+    database.reserve(dbModel->rowCount());
+    for (int i = 0; i < dbModel->rowCount(); ++i)
+        database.append(dbModel->getGame(i));
 
-    QTextStream out(&file);
-    for (int i = 0; i < dbModel->rowCount(); i++){
-        PGNGame &dbGame = dbModel->getGame(i);
-        QString PGNtext = dbGame.serializePGN();
-        out << PGNtext << "\n\n";
-    }
-
-    file.close();
+    // asynchronous save request
+    emit saveRequested(m_filePath, database);
 }
 
 void DatabaseViewer::onPGNGameUpdated(PGNGame &game)
