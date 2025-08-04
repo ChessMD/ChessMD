@@ -242,6 +242,11 @@ QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, 
 {
     for (auto &kv : hdr) {
         if (kv.first == tag) return kv.second;
+
+        //custom ones
+        if(tag == "bElo" && kv.first == "BlackElo") return kv.second;
+        if(tag == "wElo" && kv.first == "WhiteElo") return kv.second;
+
     }
     return notFound;
 }
@@ -454,12 +459,32 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
         DraggableCheckBoxContainer* container = new DraggableCheckBoxContainer(&dialog);
+
+        QStringList essentialHeaders = {"#", "White", "Black", "Result", "Event", "Date"};
         
         //readd in proper order
         for(int i = 0; i < dbModel->columnCount(); i++){
             QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
             DraggableCheckBox*  box = new DraggableCheckBox(colName, &dialog);
             box->setChecked(dbView->columnWidth(i) != 0);
+
+            if(essentialHeaders.contains(colName)){
+                box->setDeleteEnabled(false);
+                box->setDragEnabled(false);
+            }
+            connect(box, &DraggableCheckBox::deleteRequested, [=](){
+                if(!essentialHeaders.contains(colName)){
+                    int headerIndex = dbModel->headerIndex(colName);
+                    if(headerIndex >= 0){
+                        dbModel->removeHeader(headerIndex);
+                        container->removeCheckBox(box);  
+                        
+                        if(headerIndex < mRatios.size()){
+                            mRatios.removeAt(headerIndex);
+                        }
+                    }
+                }
+            });
             container->addCheckBox(box);
         }
 
@@ -468,7 +493,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         //ui
         QHBoxLayout* addLayout = new QHBoxLayout();
         QLineEdit* addEdit= new QLineEdit(&dialog);
-        QRegularExpression regex("[A-Za-z]");
+        QRegularExpression regex("[A-Za-z]{0,15}");  
         QValidator* validator = new QRegularExpressionValidator(regex, addEdit);
         addEdit->setValidator(validator);
         addEdit->setPlaceholderText("e.g ECO, WhiteTitle");
@@ -512,7 +537,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             }
 
             //visibility
-            for (int i = 0; i < boxes.size(); i++) {
+            for (int i = 0; i < dbModel->columnCount(); i++) {
                 QString headerName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
                 if(!shownHeaders.contains(headerName)) dbView->setColumnWidth(i, 0);
                 else dbView->setColumnWidth(i, 1);
@@ -555,13 +580,13 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             // for(int i = 0; i < shownHeaders.length(); i++) qDebug() << shownHeaders.at(i);
         }
     }
+
 }
 
 // Handles game preview
 void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
 {
-    if (!proxyIndex.isValid())
-        return;
+    if (!proxyIndex.isValid() || proxyIndex.row() < 0) return;
 
     // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);

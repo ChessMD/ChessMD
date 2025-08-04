@@ -4,7 +4,7 @@
 #include <sstream>
 
 DatabaseViewerModel::DatabaseViewerModel(QObject *parent): QAbstractItemModel{parent} {
-    mHeaders << "#" << "White" << "Elo" << "Black" << "Elo" << "Result" << "Moves" << "Event" << "Date";
+    mHeaders << "#" << "White" << "wElo" << "Black" << "bElo" << "Result" << "Moves" << "Event" << "Date";
 }
 
 // Returns the number of rows
@@ -122,6 +122,24 @@ void DatabaseViewerModel::addHeader(const QString& header){
         endInsertColumns();
         emit headerDataChanged(Qt::Horizontal, mHeaders.size()-1, mHeaders.size()-1);
     }
+}
+
+void DatabaseViewerModel::removeHeader(int headerIndex) {
+    if(headerIndex < 0 || headerIndex >= mHeaders.size()) return;
+    
+    beginRemoveColumns(QModelIndex(), headerIndex, headerIndex);
+    
+    mHeaders.removeAt(headerIndex);
+    
+    for(auto& row : mData) {
+        if(headerIndex < static_cast<int>(row.size())) {
+            row.erase(row.begin() + headerIndex);
+        }
+    }
+    
+    endRemoveColumns();
+    
+    emit headerDataChanged(Qt::Horizontal, 0, columnCount() - 1);
 }
 
 

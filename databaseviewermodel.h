@@ -27,6 +27,7 @@ public:
 
     int headerIndex(const QString& header);
     void addHeader(const QString& header);
+    void removeHeader(int headerIndex);
     void addGame(const PGNGame& game);
     bool removeGame(const int row, const QModelIndex &parent);
     PGNGame& getGame(int row);
