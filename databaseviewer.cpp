@@ -15,6 +15,7 @@ March 18, 2025 - Program Creation
 #include "chessposition.h"
 #include "chesstabhost.h"
 #include "pgngamedata.h"
+#include "draggablecheckbox.h"
 
 #include <fstream>
 #include <vector>
@@ -28,6 +29,8 @@ March 18, 2025 - Program Creation
 #include <QLayoutItem>
 #include <QTimer>
 #include <QThread>
+#include <QRegularExpression>
+#include <QValidator>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -447,22 +450,29 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
     if(selected == config){
         QDialog dialog(this);
         dialog.setWindowTitle(tr("Configure Columns"));
+        dialog.resize(300, 400);
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
-        QVector<QCheckBox*> boxes;
+        DraggableCheckBoxContainer* container = new DraggableCheckBoxContainer(&dialog);
         
         //readd in proper order
         for(int i = 0; i < dbModel->columnCount(); i++){
             QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-            QCheckBox* box = new QCheckBox(colName, &dialog);
+            DraggableCheckBox*  box = new DraggableCheckBox(colName, &dialog);
             box->setChecked(dbView->columnWidth(i) != 0);
-            layout->addWidget(box);
-            boxes.append(box);
+            container->addCheckBox(box);
         }
+
+        layout->addWidget(container);
 
         //ui
         QHBoxLayout* addLayout = new QHBoxLayout();
         QLineEdit* addEdit= new QLineEdit(&dialog);
+        QRegularExpression regex("[A-Za-z]");
+        QValidator* validator = new QRegularExpressionValidator(regex, addEdit);
+        addEdit->setValidator(validator);
+        addEdit->setPlaceholderText("e.g ECO, WhiteTitle");
+
         QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
         addLayout->addWidget(addEdit);
         addLayout->addWidget(addBtn);
@@ -480,10 +490,9 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
                 dbModel->addHeader(newHeader);
 
                 //insert the thing last
-                QCheckBox* box = new QCheckBox(newHeader, &dialog);
+                DraggableCheckBox* box = new DraggableCheckBox(newHeader, &dialog);
                 box->setChecked(true);
-                layout->insertWidget(layout->count()-2, box);
-                boxes.append(box);
+                container->addCheckBox(box);
 
                 addEdit->clear();
                 mRatios.append(0.1f);
@@ -491,32 +500,59 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         });
 
         if(dialog.exec() == QDialog::Accepted){
+
+            QVector<DraggableCheckBox*> boxes = container->getCheckBoxes();
+
+            QStringList columnOrder;
+            QStringList shownHeaders;
+
+            for(DraggableCheckBox* box: boxes){
+                columnOrder << box->text();
+                if(box->isChecked()) shownHeaders << box->text();
+            }
+
+            //visibility
             for (int i = 0; i < boxes.size(); i++) {
-                if(!boxes[i]->isChecked()) dbView->setColumnWidth(i, 0);
+                QString headerName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+                if(!shownHeaders.contains(headerName)) dbView->setColumnWidth(i, 0);
                 else dbView->setColumnWidth(i, 1);
             }
+
+            //order visually
+            QHeaderView* header = dbView->horizontalHeader();
+            for(int visualPos = 0; visualPos < columnOrder.size(); visualPos++){
+                QString headerName = columnOrder[visualPos];
+                int logicalIndex = dbModel->headerIndex(headerName);
+                if(logicalIndex >= 0){
+                    int currentVisualPos = header->visualIndex(logicalIndex);
+                    if(currentVisualPos != visualPos){
+                        header->moveSection(currentVisualPos, visualPos);
+                    }
+                }
+            }
+
             resizeTable();
+
+
 
             //save the new header settings
             QSettings settings;
             settings.beginGroup("DBViewHeaders");
-            
-            QStringList allHeaders;
-            QStringList shownHeaders;
-            for(int i = 0; i < dbModel->columnCount(); i++){
-                QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-                allHeaders << header;
-                if(dbView->columnWidth(i) > 0){
-                    shownHeaders << header;
-                }
-            }
-            settings.setValue("all", allHeaders);
+            settings.setValue("all", columnOrder);
             settings.setValue("shown", shownHeaders);
+
+            // QList<QVariant> ratioVariants;
+            // for(float ratio : mRatios) {
+            //     ratioVariants.append(QVariant(ratio));
+            // }
+            // settings.setValue("ratios", ratioVariants);
             settings.endGroup();
+
+
             
             mShownHeaders = shownHeaders;
 
-            for(int i = 0; i < shownHeaders.length(); i++) qDebug() << shownHeaders.at(i);
+            // for(int i = 0; i < shownHeaders.length(); i++) qDebug() << shownHeaders.at(i);
         }
     }
 }
