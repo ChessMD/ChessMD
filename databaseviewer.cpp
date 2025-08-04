@@ -112,6 +112,14 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
             mShownHeaders << header;
         }
     }
+
+    //hide hidden ones
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+        if(!mShownHeaders.contains(header)){
+            dbView->setColumnWidth(i, 0);  
+        }
+    }
     
 
     // signals and slots
@@ -497,7 +505,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             for(int i = 0; i < dbModel->columnCount(); i++){
                 QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
                 allHeaders << header;
-                if(dbView->columnWidth(i) != 0){
+                if(dbView->columnWidth(i) > 0){
                     shownHeaders << header;
                 }
             }
@@ -506,6 +514,8 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             settings.endGroup();
             
             mShownHeaders = shownHeaders;
+
+            for(int i = 0; i < shownHeaders.length(); i++) qDebug() << shownHeaders.at(i);
         }
     }
 }
