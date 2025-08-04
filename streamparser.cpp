@@ -79,6 +79,8 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
         streamBuffer.get();
     }
 
+    // return database;
+
     // PGN files can have any number of games, continue parsing until end of file
     while(!streamBuffer.eof()){
         std::string line, bodyText;

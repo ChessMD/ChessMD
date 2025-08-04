@@ -26,5 +26,7 @@
         <file>img/edit.png</file>
         <file>styles/headerstyle.qss</file>
         <file>styles/tablestyle.qss</file>
+        <file>img/database-upload-icon.png</file>
+        <file>img/board-icon.png</file>
     </qresource>
 </RCC>

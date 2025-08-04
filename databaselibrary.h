@@ -26,6 +26,11 @@ public:
 
     void AddNewGame(QString file_name);
 
+public slots:
+    void importDatabase();
+    void newDatabase();
+    void newChessboard();
+
 signals:
     void fileDoubleClicked(const QString &fileIdentifier);
 
