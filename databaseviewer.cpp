@@ -30,8 +30,6 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     , ui(new Ui::DatabaseViewer)
     , host(new ChessTabHost)
     , m_filePath(filePath)
-    , m_saveThread(new QThread(this))
-    , m_saveWorker(new PGNSaveWorker)
 {
     // connect to ui and initialization
     ui->setupUi(this);
@@ -78,31 +76,33 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     containerLayout->addWidget(embed);
     ui->gamePreview->setLayout(containerLayout);
     ui->gamePreview->show();
-
-    m_saveWorker->moveToThread(m_saveThread);
-    connect(m_saveThread, &QThread::finished, m_saveWorker,  &QObject::deleteLater);
-    m_saveThread->start();
-    connect(this, &DatabaseViewer::saveRequested, m_saveWorker, &PGNSaveWorker::requestSave);
 }
 
 // Destructor
 DatabaseViewer::~DatabaseViewer()
 {
-    m_saveWorker->requestCancel();
-    m_saveThread->quit();
-    m_saveThread->wait();
     delete ui;
 }
 
 // Window resize event handler
-void DatabaseViewer::resizeEvent(QResizeEvent *event){
+void DatabaseViewer::resizeEvent(QResizeEvent *event)
+{
     resizeTable();
 }
 
-void DatabaseViewer::showEvent(QShowEvent *event) {
+void DatabaseViewer::showEvent(QShowEvent *event)
+{
     // force render on show
     QWidget::showEvent(event);
     resizeTable();
+}
+
+void DatabaseViewer::closeEvent(QCloseEvent *event)
+{
+    if (m_saveThread && m_saveThread->isRunning()) {
+        m_saveThread->wait();
+    }
+    QWidget::closeEvent(event);
 }
 
 // Custom table resizer
@@ -218,11 +218,9 @@ void DatabaseViewer::importPGN()
 void DatabaseViewer::exportPGN()
 {
     QVector<PGNGame> database;
-    database.reserve(dbModel->rowCount());
-    for (int i = 0; i < dbModel->rowCount(); ++i)
+    for (int i = 0; i < dbModel->rowCount(); ++i){
         database.append(dbModel->getGame(i));
-
-    // asynchronous save request
+    }
     emit saveRequested(m_filePath, database);
 }
 

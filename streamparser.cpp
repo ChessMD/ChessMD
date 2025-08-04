@@ -121,7 +121,7 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
         while ((c = streamBuffer.peek()) != EOF && c != '['){
             std::string line;
             std::getline(streamBuffer, line);
-            bodyText += line + " ";
+            bodyText += line;
         }
 
         game.bodyText = QString::fromStdString(bodyText);
@@ -175,7 +175,7 @@ bool StreamParser::parseNextGame(PGNGame& game) {
     std::string bodyText;
     while ((c = streamBuffer.peek()) != EOF && c != '[') {
         std::getline(streamBuffer, line);
-        bodyText += line + " ";
+        bodyText += line;
     }
     
     game.bodyText = QString::fromStdString(bodyText);

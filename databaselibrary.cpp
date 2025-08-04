@@ -67,10 +67,11 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
 
     if (!host->tabExists(fileName)) {
         // Open new window if not previously opened
-        DatabaseViewer * databaseViewer = new DatabaseViewer(fileName);
+        DatabaseViewer* databaseViewer = new DatabaseViewer(fileName);
         databaseViewer->setWindowTitle(fileName);
-
         auto *mainWindow = qobject_cast<MainWindow*>(this->window());
+        connect(databaseViewer, &DatabaseViewer::saveRequested, mainWindow, &MainWindow::onSaveRequested);
+
         mainWindow->setStatusBarText("Loading ...");
         QApplication::processEvents();
 
@@ -160,11 +161,12 @@ void DatabaseLibrary::newChessboard()
         if (!host->tabExists(savePath)) {
             DatabaseViewer *databaseViewer = new DatabaseViewer(savePath);
             databaseViewer->setWindowTitle(savePath);
-            ((MainWindow *)parent())->setStatusBarText(tr("Loading ..."));
+            auto *mainWindow = qobject_cast<MainWindow*>(this->window());
+            mainWindow->setStatusBarText(tr("Loading ..."));
             QApplication::processEvents();
             databaseViewer->importPGN();
             host->addNewTab(databaseViewer, savePath);
-            ((MainWindow *)parent())->setStatusBarText("");
+            mainWindow->setStatusBarText("");
             QApplication::processEvents();
         } else {
             host->activateTabByLabel(savePath);

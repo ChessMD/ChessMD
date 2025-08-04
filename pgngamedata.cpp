@@ -21,10 +21,10 @@ PGNGame::PGNGame()
 void PGNGame::copyFrom(PGNGame &other)
 {
     headerInfo = other.headerInfo;
-    result     = other.result;
-    bodyText   = other.bodyText;
-    dbIndex    = other.dbIndex;
-    isParsed   = other.isParsed;
+    result = other.result;
+    bodyText = other.bodyText;
+    dbIndex = other.dbIndex;
+    isParsed = other.isParsed;
     rootMove = other.rootMove->cloneNotationTree(other.rootMove);
 }
 

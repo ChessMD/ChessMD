@@ -7,7 +7,6 @@
 #include "databaseviewermodel.h"
 #include "databasefilterproxymodel.h"
 #include "pgngamedata.h"
-#include "pgnsaveworker.h"
 
 #include <QTextEdit>
 #include <QSortFilterProxyModel>
@@ -42,6 +41,7 @@ signals:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void filter();
@@ -67,7 +67,6 @@ private:
     QString m_filePath;
 
     QThread* m_saveThread;
-    PGNSaveWorker* m_saveWorker;
 };
 
 #endif // DATABASEVIEWER_H
