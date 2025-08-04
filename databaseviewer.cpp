@@ -155,15 +155,15 @@ void DatabaseViewer::resizeTable(){
     for(int i = 0; i < dbModel->columnCount(); i++){
         if(dbView->columnWidth(i) > 0) {
             sum += mRatios[i];
-            qDebug() << mRatios[i] << sum;
+            // qDebug() << mRatios[i] << sum;
         }
     }
 
     int totalWidth = dbView->viewport()->width();
-    qDebug() << totalWidth;
+    // qDebug() << totalWidth;
     for(int i = 0; i < dbModel->columnCount(); i++){
         if(dbView->columnWidth(i) > 0) dbView->setColumnWidth(i, totalWidth*mRatios[i]/sum);
-        qDebug() <<i << totalWidth << mRatios[i] << sum;
+        // qDebug() <<i << totalWidth << mRatios[i] << sum;
     }
 
     
@@ -186,6 +186,9 @@ void DatabaseViewer::saveColumnRatios(){
     int cols = dbModel->columnCount();
     int totalWidth = dbView->viewport()->width();
     QList<QVariant> ratios;
+
+    while(mRatios.size() < cols) mRatios.append(0.1);
+
     for(int i = 0; i < cols; i++){
         if(dbView->columnWidth(i) != 0){        
             float ratio = float(dbView->columnWidth(i)) / float(totalWidth);
@@ -438,34 +441,19 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
         QVector<QCheckBox*> boxes;
-
-        //lambda to build the checkboxes in proper order
-        auto rebuildBoxes = [&](){
-            QLayoutItem* child;
-            
-            //delete everything
-            while((child = layout -> takeAt(0)) != nullptr){
-                if(child->widget()) delete child->widget();
-                delete child;
-            }
-            boxes.clear();
-
-            //readd in proepr order
-            for(int i = 0; i < dbModel->columnCount(); i++){
-                QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-                QCheckBox* box = new QCheckBox(colName, &dialog);
-                box->setChecked(dbView->columnWidth(i) != 0);
-                layout->addWidget(box);
-                boxes.append(box);
-            }
-
-        };
-
-        rebuildBoxes();
+        
+        //readd in proper order
+        for(int i = 0; i < dbModel->columnCount(); i++){
+            QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+            QCheckBox* box = new QCheckBox(colName, &dialog);
+            box->setChecked(dbView->columnWidth(i) != 0);
+            layout->addWidget(box);
+            boxes.append(box);
+        }
 
         //ui
         QHBoxLayout* addLayout = new QHBoxLayout();
-        QLineEdit* addEdit = new QLineEdit(&dialog);
+        QLineEdit* addEdit= new QLineEdit(&dialog);
         QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
         addLayout->addWidget(addEdit);
         addLayout->addWidget(addBtn);
@@ -473,17 +461,24 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
 
         QPushButton* okBtn = new QPushButton(tr("OK"), &dialog);
         layout->addWidget(okBtn);
-        connect(okBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
-        
-        //lambad to add custom header
-        connect(addBtn, &QPushButton::clicked, [&](){
-            QString newHeader = addEdit->text().trimmed();
-            if(!newHeader.isEmpty()){
-                dbModel->addHeader(newHeader);
-                addEdit->clear();
-                rebuildBoxes();
-            }
 
+
+        connect(okBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+            
+        connect(addBtn, &QPushButton::clicked, [&](){  
+            QString newHeader = addEdit->text().trimmed();
+            if(!newHeader.isEmpty() && dbModel->headerIndex(newHeader) == -1){
+                dbModel->addHeader(newHeader);
+
+                //insert the thing last
+                QCheckBox* box = new QCheckBox(newHeader, &dialog);
+                box->setChecked(true);
+                layout->insertWidget(layout->count()-2, box);
+                boxes.append(box);
+
+                addEdit->clear();
+                mRatios.append(0.1f);
+            }
         });
 
         if(dialog.exec() == QDialog::Accepted){
@@ -505,17 +500,14 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
                 if(dbView->columnWidth(i) != 0){
                     shownHeaders << header;
                 }
-
             }
             settings.setValue("all", allHeaders);
             settings.setValue("shown", shownHeaders);
             settings.endGroup();
+            
+            mShownHeaders = shownHeaders;
         }
-
-
     }
-
-
 }
 
 // Handles game preview
