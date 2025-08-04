@@ -28,6 +28,7 @@ endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
     qt_add_executable(ChessMD
         MANUAL_FINALIZATION
@@ -79,8 +80,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         gamereviewviewer.h gamereviewviewer.cpp
         settingsdialog.h settingsdialog.cpp
         styles/headerstyle.qss
-
-
+        draggablecheckbox.h draggablecheckbox.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ChessMD APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -101,6 +101,7 @@ else()
 endif()
 
 target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt6::Charts)
+target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

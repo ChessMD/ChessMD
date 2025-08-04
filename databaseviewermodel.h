@@ -4,6 +4,7 @@
 #include "pgngamedata.h"
 
 #include <QAbstractItemModel>
+#include <QStringList>
 
 // DatabaseViewerModel class is a model to store game headers
 class DatabaseViewerModel : public QAbstractItemModel
@@ -16,7 +17,6 @@ public:
     QModelIndex parent(const QModelIndex &index) const override;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -25,16 +25,17 @@ public:
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
+    int headerIndex(const QString& header);
+    void addHeader(const QString& header);
+    void removeHeader(int headerIndex);
     void addGame(const PGNGame& game);
     bool removeGame(const int row, const QModelIndex &parent);
     PGNGame& getGame(int row);
 
 private:
-    std::vector<std::vector<QString>> m_data;
-    QVector<PGNGame> m_gameData;
-    QString headers[10] = {"Number", "White", "Elo", "Black", "Elo", "Result", "Moves", "Event", "Date"};
-
-
+    std::vector<std::vector<QString>> mData;
+    QVector<PGNGame> mGameData;
+    QStringList mHeaders;
 };
 
 #endif // DATABASEVIEWERMODEL_H

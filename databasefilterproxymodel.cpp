@@ -68,7 +68,9 @@ bool DatabaseFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex
 // Custom comparator for integer sorting
 bool DatabaseFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const{
     QString headerName = sourceModel()->headerData(left.column(), Qt::Horizontal).toString();
-    if(headerName == "Number" || headerName == "Elo" || headerName == "Moves"){
+    QVector<QString> numericHeaders {"Number", "#", "Elo", "Move", "Moves"};
+
+    if(std::find(numericHeaders.begin(), numericHeaders.end(), headerName) != numericHeaders.end()){
         return sourceModel()->data(left).toString().toInt() < sourceModel()->data(right).toString().toInt();
     }
 

@@ -14,6 +14,8 @@
 #include <QWidget>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QStringList>
+#include <QTimer>
 
 class ChessTabHost;
 
@@ -45,22 +47,29 @@ protected:
 
 private slots:
     void filter();
+    void saveColumnRatios();
     void addGame();
     void onPGNGameUpdated(PGNGame &game);
     void onDoubleSelected(const QModelIndex &proxyIndex);
     void onSingleSelected(const QModelIndex &current, const QModelIndex &previous);
     void onContextMenu(const QPoint &pos);
+    void onHeaderContextMenu(const QPoint &pos);
 
 private:
     void resizeTable();
+    void resizeSplitter();
 
-    int DATA_ORDER[13] = {7, -1, 8, -1, 1, 3, 5, -1, 2, 4, 6, -1, -1};
     Ui::DatabaseViewer *ui;
 
     ChessGameWindow *m_embed;
     QTableView *dbView;
     DatabaseViewerModel *dbModel;
     DatabaseFilterProxyModel *proxyModel;
+
+    QStringList mShownHeaders;
+    QTimer *mSaveTimer;
+
+    QVector<float> mRatios;
 
     ChessTabHost *host;
 

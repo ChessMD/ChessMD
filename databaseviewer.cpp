@@ -15,13 +15,22 @@ March 18, 2025 - Program Creation
 #include "chessposition.h"
 #include "chesstabhost.h"
 #include "pgngamedata.h"
+#include "draggablecheckbox.h"
 
 #include <fstream>
 #include <vector>
 #include <QResizeEvent>
 #include <QFile>
 #include <QMenu>
+#include <QCheckBox>
+#include <QVBoxLayout>
+#include <QLineEdit>
+#include <QSettings>
+#include <QLayoutItem>
+#include <QTimer>
 #include <QThread>
+#include <QRegularExpression>
+#include <QValidator>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -45,6 +54,9 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     dbView->setSelectionMode(QAbstractItemView::SingleSelection);
     dbView->setContextMenuPolicy(Qt::CustomContextMenu);
 
+    QHeaderView* header = dbView->horizontalHeader();
+    header->setContextMenuPolicy(Qt::CustomContextMenu);
+
     dbModel = new DatabaseViewerModel(this);
     proxyModel = new DatabaseFilterProxyModel(parent);
     proxyModel->setSourceModel(dbModel);
@@ -52,14 +64,6 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     dbView->setModel(proxyModel);
     dbView->setSortingEnabled(true);
     proxyModel->sort(0, Qt::AscendingOrder);
-
-    // signals and slots
-    connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
-    connect(ui->AddGameButton, &QPushButton::released, this, &DatabaseViewer::addGame);
-    connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
-    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
-    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
-    connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
@@ -76,6 +80,64 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     containerLayout->addWidget(embed);
     ui->gamePreview->setLayout(containerLayout);
     ui->gamePreview->show();
+
+    //load header settings    
+    QSettings settings;
+    settings.beginGroup("DBViewHeaders");
+    QStringList allHeaders = settings.value("all").toStringList();
+    mShownHeaders = settings.value("shown").toStringList();
+    QVariant ratioVar = settings.value("ratios");
+    settings.endGroup();
+
+    for(const QString& header: allHeaders){
+        dbModel->addHeader(header);
+    }
+
+    if(ratioVar.isValid()){
+        QList<QVariant> ratioList = ratioVar.toList();
+        for(const QVariant& v: ratioList){
+            mRatios.append(v.toFloat());
+        }
+    }
+    
+    //in case not enough for some reason
+    while (mRatios.size() < dbModel->columnCount()){
+        mRatios.append(0.1);
+    }
+
+
+    if(mShownHeaders.isEmpty()){
+        for(int i = 0; i < dbModel->columnCount(); i++){
+            QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+            mShownHeaders << header;
+        }
+    }
+
+    //hide hidden ones
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+        if(!mShownHeaders.contains(header)){
+            dbView->setColumnWidth(i, 0);  
+        }
+    }
+    
+
+    // signals and slots
+    connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
+    connect(ui->AddGameButton, &QPushButton::released, this, &DatabaseViewer::addGame);
+    // connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
+    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
+    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
+    connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
+    connect(header, &QHeaderView::customContextMenuRequested, this, &DatabaseViewer::onHeaderContextMenu);
+
+    //save colums ratios 300ms after editing
+    mSaveTimer = new QTimer(this);
+    mSaveTimer->setSingleShot(true);
+    mSaveTimer->setInterval(300);
+    connect(mSaveTimer, &QTimer::timeout, this, &DatabaseViewer::saveColumnRatios);
+    connect(header, &QHeaderView::sectionResized, this, [this](){mSaveTimer->start();});
+    connect(header, &QHeaderView::sectionResized, this, &DatabaseViewer::resizeSplitter);
 }
 
 // Destructor
@@ -107,12 +169,58 @@ void DatabaseViewer::closeEvent(QCloseEvent *event)
 
 // Custom table resizer
 void DatabaseViewer::resizeTable(){
-    const float widths[9] = {0.1, 0.15, 0.1, 0.15, 0.1, 0.1, 0.05, 0.15, 0.1};
-    QList window_width = this->ui->ContentLayout->sizes();
-
-    for(int i = 0; i < 9; i++){
-        dbView->setColumnWidth(i, window_width.front()*widths[i]);
+    float sum = 0.0f;
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        if(dbView->columnWidth(i) > 0) {
+            sum += mRatios[i];
+            // qDebug() << mRatios[i] << sum;
+        }
     }
+
+    int totalWidth = dbView->viewport()->width();
+    // qDebug() << totalWidth;
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        if(dbView->columnWidth(i) > 0) dbView->setColumnWidth(i, totalWidth*mRatios[i]/sum);
+        // qDebug() <<i << totalWidth << mRatios[i] << sum;
+    }
+
+    
+}
+
+void DatabaseViewer::resizeSplitter(){
+    int totalColumnWidth = 0;
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        if(dbView->columnWidth(i) > 0) { 
+            totalColumnWidth += dbView->columnWidth(i);
+        }
+    }
+    
+    QList<int> sizes = ui->ContentLayout->sizes();
+    int totalSplitterWidth = sizes[0] + sizes[1];
+    ui->ContentLayout->setSizes({totalColumnWidth, totalSplitterWidth-totalColumnWidth});
+}
+
+void DatabaseViewer::saveColumnRatios(){
+    int cols = dbModel->columnCount();
+    int totalWidth = dbView->viewport()->width();
+    QList<QVariant> ratios;
+
+    while(mRatios.size() < cols) mRatios.append(0.1);
+
+    for(int i = 0; i < cols; i++){
+        if(dbView->columnWidth(i) != 0){        
+            float ratio = float(dbView->columnWidth(i)) / float(totalWidth);
+            ratios.append(QVariant(ratio));
+            mRatios[i] = ratio;
+        }
+        else{
+            ratios.append(QVariant(mRatios[i]));
+        }
+    }
+    QSettings settings;
+    settings.beginGroup("DBViewHeaders");
+    settings.setValue("ratios", ratios);
+    settings.endGroup();
 }
 
 // Handles custom filters
@@ -130,38 +238,32 @@ void DatabaseViewer::filter(){
     }
 }
 
-
 QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, const QString& notFound = QStringLiteral("?"))
 {
     for (auto &kv : hdr) {
         if (kv.first == tag) return kv.second;
+
+        //custom ones
+        if(tag == "bElo" && kv.first == "BlackElo") return kv.second;
+        if(tag == "wElo" && kv.first == "WhiteElo") return kv.second;
+
     }
     return notFound;
 }
 
 void DatabaseViewer::addGame(){
-    PGNGame game; int row = dbModel->rowCount();
+    PGNGame game; 
+    int row = dbModel->rowCount();
     game.dbIndex = row;
     game.headerInfo.push_back({QString("Number"), QString::number(row+1)});
     dbModel->insertRows(row, 1);
     dbModel->addGame(game);
-    static const QMap<QString,int> tagToCol = {
-        {"Number",   0 },
-        {"White",    1 },
-        {"WhiteElo", 2 },
-        {"Black",    3 },
-        {"BlackElo", 4 },
-        {"Result",   5 },
-        {"Moves",    6 },
-        {"Event",    7 },
-        {"Date",     8 }
-    };
+    
 
-    for (auto it = tagToCol.constBegin(); it != tagToCol.constEnd(); ++it) {
-        const QString &tag = it.key();
-        int column = it.value();
+    for (int i = 0; i < dbModel->columnCount(); i++) {
+        QString tag = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
         QString value = findTag(game.headerInfo, tag, "");
-        QModelIndex idx = dbModel->index(row, column);
+        QModelIndex idx = dbModel->index(row, i);
         dbModel->setData(idx, value);
     }
 
@@ -178,19 +280,7 @@ void DatabaseViewer::importPGN()
 
     // parse PGN and get headers
     StreamParser parser(file);
-
     std::vector<PGNGame> database = parser.parseDatabase();
-    static const QMap<QString,int> tagToCol = {
-        {"Number",   0 },
-        {"White",    1 },
-        {"WhiteElo", 2 },
-        {"Black",    3 },
-        {"BlackElo", 4 },
-        {"Result",   5 },
-        {"Moves",    6 },
-        {"Event",    7 },
-        {"Date",     8 }
-    };
 
     // iterate through parsed pgn
     for(auto &game: database){
@@ -200,11 +290,11 @@ void DatabaseViewer::importPGN()
             game.dbIndex = row;
             dbModel->insertRow(row);
             dbModel->addGame(game);
-            for (auto it = tagToCol.constBegin(); it != tagToCol.constEnd(); ++it) {
-                const QString &tag = it.key();
-                int column = it.value();
+
+            for (int i = 0; i < dbModel->columnCount(); i++) {
+                QString tag = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
                 QString value = findTag(game.headerInfo, tag, "");
-                QModelIndex idx = dbModel->index(row, column);
+                QModelIndex idx = dbModel->index(row, i);
                 dbModel->setData(idx, value);
             }
             dbModel->setData(dbModel->index(row, 0), row+1);
@@ -244,10 +334,10 @@ void DatabaseViewer::onPGNGameUpdated(PGNGame &game)
         }
     }
 
-    for (int i = 0; i < game.headerInfo.size(); ++i) {
-        int col = DATA_ORDER[i];
-        if (col < 0) continue;
+    for (int i = 0; i < game.headerInfo.size(); i++) {
         const auto &kv = game.headerInfo[i];
+        int col = dbModel->headerIndex(kv.first);
+        if (col < 0) continue;
         QModelIndex idx = dbModel->index(game.dbIndex, col);
         dbModel->setData(idx, kv.second, Qt::EditRole);
     }
@@ -351,11 +441,150 @@ void DatabaseViewer::onContextMenu(const QPoint &pos)
     }
 }
 
+// Right click table header menu for updating shown headers
+void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
+    int col = dbView->horizontalHeader()->logicalIndexAt(pos);
+    if(col < 0) return;
+
+    QMenu menu(this);
+    QAction* config = menu.addAction(tr("Configure Columns"));
+
+    QAction* selected = menu.exec(dbView->horizontalHeader()->mapToGlobal(pos));
+    if(selected == config){
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Configure Columns"));
+        dialog.resize(300, 400);
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+        DraggableCheckBoxContainer* container = new DraggableCheckBoxContainer(&dialog);
+
+        QStringList essentialHeaders = {"#", "White", "Black", "Result", "Event", "Date"};
+        
+        //readd in proper order
+        for(int i = 0; i < dbModel->columnCount(); i++){
+            QString colName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+            DraggableCheckBox*  box = new DraggableCheckBox(colName, &dialog);
+            box->setChecked(dbView->columnWidth(i) != 0);
+
+            if(essentialHeaders.contains(colName)){
+                box->setDeleteEnabled(false);
+                box->setDragEnabled(false);
+            }
+            connect(box, &DraggableCheckBox::deleteRequested, [=](){
+                if(!essentialHeaders.contains(colName)){
+                    int headerIndex = dbModel->headerIndex(colName);
+                    if(headerIndex >= 0){
+                        dbModel->removeHeader(headerIndex);
+                        container->removeCheckBox(box);  
+                        
+                        if(headerIndex < mRatios.size()){
+                            mRatios.removeAt(headerIndex);
+                        }
+                    }
+                }
+            });
+            container->addCheckBox(box);
+        }
+
+        layout->addWidget(container);
+
+        //ui
+        QHBoxLayout* addLayout = new QHBoxLayout();
+        QLineEdit* addEdit= new QLineEdit(&dialog);
+        QRegularExpression regex("[A-Za-z]{0,15}");  
+        QValidator* validator = new QRegularExpressionValidator(regex, addEdit);
+        addEdit->setValidator(validator);
+        addEdit->setPlaceholderText("e.g ECO, WhiteTitle");
+
+        QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
+        addLayout->addWidget(addEdit);
+        addLayout->addWidget(addBtn);
+        layout->addLayout(addLayout);
+
+        QPushButton* okBtn = new QPushButton(tr("OK"), &dialog);
+        layout->addWidget(okBtn);
+
+
+        connect(okBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+            
+        connect(addBtn, &QPushButton::clicked, [&](){  
+            QString newHeader = addEdit->text().trimmed();
+            if(!newHeader.isEmpty() && dbModel->headerIndex(newHeader) == -1){
+                dbModel->addHeader(newHeader);
+
+                //insert the thing last
+                DraggableCheckBox* box = new DraggableCheckBox(newHeader, &dialog);
+                box->setChecked(true);
+                container->addCheckBox(box);
+
+                addEdit->clear();
+                mRatios.append(0.1f);
+            }
+        });
+
+        if(dialog.exec() == QDialog::Accepted){
+
+            QVector<DraggableCheckBox*> boxes = container->getCheckBoxes();
+
+            QStringList columnOrder;
+            QStringList shownHeaders;
+
+            for(DraggableCheckBox* box: boxes){
+                columnOrder << box->text();
+                if(box->isChecked()) shownHeaders << box->text();
+            }
+
+            //visibility
+            for (int i = 0; i < dbModel->columnCount(); i++) {
+                QString headerName = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+                if(!shownHeaders.contains(headerName)) dbView->setColumnWidth(i, 0);
+                else dbView->setColumnWidth(i, 1);
+            }
+
+            //order visually
+            QHeaderView* header = dbView->horizontalHeader();
+            for(int visualPos = 0; visualPos < columnOrder.size(); visualPos++){
+                QString headerName = columnOrder[visualPos];
+                int logicalIndex = dbModel->headerIndex(headerName);
+                if(logicalIndex >= 0){
+                    int currentVisualPos = header->visualIndex(logicalIndex);
+                    if(currentVisualPos != visualPos){
+                        header->moveSection(currentVisualPos, visualPos);
+                    }
+                }
+            }
+
+            resizeTable();
+
+
+
+            //save the new header settings
+            QSettings settings;
+            settings.beginGroup("DBViewHeaders");
+            settings.setValue("all", columnOrder);
+            settings.setValue("shown", shownHeaders);
+
+            // QList<QVariant> ratioVariants;
+            // for(float ratio : mRatios) {
+            //     ratioVariants.append(QVariant(ratio));
+            // }
+            // settings.setValue("ratios", ratioVariants);
+            settings.endGroup();
+
+
+            
+            mShownHeaders = shownHeaders;
+
+            // for(int i = 0; i < shownHeaders.length(); i++) qDebug() << shownHeaders.at(i);
+        }
+    }
+
+}
+
 // Handles game preview
 void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
 {
-    if (!proxyIndex.isValid())
-        return;
+    if (!proxyIndex.isValid() || proxyIndex.row() < 0) return;
 
     // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
