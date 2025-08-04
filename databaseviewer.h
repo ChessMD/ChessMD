@@ -14,6 +14,8 @@
 #include <QWidget>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QStringList>
+#include <QTimer>
 
 class ChessTabHost;
 
@@ -51,6 +53,7 @@ private slots:
 
 private:
     void resizeTable();
+    void resizeSplitter();
 
     Ui::DatabaseViewer *ui;
 
@@ -59,7 +62,10 @@ private:
     DatabaseViewerModel *dbModel;
     DatabaseFilterProxyModel *proxyModel;
 
-    QVector<float> mRatios = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+    QStringList mShownHeaders;
+    QTimer *mSaveTimer;
+
+    QVector<float> mRatios;
 
     ChessTabHost *host;
 

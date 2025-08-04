@@ -26,6 +26,7 @@ March 18, 2025 - Program Creation
 #include <QLineEdit>
 #include <QSettings>
 #include <QLayoutItem>
+#include <QTimer>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
@@ -63,37 +64,6 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     dbView->setSortingEnabled(true);
     proxyModel->sort(0, Qt::AscendingOrder);
 
-    {
-    //load header settings    
-    QSettings settings;
-    settings.beginGroup("DBViewHeaders");
-    QStringList allHeaders = settings.value("all").toStringList();
-    QStringList shownHeaders = settings.value("shown").toStringList();
-    settings.endGroup();
-
-    for(const QString& header: allHeaders){
-        dbModel->addHeader(header);
-    }
-
-    if(!shownHeaders.isEmpty()){
-        for(int i = 0; i < dbModel->columnCount(); i++){
-            QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-            if(!shownHeaders.contains(header)) dbView->setColumnWidth(i, 0);
-        }
-    }
-    
-    }
-
-    // signals and slots
-    connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
-    connect(ui->AddGameButton, &QPushButton::released, this, &DatabaseViewer::addGame);
-    connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
-    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
-    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
-    connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
-    connect(header, &QHeaderView::customContextMenuRequested, this, &DatabaseViewer::onHeaderContextMenu);
-    connect(header, &QHeaderView::sectionResized, this, &DatabaseViewer::saveColumnRatios);
-
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
     QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
@@ -109,6 +79,57 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     containerLayout->addWidget(embed);
     ui->gamePreview->setLayout(containerLayout);
     ui->gamePreview->show();
+
+    
+    //load header settings    
+    QSettings settings;
+    settings.beginGroup("DBViewHeaders");
+    QStringList allHeaders = settings.value("all").toStringList();
+    mShownHeaders = settings.value("shown").toStringList();
+    QVariant ratioVar = settings.value("ratios");
+    settings.endGroup();
+
+    for(const QString& header: allHeaders){
+        dbModel->addHeader(header);
+    }
+
+    if(ratioVar.isValid()){
+        QList<QVariant> ratioList = ratioVar.toList();
+        for(const QVariant& v: ratioList){
+            mRatios.append(v.toFloat());
+        }
+    }
+    
+    //in case not enough for some reason
+    while (mRatios.size() < dbModel->columnCount()){
+        mRatios.append(0.1);
+    }
+
+
+    if(mShownHeaders.isEmpty()){
+        for(int i = 0; i < dbModel->columnCount(); i++){
+            QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+            mShownHeaders << header;
+        }
+    }
+    
+
+    // signals and slots
+    connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
+    connect(ui->AddGameButton, &QPushButton::released, this, &DatabaseViewer::addGame);
+    // connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
+    connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
+    connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
+    connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
+    connect(header, &QHeaderView::customContextMenuRequested, this, &DatabaseViewer::onHeaderContextMenu);
+
+    //save colums ratios 300ms after editing
+    mSaveTimer = new QTimer(this);
+    mSaveTimer->setSingleShot(true);
+    mSaveTimer->setInterval(300);
+    connect(mSaveTimer, &QTimer::timeout, this, &DatabaseViewer::saveColumnRatios);
+    connect(header, &QHeaderView::sectionResized, this, [this](){mSaveTimer->start();});
+    connect(header, &QHeaderView::sectionResized, this, &DatabaseViewer::resizeSplitter);
 }
 
 // Destructor
@@ -130,39 +151,55 @@ void DatabaseViewer::showEvent(QShowEvent *event) {
 
 // Custom table resizer
 void DatabaseViewer::resizeTable(){
-    // qDebug() << ratios.size();
-    // for(auto i: ratios) qDebug() << i;
-    // if(ratios.size() != dbModel->columnCount()) qDebug() << "ratios no match";
-
     float sum = 0.0f;
     for(int i = 0; i < dbModel->columnCount(); i++){
-        if(dbView->columnWidth(i) != 0) sum += mRatios[i];
+        if(dbView->columnWidth(i) > 0) {
+            sum += mRatios[i];
+            qDebug() << mRatios[i] << sum;
+        }
     }
 
     int totalWidth = dbView->viewport()->width();
+    qDebug() << totalWidth;
     for(int i = 0; i < dbModel->columnCount(); i++){
-        if(dbView->columnWidth(i) != 0) dbView->setColumnWidth(i, totalWidth*mRatios[i]/sum);
+        if(dbView->columnWidth(i) > 0) dbView->setColumnWidth(i, totalWidth*mRatios[i]/sum);
+        qDebug() <<i << totalWidth << mRatios[i] << sum;
     }
+
+    
+}
+
+void DatabaseViewer::resizeSplitter(){
+    int totalColumnWidth = 0;
+    for(int i = 0; i < dbModel->columnCount(); i++){
+        if(dbView->columnWidth(i) > 0) { 
+            totalColumnWidth += dbView->columnWidth(i);
+        }
+    }
+    
+    QList<int> sizes = ui->ContentLayout->sizes();
+    int totalSplitterWidth = sizes[0] + sizes[1];
+    ui->ContentLayout->setSizes({totalColumnWidth, totalSplitterWidth-totalColumnWidth});
 }
 
 void DatabaseViewer::saveColumnRatios(){
     int cols = dbModel->columnCount();
     int totalWidth = dbView->viewport()->width();
-    QVector<float> ratios;
+    QList<QVariant> ratios;
     for(int i = 0; i < cols; i++){
         if(dbView->columnWidth(i) != 0){        
             float ratio = float(dbView->columnWidth(i)) / float(totalWidth);
-            ratios.append(ratio);
+            ratios.append(QVariant(ratio));
+            mRatios[i] = ratio;
         }
         else{
-            ratios.append(mRatios[i]);
+            ratios.append(QVariant(mRatios[i]));
         }
     }
     QSettings settings;
-    settings.beginGroup("DbViewHeaders");
-    settings.setValue("ratios", QVariant::fromValue(ratios));
+    settings.beginGroup("DBViewHeaders");
+    settings.setValue("ratios", ratios);
     settings.endGroup();
-
 }
 
 // Handles custom filters
