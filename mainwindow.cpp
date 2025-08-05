@@ -153,6 +153,7 @@ void MainWindow::onSaveRequested(const QString &path, const QVector<PGNGame> &da
 
         for (PGNGame game: database) {
             if (QThread::currentThread()->isInterruptionRequested()) {
+                tempFile.close();
                 return;
             }
             out << game.serializePGN() << "\n\n";
