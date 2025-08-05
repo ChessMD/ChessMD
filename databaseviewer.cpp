@@ -262,11 +262,11 @@ void DatabaseViewer::filter(){
     // init filter window
     DatabaseFilter filterWindow(this);
 
-    // apply filters
+    // apply filters    
     if(filterWindow.exec() == QDialog::Accepted){
         auto filters = filterWindow.getNameFilters();
-        proxyModel->setTextFilter("Black", QString("^(?=.*%1)(?=.*%2).*").arg(filters.blackFirst, filters.blackLast));
-        proxyModel->setTextFilter("White", QString("^(?=.*%1)(?=.*%2).*").arg(filters.whiteFirst, filters.whiteLast));
+
+        proxyModel->setPlayerFilter(filters.whiteFirst, filters.whiteLast, filters.blackFirst, filters.blackLast, filters.ignoreColours);
         proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
     }
 }
