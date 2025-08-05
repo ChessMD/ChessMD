@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QAction>
 #include <QHBoxLayout>
+#include <QThread>
 
 MainWindow::MainWindow()
 {
@@ -131,6 +132,42 @@ QWidget* MainWindow::setupSidebar() {
     v->addSpacing(5);
 
     return sidebar;
+}
+
+void MainWindow::onSaveRequested(const QString &path, const QVector<PGNGame> &database) {
+    if (auto oldThread = m_saveThreads.value(path, nullptr)) {
+        if (oldThread->isRunning()) {
+            oldThread->requestInterruption();
+            oldThread->wait();
+        }
+        oldThread->deleteLater();
+        m_saveThreads.remove(path);
+    }
+
+    QThread *worker = QThread::create([path, database]() {
+        QString tempPath = path + ".tmp";
+        QFile tempFile(tempPath);
+        if (!tempFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+            return;
+        QTextStream out(&tempFile);
+
+        for (PGNGame game: database) {
+            if (QThread::currentThread()->isInterruptionRequested()) {
+                return;
+            }
+            out << game.serializePGN() << "\n\n";
+        }
+
+        tempFile.close();
+        QFile::remove(path);
+        tempFile.rename(path);
+    });
+
+    connect(worker, &QThread::finished, worker, &QObject::deleteLater);
+    connect(worker, &QThread::finished, this, [this, path]() { m_saveThreads.remove(path); }, Qt::QueuedConnection);
+
+    m_saveThreads.insert(path, worker);
+    worker->start();
 }
 
 void MainWindow::showEvent(QShowEvent *ev)

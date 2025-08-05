@@ -80,9 +80,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         gamereviewviewer.h gamereviewviewer.cpp
         settingsdialog.h settingsdialog.cpp
         styles/headerstyle.qss
-        pgnsaveworker.h pgnsaveworker.cpp
         draggablecheckbox.h draggablecheckbox.cpp
-
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ChessMD APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

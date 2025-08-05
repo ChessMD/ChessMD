@@ -54,14 +54,12 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
 
     // create and connect keyboard shortcuts
-    QShortcut* saveGame = new QShortcut(QKeySequence("Ctrl+S"), this);
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
     QShortcut* nextMove = new QShortcut(QKeySequence(Qt::Key_Right), this);
     QShortcut* delAfter = new QShortcut(QKeySequence(Qt::Key_Delete), this);
     QShortcut* delVariation = new QShortcut(QKeySequence("Ctrl+D"), this);
     QShortcut* promoteVariation = new QShortcut(QKeySequence("Ctrl+Up"), this);
 
-    connect(saveGame, &QShortcut::activated, this, &ChessGameWindow::onSavePgnClicked);
     connect(prevMove, &QShortcut::activated, this, &ChessGameWindow::onPrevMoveShortcut);
     connect(nextMove, &QShortcut::activated, this, &ChessGameWindow::onNextMoveShortcut);
     connect(delAfter, &QShortcut::activated, this, &ChessGameWindow::onDeleteAfterShortcut);
@@ -119,6 +117,8 @@ void ChessGameWindow::mainSetup(){
     setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
     resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
+    QShortcut* saveGame = new QShortcut(QKeySequence("Ctrl+S"), this);
+    connect(saveGame, &QShortcut::activated, this, &ChessGameWindow::onSavePgnClicked);
 }
 
 // Configures ChessGameWindow for previewing
@@ -620,9 +620,7 @@ QString buildMoveText(const QSharedPointer<NotationMove>& move)
         fullMoveText += QString("{%1} ").arg(move->commentBefore.trimmed());
     }
 
-    fullMoveText += move->moveText;
-    fullMoveText += move->annotation1;
-    fullMoveText += move->annotation2;
+    fullMoveText += move->moveText + (move->annotation1.isEmpty() && move->annotation2.isEmpty() ? "" : " ")  + move->annotation1 + move->annotation2;
     if (!move->commentAfter.isEmpty()) {
         fullMoveText += QString(" {%1}").arg(move->commentAfter.trimmed());
     }
@@ -636,11 +634,11 @@ void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int 
     if (children.isEmpty()) return;
 
     auto principal = children.first();
-    out << (plyCount % 2 == 0 ? QString::number(plyCount/2 + 1) + ". " : "") << buildMoveText(principal);
+    out << (plyCount % 2 == 0 ? QString::number(plyCount/2 + 1) + "." : "") << buildMoveText(principal);
 
     for (int i = 1; i < children.size(); ++i) {
         out << "(";
-        out << plyCount/2 + 1 << (plyCount % 2 == 0 ? ". " : "... ") << buildMoveText(children[i]);
+        out << plyCount/2 + 1 << (plyCount % 2 == 0 ? "." : "...") << buildMoveText(children[i]);
         writeMoves(children[i], out, plyCount+1);
         out << ") ";
     }

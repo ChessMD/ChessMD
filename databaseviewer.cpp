@@ -44,8 +44,6 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     , dbView(new QTableView(this))
     , host(new ChessTabHost)
     , m_filePath(filePath)
-    , m_saveThread(new QThread(this))
-    , m_saveWorker(new PGNSaveWorker)
 {
     setupUI();
     
@@ -84,6 +82,7 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     gamePreview->setLayout(containerLayout);
     gamePreview->show();
     
+
     //load header settings    
     QSettings settings;
     settings.beginGroup("DBViewHeaders");
@@ -138,11 +137,6 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     connect(mSaveTimer, &QTimer::timeout, this, &DatabaseViewer::saveColumnRatios);
     connect(header, &QHeaderView::sectionResized, this, [this](){mSaveTimer->start();});
     connect(header, &QHeaderView::sectionResized, this, &DatabaseViewer::resizeSplitter);
-
-    m_saveWorker->moveToThread(m_saveThread);
-    connect(m_saveThread, &QThread::finished, m_saveWorker,  &QObject::deleteLater);
-    m_saveThread->start();
-    connect(this, &DatabaseViewer::saveRequested, m_saveWorker, &PGNSaveWorker::requestSave);
 }
 
 void DatabaseViewer::setupUI()
@@ -184,20 +178,27 @@ void DatabaseViewer::setupUI()
 // Destructor
 DatabaseViewer::~DatabaseViewer()
 {
-    m_saveWorker->requestCancel();
-    m_saveThread->quit();
-    m_saveThread->wait();
 }
 
 // Window resize event handler
-void DatabaseViewer::resizeEvent(QResizeEvent *event){
+void DatabaseViewer::resizeEvent(QResizeEvent *event)
+{
     resizeTable();
 }
 
-void DatabaseViewer::showEvent(QShowEvent *event) {
+void DatabaseViewer::showEvent(QShowEvent *event)
+{
     // force render on show
     QWidget::showEvent(event);
     resizeTable();
+}
+
+void DatabaseViewer::closeEvent(QCloseEvent *event)
+{
+    if (m_saveThread && m_saveThread->isRunning()) {
+        m_saveThread->wait();
+    }
+    QWidget::closeEvent(event);
 }
 
 // Custom table resizer
@@ -341,11 +342,9 @@ void DatabaseViewer::importPGN()
 void DatabaseViewer::exportPGN()
 {
     QVector<PGNGame> database;
-    database.reserve(dbModel->rowCount());
-    for (int i = 0; i < dbModel->rowCount(); ++i)
+    for (int i = 0; i < dbModel->rowCount(); ++i){
         database.append(dbModel->getGame(i));
-
-    // asynchronous save request
+    }
     emit saveRequested(m_filePath, database);
 }
 
