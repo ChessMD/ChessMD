@@ -143,6 +143,16 @@ void DraggableCheckBox::setDragEnabled(bool enabled){
         mDragHandle->setToolTip(tr("Drag to reorder"));
         setCursor(Qt::OpenHandCursor);
     }
+}
+
+void DraggableCheckBox::setCheckBoxEnabled(bool enabled){
+    mCheckBox->setEnabled(enabled);
+
+    if (!enabled) {
+        mCheckBox->setToolTip(tr("This column must always be visible"));
+    } else {
+        mCheckBox->setToolTip("");
+    }
 
 
 }

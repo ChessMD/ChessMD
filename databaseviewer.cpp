@@ -269,6 +269,8 @@ void DatabaseViewer::filter(){
 
         proxyModel->setPlayerFilter(filters.whiteFirst, filters.whiteLast, filters.blackFirst, filters.blackLast, filters.ignoreColours);
         proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
+        proxyModel->setTextFilter("Tournament", filters.tournament);
+        proxyModel->setTextFilter("Annotator", filters.annotator);
     }
 }
 
@@ -503,6 +505,13 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
             if(essentialHeaders.contains(colName)){
                 box->setDeleteEnabled(false);
                 box->setDragEnabled(false);
+
+
+                if(colName == "#"){
+                    box->setCheckBoxEnabled(false);
+                    box->setChecked(true);
+                }
+
             }
             connect(box, &DraggableCheckBox::deleteRequested, [=](){
                 if(!essentialHeaders.contains(colName)){

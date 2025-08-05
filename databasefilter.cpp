@@ -26,6 +26,8 @@ DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
     _filter.winsOnly = ui->WinsOnly->isChecked();
     _filter.eloMin = ui->EloMin->value();
     _filter.eloMax = ui->EloMax->value();
+    _filter.tournament = ui->TournamentEdit->text();
+    _filter.annotator = ui->AnnotatorEdit->text();
 
     return _filter;
 
