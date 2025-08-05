@@ -10,12 +10,13 @@
 
 #include <QTextEdit>
 #include <QSortFilterProxyModel>
-
 #include <QWidget>
-#include <QTableWidget>
+#include <QTableView>  
 #include <QHeaderView>
 #include <QStringList>
 #include <QTimer>
+#include <QPushButton>
+#include <QSplitter>
 
 class ChessTabHost;
 
@@ -55,10 +56,15 @@ private slots:
     void onHeaderContextMenu(const QPoint &pos);
 
 private:
+    void setupUI();  
     void resizeTable();
     void resizeSplitter();
 
-    Ui::DatabaseViewer *ui;
+    // UI 
+    QAction* mFilterAction;
+    QAction* mAddGameAction;
+    QSplitter* contentLayout;
+    QWidget* gamePreview;
 
     ChessGameWindow *m_embed;
     QTableView *dbView;
@@ -67,7 +73,6 @@ private:
 
     QStringList mShownHeaders;
     QTimer *mSaveTimer;
-
     QVector<float> mRatios;
 
     ChessTabHost *host;

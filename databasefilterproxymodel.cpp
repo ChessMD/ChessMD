@@ -23,8 +23,90 @@ void DatabaseFilterProxyModel::setRangeFilter(QString header, int lower, int hig
 
 }
 
+void DatabaseFilterProxyModel::setPlayerFilter(const QString& whiteFirst, const QString& whiteLast, const QString& blackFirst, const QString& blackLast, bool ignoreColor) {
+    mWhiteFirst = whiteFirst.trimmed();
+    mWhiteLast = whiteLast.trimmed();
+    mBlackFirst = blackFirst.trimmed();
+    mBlackLast = blackLast.trimmed();
+    mIgnoreColour = ignoreColor;
+    
+    mHasPlayerFilter = !mWhiteFirst.isEmpty() || !mWhiteLast.isEmpty() || !mBlackFirst.isEmpty() || !mBlackLast.isEmpty();
+    
+    if (mIgnoreColour) {
+        textFilters.remove("White");
+        textFilters.remove("Black");
+    }
+    else{
+        setTextFilter("Black", QString("^(?=.*%1)(?=.*%2).*").arg(mBlackFirst, mBlackLast));
+        setTextFilter("White", QString("^(?=.*%1)(?=.*%2).*").arg(mWhiteFirst, mWhiteLast));
+    }
+    
+    
+    invalidateFilter();
+}
+
 // Translate filters to display
 bool DatabaseFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const{
+
+    if(mHasPlayerFilter){
+        //get indices
+        int whiteCol = -1, blackCol = -1;
+        for(int i = 0; i < sourceModel()->columnCount(); i++) {
+            QVariant headerData = sourceModel()->headerData(i, Qt::Horizontal);
+            QString headerName = headerData.toString();
+            if(headerName == "White") whiteCol = i;
+            else if(headerName == "Black") blackCol = i;
+        }
+
+        if (whiteCol >= 0 && blackCol >= 0) {
+            QModelIndex whiteIndex = sourceModel()->index(sourceRow, whiteCol, sourceParent);
+            QModelIndex blackIndex = sourceModel()->index(sourceRow, blackCol, sourceParent);
+            QString whitePlayer = sourceModel()->data(whiteIndex).toString();
+            QString blackPlayer = sourceModel()->data(blackIndex).toString();
+
+            if(mIgnoreColour){
+                QString player1Pattern, player2Pattern;
+                
+                if (!mWhiteFirst.isEmpty() || !mWhiteLast.isEmpty()) {
+                    QStringList parts;
+                    if (!mWhiteFirst.isEmpty()) parts << mWhiteFirst;
+                    if (!mWhiteLast.isEmpty()) parts << mWhiteLast;
+                    player1Pattern = QString("^(?=.*%1).*").arg(parts.join(")(?=.*"));
+                }
+                
+                if (!mBlackFirst.isEmpty() || !mBlackLast.isEmpty()) {
+                    QStringList parts;
+                    if (!mBlackFirst.isEmpty()) parts << mBlackFirst;
+                    if (!mBlackLast.isEmpty()) parts << mBlackLast;
+                    player2Pattern = QString("^(?=.*%1).*").arg(parts.join(")(?=.*"));
+                }
+
+                bool hasPlayer1 = false, hasPlayer2 = false;
+                
+                if (!player1Pattern.isEmpty()) {
+                    QRegularExpression regex1(player1Pattern, QRegularExpression::CaseInsensitiveOption);
+                    hasPlayer1 = regex1.match(whitePlayer).hasMatch() || regex1.match(blackPlayer).hasMatch();
+                }
+                
+                if (!player2Pattern.isEmpty()) {
+                    QRegularExpression regex2(player2Pattern, QRegularExpression::CaseInsensitiveOption);
+                    hasPlayer2 = regex2.match(whitePlayer).hasMatch() || regex2.match(blackPlayer).hasMatch();
+                }
+                
+                //if both check both else check each
+                if (!player1Pattern.isEmpty() && !player2Pattern.isEmpty()) {
+                    if (!hasPlayer1 || !hasPlayer2) return false;
+                } else {
+                    if (!player1Pattern.isEmpty() && !hasPlayer1) return false;
+                    if (!player2Pattern.isEmpty() && !hasPlayer2) return false;
+                }
+
+            }
+            
+        }
+
+    }
+
 
     for(auto [key, value]: textFilters.asKeyValueRange()){
         // iterate through rows and apply text filter

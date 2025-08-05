@@ -12,6 +12,7 @@ public:
 
     void setTextFilter(QString header, const QString &pattern);
     void setRangeFilter(QString header, int lower, int higher);
+    void setPlayerFilter(const QString& whiteFirst, const QString& whiteLast, const QString& blackFirst, const QString& blackLast, bool ignoreColor);
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
@@ -20,6 +21,11 @@ protected:
 private:
     QMap<QString, QRegularExpression> textFilters;
     QMap<QString, QPair<int,int>> rangeFilters;
+
+    QString mWhiteFirst, mWhiteLast;
+    QString mBlackFirst, mBlackLast;
+    bool mIgnoreColour = false;
+    bool mHasPlayerFilter = false;
 
     
 };
