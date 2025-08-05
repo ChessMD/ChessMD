@@ -41,7 +41,9 @@ HEADERS += chessgamefilesdata.h \
            uciengine.h \
            variationdialogue.h \
 		   gamereviewviewer.h \
-		   engineviewer.h 
+		   engineviewer.h \
+		   draggablecheckbox.h
+
 FORMS += customtitlebar.ui \
          databasefilter.ui \
          databaselibrary.ui \
@@ -77,7 +79,8 @@ SOURCES += chessgamefilesdata.cpp \
            uciengine.cpp \
            variationdialogue.cpp \
 		   gamereviewviewer.cpp \
-		   engineviewer.cpp 
+		   engineviewer.cpp \
+		   draggablecheckbox.cpp
 RESOURCES += img.qrc qml.qrc resource.qrc resources.qrc
 
 QT += widgets quickwidgets graphs charts

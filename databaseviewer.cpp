@@ -193,14 +193,6 @@ void DatabaseViewer::showEvent(QShowEvent *event)
     resizeTable();
 }
 
-void DatabaseViewer::closeEvent(QCloseEvent *event)
-{
-    if (m_saveThread && m_saveThread->isRunning()) {
-        m_saveThread->wait();
-    }
-    QWidget::closeEvent(event);
-}
-
 // Custom table resizer
 void DatabaseViewer::resizeTable(){
     float sum = 0.0f;
