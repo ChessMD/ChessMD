@@ -6,7 +6,6 @@ March 18, 2025 - Program Creation
 */
 
 #include "databaseviewer.h"
-#include "ui_databaseviewer.h"
 
 #include "tabledelegate.h"
 #include "helpers.h"
@@ -24,6 +23,7 @@ March 18, 2025 - Program Creation
 #include <QMenu>
 #include <QCheckBox>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLineEdit>
 #include <QSettings>
 #include <QLayoutItem>
@@ -31,24 +31,25 @@ March 18, 2025 - Program Creation
 #include <QThread>
 #include <QRegularExpression>
 #include <QValidator>
+#include <QPushButton>
+#include <QSplitter>
+#include <QSpacerItem>
+#include <QToolBar>
+#include <QAction>
+#include <QIcon>
 
 // Initializes the DatabaseViewer
 DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     : QWidget(parent)
     , dbView(new QTableView(this))
-    , ui(new Ui::DatabaseViewer)
     , host(new ChessTabHost)
     , m_filePath(filePath)
     , m_saveThread(new QThread(this))
     , m_saveWorker(new PGNSaveWorker)
 {
-    // connect to ui and initialization
-    ui->setupUi(this);
-    ui->ContentLayout->insertWidget(0, dbView);
-    ui->gamePreview->setMaximumWidth(800);
-
+    setupUI();
+    
     dbView->setItemDelegate(new TableDelegate(this));
-    // dbView->setStyleSheet(getStyle(":/resource/styles/tablestyle.qss"));
     dbView->verticalHeader()->setVisible(false);
     dbView->setShowGrid(false);
     dbView->setMinimumWidth(500);
@@ -76,12 +77,12 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     embed->setFocusPolicy(Qt::StrongFocus);
 
     // put embed inside gamePreview
-    ui->gamePreview->hide();
-    QLayout* containerLayout = new QVBoxLayout(ui->gamePreview);
+    gamePreview->hide();
+    QLayout* containerLayout = new QVBoxLayout(gamePreview);
     containerLayout->setContentsMargins(0, 0, 0, 0);
     containerLayout->addWidget(embed);
-    ui->gamePreview->setLayout(containerLayout);
-    ui->gamePreview->show();
+    gamePreview->setLayout(containerLayout);
+    gamePreview->show();
     
     //load header settings    
     QSettings settings;
@@ -107,7 +108,6 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
         mRatios.append(0.1);
     }
 
-
     if(mShownHeaders.isEmpty()){
         for(int i = 0; i < dbModel->columnCount(); i++){
             QString header = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
@@ -123,17 +123,15 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
         }
     }
     
-
     // signals and slots
-    connect(ui->FilterButton, &QPushButton::released, this, &DatabaseViewer::filter);
-    connect(ui->AddGameButton, &QPushButton::released, this, &DatabaseViewer::addGame);
-    // connect(ui->ContentLayout, &QSplitter::splitterMoved, this, &DatabaseViewer::resizeTable);
+    connect(mFilterAction, &QAction::triggered, this, &DatabaseViewer::filter);
+    connect(mAddGameAction, &QAction::triggered, this, &DatabaseViewer::addGame);
     connect(dbView, &QAbstractItemView::doubleClicked, this, &DatabaseViewer::onDoubleSelected);
     connect(dbView->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &DatabaseViewer::onSingleSelected);
     connect(dbView, &QWidget::customContextMenuRequested, this, &DatabaseViewer::onContextMenu);
     connect(header, &QHeaderView::customContextMenuRequested, this, &DatabaseViewer::onHeaderContextMenu);
 
-    //save colums ratios 300ms after editing
+    //save columns ratios 300ms after editing
     mSaveTimer = new QTimer(this);
     mSaveTimer->setSingleShot(true);
     mSaveTimer->setInterval(300);
@@ -147,13 +145,48 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     connect(this, &DatabaseViewer::saveRequested, m_saveWorker, &PGNSaveWorker::requestSave);
 }
 
+void DatabaseViewer::setupUI()
+{
+    QVBoxLayout* verticalLayout = new QVBoxLayout(this);
+    
+    QToolBar* toolbar = new QToolBar(this);
+    toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    toolbar->setIconSize(QSize(24, 24));
+    
+    QAction* filterAction = new QAction(QIcon(":/resource/img/filter.png"), "Filter", this);
+    QAction* addGameAction = new QAction(QIcon(":/resource/img/board-icon.png"), "Add Game", this);
+    
+    toolbar->addAction(filterAction);
+    toolbar->addAction(addGameAction);
+    
+    QWidget* spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    toolbar->addWidget(spacer);
+    
+    contentLayout = new QSplitter(Qt::Horizontal, this);
+    
+    gamePreview = new QWidget();
+    gamePreview->setMaximumWidth(800);
+    
+    contentLayout->addWidget(dbView);
+    contentLayout->addWidget(gamePreview);
+    
+    verticalLayout->addWidget(toolbar);
+    verticalLayout->addWidget(contentLayout);
+    
+    setLayout(verticalLayout);
+    
+    mFilterAction = filterAction;
+    mAddGameAction = addGameAction;
+
+}
+
 // Destructor
 DatabaseViewer::~DatabaseViewer()
 {
     m_saveWorker->requestCancel();
     m_saveThread->quit();
     m_saveThread->wait();
-    delete ui;
 }
 
 // Window resize event handler
@@ -195,9 +228,9 @@ void DatabaseViewer::resizeSplitter(){
         }
     }
     
-    QList<int> sizes = ui->ContentLayout->sizes();
+    QList<int> sizes = contentLayout->sizes();
     int totalSplitterWidth = sizes[0] + sizes[1];
-    ui->ContentLayout->setSizes({totalColumnWidth, totalSplitterWidth-totalColumnWidth});
+    contentLayout->setSizes({totalColumnWidth, totalSplitterWidth-totalColumnWidth});
 }
 
 void DatabaseViewer::saveColumnRatios(){
@@ -606,17 +639,16 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     m_embed->previewSetup();
     m_embed->setFocusPolicy(Qt::StrongFocus);
 
-    // put embed inside gamePreview
-    ui->gamePreview->hide();
-    if (ui->gamePreview->layout()) {
-        clearPreview(ui->gamePreview); // clear old preview
+    gamePreview->hide();
+    if (gamePreview->layout()) {
+        clearPreview(gamePreview);
     }
-    QLayout* containerLayout = new QVBoxLayout(ui->gamePreview);
+    QLayout* containerLayout = new QVBoxLayout(gamePreview);
 
     containerLayout->setContentsMargins(0, 0, 0, 0);
     containerLayout->addWidget(m_embed);
-    ui->gamePreview->setLayout(containerLayout);
-    ui->gamePreview->show();
+    gamePreview->setLayout(containerLayout);
+    gamePreview->show();
 }
 
 void DatabaseViewer::setWindowTitle(QString text)

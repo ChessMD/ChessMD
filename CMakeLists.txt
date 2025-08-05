@@ -36,7 +36,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 
 
-        databaseviewer.h databaseviewer.cpp databaseviewer.ui
+        databaseviewer.h databaseviewer.cpp
         styles/tablestyle.qss
         tabledelegate.h tabledelegate.cpp
         pgnuploader.h pgnuploader.cpp pgnuploader.ui

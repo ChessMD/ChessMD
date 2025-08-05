@@ -28,5 +28,6 @@
         <file>styles/tablestyle.qss</file>
         <file>img/database-upload-icon.png</file>
         <file>img/board-icon.png</file>
+        <file>img/filter.png</file>
     </qresource>
 </RCC>
