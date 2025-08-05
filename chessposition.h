@@ -102,6 +102,9 @@ private:
     double m_evalScore = 0;
 };
 
+QString buildMoveText(const QSharedPointer<NotationMove>& move);
+void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount);
+
 QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove);
 QVector<QVector<QString>> convertFenToBoardData(const QString &fen);
 // Recursively builds a Notation tree from PgnGameData

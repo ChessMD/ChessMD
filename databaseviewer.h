@@ -43,7 +43,6 @@ signals:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
-    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void filter();
@@ -74,8 +73,6 @@ private:
     ChessTabHost *host;
 
     QString m_filePath;
-
-    QThread* m_saveThread;
 };
 
 #endif // DATABASEVIEWER_H

@@ -67,6 +67,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
 
+
 void ChessGameWindow::closeEvent(QCloseEvent *event)
 {
     if (m_isPreview || !m_notationViewer->m_isEdited) {
@@ -97,6 +98,9 @@ void ChessGameWindow::closeEvent(QCloseEvent *event)
             return;
         }
         dialog.applyTo(m_notationViewer->m_game);
+        QString result; QTextStream out(&result); int plyCount = 0;
+        writeMoves(m_notationViewer->getRootMove(), out, plyCount);
+        m_notationViewer->m_game.bodyText = result.trimmed();
         saveGame();
     }
 
@@ -611,40 +615,6 @@ void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)
             m_positionViewer->copyFrom(*sel->m_position);
     }
     emit m_positionViewer->boardDataChanged();
-}
-
-QString buildMoveText(const QSharedPointer<NotationMove>& move)
-{
-    QString fullMoveText;
-    if (!move->commentBefore.isEmpty()) {
-        fullMoveText += QString("{%1} ").arg(move->commentBefore.trimmed());
-    }
-
-    fullMoveText += move->moveText + (move->annotation1.isEmpty() && move->annotation2.isEmpty() ? "" : " ")  + move->annotation1 + move->annotation2;
-    if (!move->commentAfter.isEmpty()) {
-        fullMoveText += QString(" {%1}").arg(move->commentAfter.trimmed());
-    }
-    fullMoveText += " ";
-    return fullMoveText;
-}
-
-void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount)
-{
-    auto children = move->m_nextMoves;
-    if (children.isEmpty()) return;
-
-    auto principal = children.first();
-    out << (plyCount % 2 == 0 ? QString::number(plyCount/2 + 1) + "." : "") << buildMoveText(principal);
-
-    for (int i = 1; i < children.size(); ++i) {
-        out << "(";
-        out << plyCount/2 + 1 << (plyCount % 2 == 0 ? "." : "...") << buildMoveText(children[i]);
-        writeMoves(children[i], out, plyCount+1);
-        out << ") ";
-    }
-
-    ++plyCount;
-    writeMoves(principal, out, plyCount);
 }
 
 // Slot for when a new move is made on the board

@@ -466,6 +466,40 @@ QVector<QPair<int,int>> ChessPosition::findPieceOrigins(QChar piece, const QStri
     return vec;
 }
 
+QString buildMoveText(const QSharedPointer<NotationMove>& move)
+{
+    QString fullMoveText;
+    if (!move->commentBefore.isEmpty()) {
+        fullMoveText += QString("{%1} ").arg(move->commentBefore.trimmed());
+    }
+
+    fullMoveText += move->moveText + (move->annotation1.isEmpty() && move->annotation2.isEmpty() ? "" : " ")  + move->annotation1 + move->annotation2;
+    if (!move->commentAfter.isEmpty()) {
+        fullMoveText += QString(" {%1}").arg(move->commentAfter.trimmed());
+    }
+    fullMoveText += " ";
+    return fullMoveText;
+}
+
+void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount)
+{
+    auto children = move->m_nextMoves;
+    if (children.isEmpty()) return;
+
+    auto principal = children.first();
+    out << (plyCount % 2 == 0 ? QString::number(plyCount/2 + 1) + "." : "") << buildMoveText(principal);
+
+    for (int i = 1; i < children.size(); ++i) {
+        out << "(";
+        out << plyCount/2 + 1 << (plyCount % 2 == 0 ? "." : "...") << buildMoveText(children[i]);
+        writeMoves(children[i], out, plyCount+1);
+        out << ") ";
+    }
+
+    ++plyCount;
+    writeMoves(principal, out, plyCount);
+}
+
 void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove)
 {
     int plyCount = varNode->plyCount;
