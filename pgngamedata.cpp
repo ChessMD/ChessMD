@@ -25,7 +25,7 @@ void PGNGame::copyFrom(PGNGame &other)
     bodyText = other.bodyText;
     dbIndex = other.dbIndex;
     isParsed = other.isParsed;
-    rootMove = other.rootMove->cloneNotationTree(other.rootMove);
+    rootMove = cloneNotationTree(other.rootMove);
 }
 
 QString PGNGame::serializePGN(){

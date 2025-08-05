@@ -1,13 +1,13 @@
 #ifndef _PRODUCT_VERSION
 #define _PRODUCT_VERSION
 
-#define CHESSMD_PRODUCT_VERSION	"v1.0-beta"
+#define CHESSMD_PRODUCT_VERSION	"v1.0-beta.2"
 
 
 
 #define BINARY_VERSION 1,0
 
-#define VERSION_TEXT	"v1.0-beta\0"
+#define VERSION_TEXT	"v1.0-beta.2\0"
 #define APP_NAME		"ChessMD.exe\0"
 #define APP_DESC		"ChessMD - Chess Database Viewer\0"
 #define COMPANY_NAME	"ChessMD\0"

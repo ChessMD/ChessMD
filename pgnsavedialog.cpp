@@ -12,19 +12,15 @@ PGNSaveDialog::PGNSaveDialog(QWidget* parent)
     setWindowTitle(tr("Save Game Headers"));
     setModal(true);
 
-    // Build the form layout
     auto *form = new QFormLayout;
 
     m_whiteEdit = new QLineEdit;
     form->addRow(tr("White:"), m_whiteEdit);
-
     m_blackEdit = new QLineEdit;
     form->addRow(tr("Black:"), m_blackEdit);
-
     m_eventEdit = new QLineEdit;
     form->addRow(tr("Event:"), m_eventEdit);
 
-    // ECO code + checkbox
     m_ecoCheck = new QCheckBox(tr("ECO code:"));
     m_ecoEdit = new QLineEdit; m_ecoEdit->setMaximumWidth(60);
     {
@@ -35,22 +31,18 @@ PGNSaveDialog::PGNSaveDialog(QWidget* parent)
         form->addRow(h);
     }
 
-    // Elo White
     m_eloWhiteCheck = new QCheckBox(tr("Elo White:"));
     m_eloWhiteSpin = new QSpinBox; m_eloWhiteSpin->setRange(100, 3000);
     form->addRow(m_eloWhiteCheck, m_eloWhiteSpin);
 
-    // Elo Black
     m_eloBlackCheck = new QCheckBox(tr("Elo Black:"));
     m_eloBlackSpin = new QSpinBox; m_eloBlackSpin->setRange(100, 3000);
     form->addRow(m_eloBlackCheck, m_eloBlackSpin);
 
-    // initialize round
     m_roundSpin = new QSpinBox;
     m_roundSpin->setRange(1, 100);
     m_roundCheck = new QCheckBox(tr("Round:"));
 
-    // Round row
     {
         auto *h = new QHBoxLayout;
         h->addWidget(m_roundCheck);
@@ -63,7 +55,6 @@ PGNSaveDialog::PGNSaveDialog(QWidget* parent)
     m_dateEdit->setCalendarPopup(true);
     m_dateCheck = new QCheckBox(tr("Date:"));
 
-    // Date row
     {
         auto *h = new QHBoxLayout;
         h->addWidget(m_dateCheck);
@@ -71,9 +62,6 @@ PGNSaveDialog::PGNSaveDialog(QWidget* parent)
         h->addStretch();
         form->addRow(h);
     }
-
-
-    // Result radio buttons
     {
         auto *h = new QHBoxLayout;
         m_resultGroup = new QButtonGroup(this);
@@ -94,12 +82,16 @@ PGNSaveDialog::PGNSaveDialog(QWidget* parent)
         form->addRow(tr("Result:"), h);
     }
 
-    // Dialog buttons
+    connect(m_ecoEdit, &QLineEdit::textChanged, this, [this](const QString&){ m_ecoCheck->setChecked(true); });
+    connect(m_eloWhiteSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int){ m_eloWhiteCheck->setChecked(true); });
+    connect(m_eloBlackSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int){ m_eloBlackCheck->setChecked(true); });
+    connect(m_roundSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int){ m_roundCheck->setChecked(true); });
+    connect(m_dateEdit, &QDateEdit::dateChanged, this, [this](const QDate&){ m_dateCheck->setChecked(true); });
+
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
     connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-    // Arrange vertical layout
     auto *lay = new QVBoxLayout(this);
     lay->addLayout(form);
     lay->addWidget(buttons);

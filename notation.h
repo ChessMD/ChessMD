@@ -8,6 +8,12 @@ March 18, 2025: File Creation
 #include <QString>
 #include <QList>
 #include <QSharedPointer>
+#include <QMap>
+
+// https://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c10
+static const QMap<int, QString> NUMERIC_ANNOTATION_MAP = {
+    {1,  "!"},  {2,  "?"},  {3,  "!!"}, {4,  "??"}, {5,  "!?"}, {6,  "?!"},
+};
 
 class ChessPosition;
 
@@ -15,8 +21,6 @@ class NotationMove
 {
 public:
     NotationMove(const QString &text, ChessPosition &position);
-
-    QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 
     QString FEN; // FEN string of chess position (after this move)
 
@@ -33,6 +37,8 @@ public:
     QList<QSharedPointer<NotationMove>> m_nextMoves;
     QSharedPointer<NotationMove> m_previousMove;
 };
+
+QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 
 // Appends a new NotationMove to the current
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
