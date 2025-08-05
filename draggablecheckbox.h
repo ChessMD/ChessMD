@@ -22,6 +22,7 @@ public:
     void setChecked(bool checked);
     void setDeleteEnabled(bool enabled);
     void setDragEnabled(bool enabled); 
+    void setCheckBoxEnabled(bool enabled);
 
 signals:
     void deleteRequested();

@@ -16,7 +16,7 @@ private:
     Ui::DatabaseFilter *ui;
 
     struct Filter {
-        QString whiteFirst, whiteLast, blackFirst, blackLast;
+        QString whiteFirst, whiteLast, blackFirst, blackLast, tournament, annotator;
         bool winsOnly, ignoreColours;
         int eloMin, eloMax;
     } _filter;
