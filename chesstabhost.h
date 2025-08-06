@@ -1,4 +1,3 @@
-
 #ifndef CHESSTABHOST_H
 #define CHESSTABHOST_H
 
@@ -19,9 +18,15 @@ public:
 
 protected:
     QSize tabSizeHint(int index) const override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
     const int defaultWidth;
+    QPoint dragStartPos;
+    bool isDraggingWindow = false;
 };
 
 namespace Ui {
@@ -35,6 +40,9 @@ public:
     Ui::CustomTitleBar *ui;
     explicit CustomTitleBar(QWidget *parent = nullptr);
     ~CustomTitleBar();
+
+    void startDrag(QPoint localPos);
+
     QTabBar* tabBar;
     QToolButton* addTabButton;
 
@@ -50,6 +58,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
+
     QPoint clickPos;
     bool isMoving;
 

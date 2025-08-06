@@ -263,6 +263,10 @@ void DatabaseViewer::filter(){
         proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
         proxyModel->setTextFilter("Tournament", filters.tournament);
         proxyModel->setTextFilter("Annotator", filters.annotator);
+        
+    if(filters.movesCheck) proxyModel->setRangeFilter("Moves", filters.movesMin, filters.movesMax);
+
+        
     }
 }
 
@@ -321,10 +325,17 @@ void DatabaseViewer::importPGN()
 
             for (int i = 0; i < dbModel->columnCount(); i++) {
                 QString tag = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-                QString value = findTag(game.headerInfo, tag, "");
                 QModelIndex idx = dbModel->index(row, i);
+
+
+                QString value;
+                if(tag == "Moves") value = "N/A";
+                else value = findTag(game.headerInfo, tag, "");
                 dbModel->setData(idx, value);
             }
+            
+
+            //# column
             dbModel->setData(dbModel->index(row, 0), row+1);
         } else {
             qDebug() << "Error: no game found!";

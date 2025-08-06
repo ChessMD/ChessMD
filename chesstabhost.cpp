@@ -22,14 +22,15 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     , defaultWidth(defaultWidth)
 {
     setUsesScrollButtons(false);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred); 
     setTabsClosable(true);
     setMovable(true);
     setExpanding(false);
+    setDocumentMode(true);
 
+    setStyleSheet("QTabBar { background-color: #f1f3f4; border: none; }");
 }
 
-//changes tab bar sizing
 QSize CustomTabBar::tabSizeHint(int index) const {
     QSize defaultSize = QTabBar::tabSizeHint(index);
 
@@ -47,6 +48,61 @@ QSize CustomTabBar::tabSizeHint(int index) const {
     return defaultSize;
 }
 
+void CustomTabBar::mousePressEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        int tabIndex = tabAt(event->pos());
+        
+        if (tabIndex < 0) {
+            if(window()->isMaximized()) {
+                QPoint globalClickPos = mapToGlobal(event->pos());
+                window()->showNormal();
+                
+                QRect restoredGeometry = window()->geometry();
+                dragStartPos = QPoint(globalClickPos.x() - restoredGeometry.x(), globalClickPos.y() - restoredGeometry.y());
+                
+                window()->move(globalClickPos.x() - dragStartPos.x(), globalClickPos.y() - dragStartPos.y());
+            } else {
+                dragStartPos = event->pos();
+            }
+            
+            isDraggingWindow = true;
+            event->accept();
+            return;
+        }
+        
+    }
+    QTabBar::mousePressEvent(event);
+}
+
+void CustomTabBar::mouseMoveEvent(QMouseEvent* event) {
+    if (isDraggingWindow) {
+        QPoint diff = event->pos() - dragStartPos;
+        window()->move(window()->pos() + diff);
+        event->accept();
+        return;
+    }
+    QTabBar::mouseMoveEvent(event);
+}
+
+void CustomTabBar::mouseReleaseEvent(QMouseEvent* event) {
+    isDraggingWindow = false;
+    QTabBar::mouseReleaseEvent(event);
+}
+
+void CustomTabBar::mouseDoubleClickEvent(QMouseEvent* event) {
+    int tabIndex = tabAt(event->pos());
+    
+    if (tabIndex < 0) {
+        if (CustomTitleBar* titleBar = qobject_cast<CustomTitleBar*>(parent())) {
+            titleBar->MaximizeWindow();
+        }
+        event->accept();
+        return;
+    }
+    
+    QTabBar::mouseDoubleClickEvent(event);
+}
+
 //initalizes container for custom tab bar
 CustomTitleBar::CustomTitleBar(QWidget* parent)
     : QWidget(parent)
@@ -61,9 +117,8 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     addTabButton->setToolTip("New Tab");
     addTabButton->hide();
 
-    ui->topBarLayout->addWidget(tabBar);
+    ui->topBarLayout->addWidget(tabBar);  
     ui->topBarLayout->addWidget(addTabButton);
-
 
     connect(ui->minimizeButton, &QPushButton::clicked, this, &CustomTitleBar::MinimizeWindow);
     connect(ui->maximizeButton, &QPushButton::clicked, this, &CustomTitleBar::MaximizeWindow);
@@ -90,10 +145,24 @@ void CustomTitleBar::CloseWindow(){
     window()->close();
 }
 
+void CustomTitleBar::startDrag(QPoint localPos) {
+    if(window()->isMaximized()) {
+        QPoint globalClickPos = mapToGlobal(localPos);
+        window()->showNormal();
+        
+        QRect restoredGeometry = window()->geometry();
+        clickPos = QPoint(globalClickPos.x() - restoredGeometry.x(),  globalClickPos.y() - restoredGeometry.y());
+        
+        window()->move(globalClickPos.x() - clickPos.x(), globalClickPos.y() - clickPos.y());
+    } else {
+        clickPos = localPos;
+    }
+    isMoving = true;
+}
+
 //handles window adjustment
 void CustomTitleBar::mousePressEvent(QMouseEvent* event){
-    clickPos= event->pos();
-    isMoving= true;
+    startDrag(event->pos());
 }
 
 void CustomTitleBar::mouseMoveEvent(QMouseEvent* event){
@@ -111,7 +180,6 @@ void CustomTitleBar::mouseReleaseEvent(QMouseEvent* event){
 void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
     MaximizeWindow();
 }
-
 
 
 
