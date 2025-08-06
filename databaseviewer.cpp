@@ -287,10 +287,10 @@ void DatabaseViewer::addGame(){
     PGNGame game; 
     int row = dbModel->rowCount();
     game.dbIndex = row;
-    game.headerInfo.push_back({QString("Number"), QString::number(row+1)});
+    game.isParsed = true;
+    game.headerInfo.push_back({QString("#"), QString::number(row+1)});
     dbModel->insertRows(row, 1);
     dbModel->addGame(game);
-    
 
     for (int i = 0; i < dbModel->columnCount(); i++) {
         QString tag = dbModel->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();

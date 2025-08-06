@@ -117,7 +117,7 @@ void DatabaseLibrary::importDatabase()
 
 void DatabaseLibrary::newDatabase()
 {
-    QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Database"), QString(), tr("PGN files (*.pgn)"));
+    QString savePath = QFileDialog::getSaveFileName(this, tr("Create a new PGN file"), QString(), tr("PGN files (*.pgn)"));
     if (savePath.isEmpty()) {
         return;
     }

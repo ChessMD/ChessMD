@@ -109,7 +109,7 @@ QWidget* MainWindow::setupSidebar() {
                         "<p>© 2025 ChessMD</p>"
                         "<p>A lightweight PGN database viewer and analysis tool.</p>"
                         "<p>Visit our <a href=\"https://chessmd.org/\">website</a> for more info.</p>"
-                        ).arg("v1.0-beta.1"));
+                        ).arg("v1.0-beta.2"));
 
         // find the internal QLabel and enable external link opening
         if (auto *label = msg.findChild<QLabel*>("qt_msgbox_label")) {

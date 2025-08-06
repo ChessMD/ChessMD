@@ -14,7 +14,7 @@ NotationMove::NotationMove(const QString &text, ChessPosition &position)
     m_position = &position;
 }
 
-QSharedPointer<NotationMove> NotationMove::cloneNotationTree(QSharedPointer<NotationMove>& move)
+QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move)
 {
     if (!move) return nullptr;
 

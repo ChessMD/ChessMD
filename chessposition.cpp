@@ -473,7 +473,9 @@ QString buildMoveText(const QSharedPointer<NotationMove>& move)
         fullMoveText += QString("{%1} ").arg(move->commentBefore.trimmed());
     }
 
-    fullMoveText += move->moveText + (move->annotation1.isEmpty() && move->annotation2.isEmpty() ? "" : " ")  + move->annotation1 + move->annotation2;
+    int code = NUMERIC_ANNOTATION_MAP.key(move->annotation1, 0);
+    QString annotationGlyph = (code ? QString(" $%1").arg(code) : "");
+    fullMoveText += move->moveText + annotationGlyph;
     if (!move->commentAfter.isEmpty()) {
         fullMoveText += QString(" {%1}").arg(move->commentAfter.trimmed());
     }
@@ -508,8 +510,17 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
 
     for (int i = 0; i < plyCount; ++i) {
         QString token = varNode->moves[i];
-        token.remove(QRegularExpression(R"(^\d+\.+)"));
+        token.remove(QRegularExpression(R"(^\d+\.+)")); // remove move number prefixes
 
+        if (token.startsWith('$')) {
+            bool ok = false;
+            int code = token.mid(1).toInt(&ok);
+            if (ok && NUMERIC_ANNOTATION_MAP.contains(code)) {
+                QString symbol = NUMERIC_ANNOTATION_MAP.value(code);
+                parentMove->annotation1 = symbol;
+                continue;
+            }
+        }
         if (token.startsWith('{')) {
             // strip leading '{'
             token.remove(0, 1);
