@@ -19,10 +19,13 @@ public:
 
 protected:
     QSize tabSizeHint(int index) const override;
+    #ifndef Q_OS_WIN
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
+    #endif
+
 
 private:
     const int defaultWidth;
@@ -48,10 +51,13 @@ public slots:
     void CloseWindow();
 
 protected:
+    #ifndef Q_OS_WIN
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
+    #endif
+
     void paintEvent(QPaintEvent* event) override;
     void showEvent(QShowEvent* event) override;
 
@@ -77,6 +83,10 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+
+#ifdef Q_OS_WIN
+    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
+#endif
 
 private slots:
     void onTabChanged(int index);

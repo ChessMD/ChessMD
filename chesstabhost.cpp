@@ -15,6 +15,12 @@ March 18, 2025 - Program Creation
 #include <QCloseEvent>
 #include <QPainter>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <dwmapi.h>
+#include <windowsx.h>
+#endif
+
 //initializes custom tab bar
 CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     : QTabBar(parent)
@@ -74,6 +80,8 @@ QSize CustomTabBar::tabSizeHint(int index) const {
     return defaultSize;
 }
 
+//if not windows (windwos uses defualt logic)
+#ifndef Q_OS_WIN
 void CustomTabBar::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         int tabIndex = tabAt(event->pos());
@@ -142,6 +150,8 @@ void CustomTabBar::mouseDoubleClickEvent(QMouseEvent* event) {
     QTabBar::mouseDoubleClickEvent(event);
 }
 
+#endif
+
 //initalizes container for custom tab bar
 CustomTitleBar::CustomTitleBar(QWidget* parent)
     : QWidget(parent)
@@ -150,8 +160,13 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     setMaximumHeight(50);
     setMinimumHeight(50);  
+
+    // setStyleSheet("CustomTitleBar { background-color: #ff0000; border: 5px solid blue; }");
+
     
     QHBoxLayout* horizontalLayout = new QHBoxLayout(this);
+    horizontalLayout->setContentsMargins(0, 0, 0, 0);  
+    horizontalLayout->setSpacing(0);   
 
     QHBoxLayout* topBarLayout = new QHBoxLayout();
     topBarLayout->setContentsMargins(0, 0, 0, 0);
@@ -170,14 +185,57 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     maximizeButton = new QPushButton(this);
     closeButton = new QPushButton(this);
 
-    QString buttonStyle = "QPushButton { background-color: #ffffff; border: none; }";
-    minimizeButton->setStyleSheet(buttonStyle);
-    maximizeButton->setStyleSheet(buttonStyle);
-    closeButton->setStyleSheet(buttonStyle);
-
     minimizeButton->setIcon(QIcon(":/resource/img/minimize.png"));
     maximizeButton->setIcon(QIcon(":/resource/img/maximize.png"));
     closeButton->setIcon(QIcon(":/resource/img/close.png"));
+
+    minimizeButton->setIconSize(QSize(16, 16));
+    maximizeButton->setIconSize(QSize(16, 16));
+    closeButton->setIconSize(QSize(16, 16));
+
+    QString buttonStyle = 
+        "QPushButton {"
+        "    background-color: transparent;"
+        "    border: none;"
+        "    min-width: 46px;"           
+        "    max-width: 46px;"
+        "    min-height: 50px;"          
+        "    max-height: 50px;"
+        "    padding: 0px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #e0e0e0;"  
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: #d0d0d0;"  
+        "}";
+
+    //red styling for close
+    QString closeButtonStyle = 
+        "QPushButton {"
+        "    background-color: transparent;"
+        "    border: none;"
+        "    min-width: 46px;"
+        "    max-width: 46px;"
+        "    min-height: 50px;"
+        "    max-height: 50px;"
+        "    padding: 0px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #e81123;" 
+        "    color: white;"
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: #c50e1f;"  
+        "}";
+
+    minimizeButton->setStyleSheet(buttonStyle);
+    maximizeButton->setStyleSheet(buttonStyle);
+    closeButton->setStyleSheet(closeButtonStyle);
+
+    minimizeButton->setFixedSize(46, 50);
+    maximizeButton->setFixedSize(46, 50);
+    closeButton->setFixedSize(46, 50);
 
     horizontalLayout->addLayout(topBarLayout);
     horizontalLayout->addWidget(minimizeButton);
@@ -223,6 +281,8 @@ void CustomTitleBar::startDrag(QPoint localPos) {
     isMoving = true;
 }
 
+//if not windows
+#ifndef Q_OS_WIN
 //handles window adjustment
 void CustomTitleBar::mousePressEvent(QMouseEvent* event){
     clickPos = event->pos();
@@ -251,6 +311,7 @@ void CustomTitleBar::mouseReleaseEvent(QMouseEvent* event){
 void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
     MaximizeWindow();
 }
+#endif
 
 void CustomTitleBar::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
@@ -263,7 +324,7 @@ void CustomTitleBar::paintEvent(QPaintEvent* event) {
 
 void CustomTitleBar::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
-    qDebug() << "CustomTitleBar actual size:" << size();
+    // qDebug() << "CustomTitleBar actual size:" << size();
 }
 
 
@@ -275,10 +336,13 @@ ChessTabHost::ChessTabHost(QWidget* parent)
 {
     setMinimumSize(1024,768);
     setWindowFlags(Qt::Window | Qt::CustomizeWindowHint);
+
+    #ifdef Q_OS_WIN
+    setAttribute(Qt::WA_NativeWindow);
+    #endif
+    
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
-
-    setStyleSheet("CustomTitleBar { background-color: #ff0000; border: 5px solid blue; }");
 
 
     CustomTitleBar* titleBar = new CustomTitleBar(this);
@@ -297,6 +361,42 @@ ChessTabHost::ChessTabHost(QWidget* parent)
     mainLayout->addWidget(stack);
 }
 
+#ifdef Q_OS_WIN
+bool ChessTabHost::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
+    if (eventType == "windows_generic_MSG") {
+        MSG* msg = static_cast<MSG*>(message);
+        
+        if (msg->message == WM_NCHITTEST) {
+            QPoint cursorPos = mapFromGlobal(QCursor::pos());
+            
+            // check if cursor is in the title bar area (top 50px)
+            if (cursorPos.y() >= 0 && cursorPos.y() <= 50) {
+                // get the CustomTitleBar widget to find the tab bar area
+                CustomTitleBar* titleBar = findChild<CustomTitleBar*>();
+                if (titleBar && titleBar->tabBar) {
+                    // convert cursor position to tab bar coordinates
+                    QPoint tabBarPos = titleBar->tabBar->mapFromGlobal(QCursor::pos());
+                    
+                    // check if cursor is over a tab
+                    if (titleBar->tabBar->rect().contains(tabBarPos)) {
+                        int tabIndex = titleBar->tabBar->tabAt(tabBarPos);
+                        if (tabIndex >= 0) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // check if not over window control buttons (right edge buttons are 138px wide: 46*3)
+                if (cursorPos.x() < width() - 138) {
+                    *result = HTCAPTION; 
+                    return true;
+                }
+            }
+        }
+    }
+    return QWidget::nativeEvent(eventType, message, result);
+}
+#endif
 
 void ChessTabHost::closeEvent(QCloseEvent *event)
 {
