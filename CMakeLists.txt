@@ -58,7 +58,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         notationviewer.h notationviewer.cpp
         variationdialogue.h variationdialogue.cpp
         chessposition.h chessposition.cpp
-        customtitlebar.ui
+
         img/close.png img/fileicon.png img/fileuploadicon.png img/maxedmaximize.png img/maximize.png img/minimize.png img/engine.png
         resource.qrc
         uciengine.h uciengine.cpp

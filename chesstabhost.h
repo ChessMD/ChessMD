@@ -7,6 +7,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 
 
 class CustomTabBar : public QTabBar {
@@ -25,19 +26,14 @@ protected:
 
 private:
     const int defaultWidth;
-    QPoint dragStartPos;
+    QPoint dragStartPos = QPoint(-1, -1);
     bool isDraggingWindow = false;
 };
-
-namespace Ui {
-class CustomTitleBar;
-}
 
 class CustomTitleBar : public QWidget
 {
     Q_OBJECT
 public:
-    Ui::CustomTitleBar *ui;
     explicit CustomTitleBar(QWidget *parent = nullptr);
     ~CustomTitleBar();
 
@@ -56,11 +52,16 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 private:
-
-    QPoint clickPos;
-    bool isMoving;
+    QPushButton* minimizeButton;
+    QPushButton* maximizeButton;
+    QPushButton* closeButton;
+    
+    QPoint clickPos = QPoint(-1, -1);
+    bool isMoving = false;
 
 };
 

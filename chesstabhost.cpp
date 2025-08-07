@@ -6,15 +6,14 @@ March 18, 2025 - Program Creation
 */
 
 #include "chesstabhost.h"
-#include "ui_customtitlebar.h"
 #include "chessgamewindow.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
 
-#include <QDebug>
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QCloseEvent>
+#include <QPainter>
 
 //initializes custom tab bar
 CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
@@ -28,7 +27,34 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     setExpanding(false);
     setDocumentMode(true);
 
-    setStyleSheet("QTabBar { background-color: #f1f3f4; border: none; }");
+
+    //fix these colours lol
+    setStyleSheet(
+        "QTabBar {"
+        "    background-color: transparent;"  
+        "    border: none;"
+        "    margin: 0px;"           
+        "    padding: 0px;"  
+        "}"
+        "QTabBar::tab {"
+        "    background-color: #adaeb0;"  
+        "    border-top-left-radius: 8px;"
+        "    border-top-right-radius: 8px;"
+        "    padding: 8px 16px 4px 16px;"
+        "    margin-right: 2px;"
+        "    min-height: 20px;"
+        "    color: #5f6368;"
+        "}"
+        "QTabBar::tab:selected {"
+        "    background-color: palette(window);"  
+        "    color: #202124;"
+        "    border: 1px solid #343536;"  
+        "    border-bottom: none;"        
+        "}"
+        "QTabBar::tab:hover:!selected {"
+        "    background-color: #d2d4d5;"  
+        "}"
+    );
 }
 
 QSize CustomTabBar::tabSizeHint(int index) const {
@@ -53,8 +79,26 @@ void CustomTabBar::mousePressEvent(QMouseEvent* event) {
         int tabIndex = tabAt(event->pos());
         
         if (tabIndex < 0) {
+            dragStartPos = event->pos();
+            isDraggingWindow = false; 
+            event->accept();
+            return;
+        }
+    }
+    
+    dragStartPos = QPoint(-1, -1);
+    isDraggingWindow = false;
+    
+    QTabBar::mousePressEvent(event);
+}
+
+void CustomTabBar::mouseMoveEvent(QMouseEvent* event) {
+    if (!isDraggingWindow && dragStartPos.x() >= 0) {
+        QPoint diff = event->pos() - dragStartPos;
+        //15 px jut like title bar
+        if(diff.manhattanLength() >= 15) { 
             if(window()->isMaximized()) {
-                QPoint globalClickPos = mapToGlobal(event->pos());
+                QPoint globalClickPos = mapToGlobal(dragStartPos);
                 window()->showNormal();
                 
                 QRect restoredGeometry = window()->geometry();
@@ -64,28 +108,23 @@ void CustomTabBar::mousePressEvent(QMouseEvent* event) {
             } else {
                 dragStartPos = event->pos();
             }
-            
             isDraggingWindow = true;
-            event->accept();
-            return;
         }
-        
     }
-    QTabBar::mousePressEvent(event);
-}
-
-void CustomTabBar::mouseMoveEvent(QMouseEvent* event) {
+    
     if (isDraggingWindow) {
         QPoint diff = event->pos() - dragStartPos;
         window()->move(window()->pos() + diff);
         event->accept();
         return;
     }
+    
     QTabBar::mouseMoveEvent(event);
 }
 
 void CustomTabBar::mouseReleaseEvent(QMouseEvent* event) {
     isDraggingWindow = false;
+    dragStartPos = QPoint(-1, -1); 
     QTabBar::mouseReleaseEvent(event);
 }
 
@@ -106,29 +145,53 @@ void CustomTabBar::mouseDoubleClickEvent(QMouseEvent* event) {
 //initalizes container for custom tab bar
 CustomTitleBar::CustomTitleBar(QWidget* parent)
     : QWidget(parent)
-    , ui(new Ui::CustomTitleBar)
 {
-    ui->setupUi(this);
+    // Set properties
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    setMaximumHeight(50);
+    setMinimumHeight(50);  
+    
+    QHBoxLayout* horizontalLayout = new QHBoxLayout(this);
+
+    QHBoxLayout* topBarLayout = new QHBoxLayout();
+    topBarLayout->setContentsMargins(0, 0, 0, 0);
+    topBarLayout->setSpacing(0);
 
     tabBar = new CustomTabBar(300, this);
+    // addTabButton = new QToolButton(this);
+    // addTabButton->setText("+");
+    // addTabButton->setToolTip("New Tab");
+    // addTabButton->hide();
 
-    addTabButton = new QToolButton(this);
-    addTabButton->setText("+");
-    addTabButton->setToolTip("New Tab");
-    addTabButton->hide();
+    topBarLayout->addWidget(tabBar);
+    // topBarLayout->addWidget(addTabButton);
 
-    ui->topBarLayout->addWidget(tabBar);  
-    ui->topBarLayout->addWidget(addTabButton);
+    minimizeButton = new QPushButton(this);
+    maximizeButton = new QPushButton(this);
+    closeButton = new QPushButton(this);
 
-    connect(ui->minimizeButton, &QPushButton::clicked, this, &CustomTitleBar::MinimizeWindow);
-    connect(ui->maximizeButton, &QPushButton::clicked, this, &CustomTitleBar::MaximizeWindow);
-    connect(ui->closeButton, &QPushButton::clicked, this, &CustomTitleBar::CloseWindow);
+    QString buttonStyle = "QPushButton { background-color: #ffffff; border: none; }";
+    minimizeButton->setStyleSheet(buttonStyle);
+    maximizeButton->setStyleSheet(buttonStyle);
+    closeButton->setStyleSheet(buttonStyle);
+
+    minimizeButton->setIcon(QIcon(":/resource/img/minimize.png"));
+    maximizeButton->setIcon(QIcon(":/resource/img/maximize.png"));
+    closeButton->setIcon(QIcon(":/resource/img/close.png"));
+
+    horizontalLayout->addLayout(topBarLayout);
+    horizontalLayout->addWidget(minimizeButton);
+    horizontalLayout->addWidget(maximizeButton);
+    horizontalLayout->addWidget(closeButton);
+
+    connect(minimizeButton, &QPushButton::clicked, this, &CustomTitleBar::MinimizeWindow);
+    connect(maximizeButton, &QPushButton::clicked, this, &CustomTitleBar::MaximizeWindow);
+    connect(closeButton, &QPushButton::clicked, this, &CustomTitleBar::CloseWindow);
+
     isMoving = false;
-
 }
 
 CustomTitleBar::~CustomTitleBar(){
-    delete ui;
 }
 
 //handle minimize, maxmimize, and close buttons
@@ -162,12 +225,20 @@ void CustomTitleBar::startDrag(QPoint localPos) {
 
 //handles window adjustment
 void CustomTitleBar::mousePressEvent(QMouseEvent* event){
-    startDrag(event->pos());
+    clickPos = event->pos();
+    isMoving = false; 
 }
 
 void CustomTitleBar::mouseMoveEvent(QMouseEvent* event){
+    if(!isMoving) {
+        QPoint diff = event->pos() - clickPos;
+        //15px threshhold to start moving
+        if(diff.manhattanLength() >= 15) { 
+            startDrag(clickPos);  
+        }
+    }
+    
     if(isMoving){
-        //calculate difference between the press position and the new Mouse position
         QPoint diff = event->pos() - clickPos;
         window()->move(window()->pos() + diff);
     }
@@ -179,6 +250,20 @@ void CustomTitleBar::mouseReleaseEvent(QMouseEvent* event){
 
 void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
     MaximizeWindow();
+}
+
+void CustomTitleBar::paintEvent(QPaintEvent* event) {
+    QWidget::paintEvent(event);
+    
+    // QPainter painter(this);
+    
+    // painter.setPen(QPen(QColor("#000000"), 1)); 
+    // painter.drawLine(0, height() - 1, width(), height() - 1);
+}
+
+void CustomTitleBar::showEvent(QShowEvent* event) {
+    QWidget::showEvent(event);
+    qDebug() << "CustomTitleBar actual size:" << size();
 }
 
 
@@ -193,6 +278,8 @@ ChessTabHost::ChessTabHost(QWidget* parent)
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
+    setStyleSheet("CustomTitleBar { background-color: #ff0000; border: 5px solid blue; }");
+
 
     CustomTitleBar* titleBar = new CustomTitleBar(this);
 
@@ -201,8 +288,8 @@ ChessTabHost::ChessTabHost(QWidget* parent)
     connect(tabBar, &QTabBar::tabCloseRequested, this, &ChessTabHost::onTabCloseRequested);
     connect(tabBar, &QTabBar::tabMoved, this, &ChessTabHost::onTabMoved);
 
-    addTabButton = titleBar->addTabButton;
-    connect(addTabButton, &QToolButton::clicked, this, &ChessTabHost::onAddTabClicked);
+    // addTabButton = titleBar->addTabButton;
+    // connect(addTabButton, &QToolButton::clicked, this, &ChessTabHost::onAddTabClicked);
 
     stack = new QStackedWidget(this);
 
@@ -238,7 +325,7 @@ int ChessTabHost::rowCount(){
     return tabBar->count();
 }
 
-//handles new tab depending on embed type
+//handles new tab depending on embed type **rn not allowed
 void ChessTabHost::addNewTab(QWidget* embed, QString title) {
 
 
@@ -314,6 +401,7 @@ void ChessTabHost::onTabCloseRequested(int index) {
 }
 
 void ChessTabHost::onAddTabClicked() {
+    //not exist rn
     // addNewTab(new DatabaseLibrary, "New Tab");
     // addNewTab(new ChessGameWindow, "Board UI");
 }
