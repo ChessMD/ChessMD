@@ -29,6 +29,8 @@ private:
     void setupToolbar();
     QWidget* setupSidebar();
 
+    void fetchChesscomGamesAndSave(const QString &username, const int maxGames);
+
     DatabaseLibrary* m_dbLibrary;
     QMenuBar* m_menuBar;
     QHash<QString, QThread*> m_saveThreads;
@@ -37,10 +39,12 @@ private:
 private slots:
     void onAddGame();
     void onSettings();
-
+    void onImportOnlineDatabase();
+    void onPGNReady(const QString &combinedPGN, const QString &suggestedFilename);
 
 signals:
-
+    void PGNFetchError(const QString &errorMessage);
+    void PGNReady(const QString &combinedPGN, const QString &suggestedFilename);
 
 };
 
