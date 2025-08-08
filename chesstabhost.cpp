@@ -45,22 +45,22 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
         "    padding: 0px;"  
         "}"
         "QTabBar::tab {"
-        "    background-color: #adaeb0;"  
+        "    background-color: #adaeb0;" //hcc
         "    border-top-left-radius: 8px;"
         "    border-top-right-radius: 8px;"
         "    margin-right: 2px;"
         "    margin-top: 20px;"
         "    min-height: 30px;"
-        "    color: #5f6368;"
+        "    color: #5f6368;" //hcc
         "}"
         "QTabBar::tab:selected {"
         "    background-color: palette(window);"  
-        "    color: #202124;"
-        "    border: 1px solid #343536;"  
+        "    color: #202124;" //hcc
+        "    border: 1px solid #343536;" //hcc
         "    border-bottom: none;"        
         "}"
         "QTabBar::tab:hover:!selected {"
-        "    background-color: #d2d4d5;"  
+        "    background-color: #d2d4d5;" //hcc
         "}"
     );
 }
@@ -81,10 +81,10 @@ void CustomTabBar::addCloseButton(int index) {
         "    border-radius: 8px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e0e0e0;"
+        "    background-color: #e0e0e0;" //hcc
         "}"
         "QPushButton:pressed {"
-        "    background-color: #d0d0d0;"
+        "    background-color: #d0d0d0;" //hcc
         "}"
     );
     
@@ -253,10 +253,10 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
         "    padding: 0px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e0e0e0;"  
+        "    background-color: #e0e0e0;" //hcc
         "}"
         "QPushButton:pressed {"
-        "    background-color: #d0d0d0;"  
+        "    background-color: #d0d0d0;" //hcc
         "}";
 
     //red styling for close
@@ -271,11 +271,11 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
         "    padding: 0px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e81123;" 
-        "    color: white;"
+        "    background-color: #e81123;" //hcc
+        "    color: white;" //hcc
         "}"
         "QPushButton:pressed {"
-        "    background-color: #c50e1f;"  
+        "    background-color: #c50e1f;" //hcc
         "}";
 
     minimizeButton->setStyleSheet(buttonStyle);
@@ -366,7 +366,7 @@ void CustomTitleBar::paintEvent(QPaintEvent* event) {
     
     // QPainter painter(this);
     
-    // painter.setPen(QPen(QColor("#000000"), 1)); 
+    // painter.setPen(QPen(QColor("#000000"), 1)); //hcc
     // painter.drawLine(0, height() - 1, width(), height() - 1);
 }
 

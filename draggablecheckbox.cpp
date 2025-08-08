@@ -35,17 +35,17 @@ DraggableCheckBox::DraggableCheckBox(const QString& text, QWidget *parent)
     mDeleteButton->setCursor(Qt::PointingHandCursor);  
     mDeleteButton->setStyleSheet(
         "QPushButton { "
-        "    background-color: #ff4444; "
-        "    color: white; "
+        "    background-color: #ff4444; " //hcc
+        "    color: white; " //hcc
         "    border: none; "
         "    border-radius: 3px; "
         "    font-size: 10px; "
         "} "
         "QPushButton:hover { "
-        "    background-color: #ff6666; "
+        "    background-color: #ff6666; " //hcc
         "} "
         "QPushButton:pressed { "
-        "    background-color: #cc3333; "
+        "    background-color: #cc3333; " //hcc
         "}"
     );
     mDeleteButton->setToolTip(tr("Delete header"));
@@ -79,11 +79,11 @@ QPixmap DraggableCheckBox::createDragIcon() {
     painter.setRenderHint(QPainter::Antialiasing);
 
     //draw the dot pattern
-    QPen pen(QColor(120, 120, 120));
+    QPen pen(QColor(120, 120, 120)); //hcc
     pen.setWidth(1);
     painter.setPen(pen);
     
-    QBrush brush(QColor(120, 120, 120));
+    QBrush brush(QColor(120, 120, 120)); //hcc
     painter.setBrush(brush);
     
     int dotSize = 2;
@@ -108,11 +108,11 @@ QPixmap DraggableCheckBox::createDisabledDragIcon() {
     painter.setRenderHint(QPainter::Antialiasing);
 
     // grayed out
-    QPen pen(QColor(180, 180, 180));  
+    QPen pen(QColor(180, 180, 180)); //hcc
     pen.setWidth(1);
     painter.setPen(pen);
     
-    QBrush brush(QColor(180, 180, 180));
+    QBrush brush(QColor(180, 180, 180)); //hcc
     painter.setBrush(brush);
     
     int dotSize = 2;
@@ -180,8 +180,8 @@ void DraggableCheckBox::setDeleteEnabled(bool enabled){
         mDeleteButton->setCursor(Qt::ArrowCursor);  
         mDeleteButton->setStyleSheet(
             "QPushButton { "
-            "    background-color: #cccccc; "
-            "    color: #666666; "
+            "    background-color: #cccccc; " //hcc
+            "    color: #666666; " //hcc
             "    border: none; "
             "    border-radius: 3px; "
             "    font-size: 10px; "
@@ -193,17 +193,17 @@ void DraggableCheckBox::setDeleteEnabled(bool enabled){
         
         mDeleteButton->setStyleSheet(
             "QPushButton { "
-            "    background-color: #ff4444; "
-            "    color: white; "
+            "    background-color: #ff4444; " //hcc
+            "    color: white; " //hcc
             "    border: none; "
             "    border-radius: 3px; "
             "    font-size: 10px; "
             "} "
             "QPushButton:hover { "
-            "    background-color: #ff6666; "
+            "    background-color: #ff6666; " //hcc
             "} "
             "QPushButton:pressed { "
-            "    background-color: #cc3333; "
+            "    background-color: #cc3333; " //hcc
             "}"
         );
         mDeleteButton->setToolTip(tr("Delete header"));

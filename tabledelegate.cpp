@@ -12,7 +12,7 @@ void TableDelegate::paint( QPainter *painter, const QStyleOptionViewItem &option
 
     // creates a line under a table row
     if(true){
-        painter->setPen(QPen(QColor(5142583), 3));
+        painter->setPen(QPen(QColor(5142583), 3)); //hcc
         painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight() );
     }
 }

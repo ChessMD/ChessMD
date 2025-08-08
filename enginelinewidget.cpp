@@ -150,13 +150,13 @@ void EngineLineWidget::mousePressEvent(QMouseEvent *ev) {
 
 void EngineLineWidget::restyleEval(const QString &text) {
     bool positive = !text.startsWith('-');
-    QString bg = positive ? QStringLiteral("white") : QStringLiteral("#333");
-    QString fg = positive ? QStringLiteral("black") : QStringLiteral("white");
+    QString bg = positive ? QStringLiteral("white") : QStringLiteral("#333"); //hcc
+    QString fg = positive ? QStringLiteral("black") : QStringLiteral("white"); //hcc
     QString sheet = QStringLiteral(R"(
         QPushButton {
             font-size: 14px;
             font-weight: bold;
-            border: 1px solid #888;
+                    border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 4px 8px;
             min-width: 50px;

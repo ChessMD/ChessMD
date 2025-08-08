@@ -26,9 +26,9 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_blackLabel = new QLabel(tr("Black accuracy: –"), this);
     m_whiteLabel->setStyleSheet(R"(
         QLabel {
-            background: white;
-            color: black;
-            border: 1px solid #888;
+            background: white; //hcc
+            color: black; //hcc
+            border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 4px 8px;
             font-weight: bold;
@@ -37,9 +37,9 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     )");
         m_blackLabel->setStyleSheet(R"(
         QLabel {
-            background: #333;
-            color: white;
-            border: 1px solid #888;
+            background: #333; /*hcc*/
+                    color: white; //hcc
+            border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 4px 8px;
             font-weight: bold;
@@ -86,7 +86,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_zeroSeries->attachAxis(m_axisY);
     m_chart->legend()->hide();
     m_chart->setBackgroundRoundness(0);
-    m_chart->setBackgroundBrush(QBrush(QColor(230, 230, 230)));
+    m_chart->setBackgroundBrush(QBrush(QColor(230, 230, 230))); //hcc
 
     m_inaccuracySeries = new QScatterSeries;
     m_mistakeSeries = new QScatterSeries;
@@ -102,9 +102,9 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         s->setPen(outlinePen);
     }
 
-    m_inaccuracySeries->setBrush(QBrush(QColor(247,198,49)));
-    m_mistakeSeries->setBrush(QBrush(QColor(255,164,89)));
-    m_blunderSeries->setBrush(QBrush(QColor(250, 65, 45)));
+    m_inaccuracySeries->setBrush(QBrush(QColor(247,198,49))); //hcc
+    m_mistakeSeries->setBrush(QBrush(QColor(255,164,89))); //hcc
+    m_blunderSeries->setBrush(QBrush(QColor(250, 65, 45))); //hcc
 
     m_chartView = new QChartView(m_chart, this);
     m_chartView->setRenderHint(QPainter::Antialiasing);
@@ -540,11 +540,11 @@ void GameReviewViewer::finalizeReview()
 
     auto* whiteArea = new QAreaSeries(posLine, zeroLine);
     whiteArea->setPen(Qt::NoPen);
-    whiteArea->setBrush(QColor(255,255,255,100));
+    whiteArea->setBrush(QColor(255,255,255,100)); //hcc
 
     auto* blackArea = new QAreaSeries(zeroLine, negLine);
     blackArea->setPen(Qt::NoPen);
-    blackArea->setBrush(QColor(0,0,0,100));
+    blackArea->setBrush(QColor(0,0,0,100)); //hcc
 
     m_chart->addSeries(whiteArea);
     m_chart->addSeries(blackArea);

@@ -36,7 +36,7 @@ EngineWidget::EngineWidget(QWidget *parent)
         QPushButton {
             font-size: 24px;
             font-weight: bold;
-            border: 1px solid #888;
+            border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 8px 16px;
         }
@@ -45,12 +45,12 @@ EngineWidget::EngineWidget(QWidget *parent)
     QString buttonStyle = R"(
         QToolButton {
             font-size: 24px;
-            border: 1px solid #888;
+            border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 8px 16px;
         }
         QToolButton:hover {
-            background: #f0f0f0;
+            background: #f0f0f0; /*hcc*/
         }
     )";
 
@@ -303,13 +303,13 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
         m_currentMove->m_position->setEvalScore(qMax(4.0, qMin(-4.0, evalScore)));
         emit engineEvalScoreChanged(evalScore);
 
-        QString bg = info.positive ? QStringLiteral("white") : QStringLiteral("#333");
-        QString fg = info.positive ? QStringLiteral("black") : QStringLiteral("white");
+        QString bg = info.positive ? QStringLiteral("white") : QStringLiteral("#333"); //hcc
+        QString fg = info.positive ? QStringLiteral("black") : QStringLiteral("white"); //hcc
         m_evalButton->setStyleSheet(QStringLiteral(R"(
             QPushButton {
                 font-size: 24px;
                 font-weight: bold;
-                border: 1px solid #888;
+                border: 1px solid #888; /*hcc*/
                 border-radius: 4px;
                 padding: 8px 16px;
                 background: %1;

@@ -13,6 +13,8 @@
 #include <QProgressBar>
 #include <QApplication>
 #include <QOperatingSystemVersion>
+#include <QSettings>
+#include <QComboBox>
 #include <fstream>
 
 
@@ -27,6 +29,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     mCategoryList = new QListWidget(this);
     mCategoryList->addItem(tr("Engine"));
     mCategoryList->addItem(tr("Opening"));
+    mCategoryList->addItem(tr("Theme"));
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
@@ -60,12 +63,33 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
     
+    // theme page
+    QWidget* themePage = new QWidget(this);
+    QVBoxLayout* themeLayout = new QVBoxLayout(themePage);
+    
+    QLabel* themeLabel = new QLabel(tr("Theme:"), themePage);
+    mThemeComboBox = new QComboBox(themePage);
+    mThemeComboBox->addItem(tr("Light"));
+    mThemeComboBox->addItem(tr("Dark"));
+    mThemeComboBox->addItem(tr("System"));
+    mThemeComboBox->setCurrentIndex(0);
+    
+    QLabel* themeInfo = new QLabel(tr("Theme changes will be applied when you restart the application."), themePage);
+    themeInfo->setStyleSheet("color: #666; font-size: 11px;"); //hcc
+    
+    themeLayout->addWidget(themeLabel);
+    themeLayout->addWidget(mThemeComboBox);
+    themeLayout->addWidget(themeInfo);
+    themeLayout->addStretch();
+    mStackedWidget->addWidget(themePage);
+    
     mainLayout->addWidget(mStackedWidget);
 
     connect(mCategoryList, &QListWidget::currentRowChanged, mStackedWidget, &QStackedWidget::setCurrentIndex);
     mCategoryList->setCurrentRow(0);
     connect(loadPgnBtn, &QPushButton::clicked, this, &SettingsDialog::onLoadPgnClicked);
     connect(selectEngineBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectEngineClicked);
+    connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
     
     ChessQSettings settings;
     QString enginePath = settings.getEngineFile();
@@ -165,4 +189,25 @@ void SettingsDialog::onLoadPgnClicked() {
 
 QString SettingsDialog::getOpeningsPath() const {
     return mOpeningsPath;
+}
+
+void SettingsDialog::onThemeChanged() {
+    QString theme;
+    int index = mThemeComboBox->currentIndex();
+    switch (index) {
+        case 0:
+            theme = "light";
+            break;
+        case 1:
+            theme = "dark";
+            break;
+        case 2:
+            theme = "system";
+            break;
+        default:
+            theme = "light";
+    }
+
+    QSettings settings;
+    settings.setValue("theme", theme);
 }
