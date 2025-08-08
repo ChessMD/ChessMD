@@ -25,12 +25,20 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     #endif
+    void tabInserted(int index) override;
+    void tabRemoved(int index) override;
+
 
 
 private:
     const int defaultWidth;
     QPoint dragStartPos = QPoint(-1, -1);
     bool isDraggingWindow = false;
+
+
+private slots:
+    void addCloseButton(int index);
+    void removeCloseButton(int index);
 };
 
 class CustomTitleBar : public QWidget

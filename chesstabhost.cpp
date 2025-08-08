@@ -14,6 +14,7 @@ March 18, 2025 - Program Creation
 #include <QMouseEvent>
 #include <QCloseEvent>
 #include <QPainter>
+#include <QRect>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -28,16 +29,17 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
 {
     setUsesScrollButtons(false);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred); 
-    setTabsClosable(true);
+    setTabsClosable(false);
     setMovable(true);
     setExpanding(false);
     setDocumentMode(true);
+
+    QTabBar::setDrawBase(false);
 
 
     //fix these colours lol
     setStyleSheet(
         "QTabBar {"
-        "    background-color: transparent;"  
         "    border: none;"
         "    margin: 0px;"           
         "    padding: 0px;"  
@@ -46,9 +48,9 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
         "    background-color: #adaeb0;"  
         "    border-top-left-radius: 8px;"
         "    border-top-right-radius: 8px;"
-        "    padding: 8px 16px 4px 16px;"
         "    margin-right: 2px;"
-        "    min-height: 20px;"
+        "    margin-top: 20px;"
+        "    min-height: 30px;"
         "    color: #5f6368;"
         "}"
         "QTabBar::tab:selected {"
@@ -61,6 +63,63 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
         "    background-color: #d2d4d5;"  
         "}"
     );
+}
+
+void CustomTabBar::addCloseButton(int index) {
+    // container to position close button
+    QWidget* container = new QWidget(this);
+    container->setFixedSize(30, 30); 
+    
+    QPushButton* closeButton = new QPushButton(container);
+    closeButton->setIcon(QIcon(":/resource/img/close.png"));
+    closeButton->setIconSize(QSize(12, 12));
+    closeButton->setFixedSize(12, 12);
+    closeButton->setStyleSheet(
+        "QPushButton {"
+        "    background: transparent;"
+        "    border: none;"
+        "    border-radius: 8px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #e0e0e0;"
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: #d0d0d0;"
+        "}"
+    );
+    
+    closeButton->move(9, 20);
+    
+    // find current index when clicked
+    connect(closeButton, &QPushButton::clicked, [this, closeButton]() {
+        for (int i = 0; i < count(); ++i) {
+            QWidget* tabButton = this->tabButton(i, QTabBar::RightSide);
+            if (tabButton && tabButton->findChild<QPushButton*>() == closeButton) {
+                emit tabCloseRequested(i);
+                break;
+            }
+        }
+    });
+    
+    setTabButton(index, QTabBar::RightSide, container);
+}
+
+void CustomTabBar::removeCloseButton(int index) {
+    // QWidget* button = tabButton(index, QTabBar::RightSide);
+    // if (button) {
+    //     setTabButton(index, QTabBar::RightSide, nullptr);
+    //     button->deleteLater();
+    // }
+}
+
+void CustomTabBar::tabInserted(int index) {
+    QTabBar::tabInserted(index);
+    addCloseButton(index);
+}
+
+void CustomTabBar::tabRemoved(int index) {
+    QTabBar::tabRemoved(index);
+    removeCloseButton(index);
 }
 
 QSize CustomTabBar::tabSizeHint(int index) const {
@@ -161,26 +220,16 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     setMaximumHeight(50);
     setMinimumHeight(50);  
 
-    // setStyleSheet("CustomTitleBar { background-color: #ff0000; border: 5px solid blue; }");
-
     
     QHBoxLayout* horizontalLayout = new QHBoxLayout(this);
     horizontalLayout->setContentsMargins(0, 0, 0, 0);  
     horizontalLayout->setSpacing(0);   
 
-    QHBoxLayout* topBarLayout = new QHBoxLayout();
-    topBarLayout->setContentsMargins(0, 0, 0, 0);
-    topBarLayout->setSpacing(0);
+    horizontalLayout->addSpacing(10);
 
     tabBar = new CustomTabBar(300, this);
-    // addTabButton = new QToolButton(this);
-    // addTabButton->setText("+");
-    // addTabButton->setToolTip("New Tab");
-    // addTabButton->hide();
-
-    topBarLayout->addWidget(tabBar);
-    // topBarLayout->addWidget(addTabButton);
-
+    horizontalLayout->addWidget(tabBar);
+    
     minimizeButton = new QPushButton(this);
     maximizeButton = new QPushButton(this);
     closeButton = new QPushButton(this);
@@ -237,7 +286,6 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     maximizeButton->setFixedSize(46, 50);
     closeButton->setFixedSize(46, 50);
 
-    horizontalLayout->addLayout(topBarLayout);
     horizontalLayout->addWidget(minimizeButton);
     horizontalLayout->addWidget(maximizeButton);
     horizontalLayout->addWidget(closeButton);
@@ -324,7 +372,6 @@ void CustomTitleBar::paintEvent(QPaintEvent* event) {
 
 void CustomTitleBar::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
-    // qDebug() << "CustomTitleBar actual size:" << size();
 }
 
 
