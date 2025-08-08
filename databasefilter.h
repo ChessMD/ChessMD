@@ -17,8 +17,8 @@ private:
 
     struct Filter {
         QString whiteFirst, whiteLast, blackFirst, blackLast, tournament, annotator;
-        bool winsOnly, ignoreColours;
-        int eloMin, eloMax;
+        bool winsOnly, ignoreColours, dateCheck, ecoCheck, movesCheck;
+        int eloMin, eloMax, movesMin, movesMax;
     } _filter;
 
 

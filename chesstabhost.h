@@ -1,4 +1,3 @@
-
 #ifndef CHESSTABHOST_H
 #define CHESSTABHOST_H
 
@@ -8,6 +7,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 
 
 class CustomTabBar : public QTabBar {
@@ -19,22 +19,37 @@ public:
 
 protected:
     QSize tabSizeHint(int index) const override;
+    #ifndef Q_OS_WIN
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
+    #endif
+    void tabInserted(int index) override;
+    void tabRemoved(int index) override;
+
+
 
 private:
     const int defaultWidth;
-};
+    QPoint dragStartPos = QPoint(-1, -1);
+    bool isDraggingWindow = false;
 
-namespace Ui {
-class CustomTitleBar;
-}
+
+private slots:
+    void addCloseButton(int index);
+    void removeCloseButton(int index);
+};
 
 class CustomTitleBar : public QWidget
 {
     Q_OBJECT
 public:
-    Ui::CustomTitleBar *ui;
     explicit CustomTitleBar(QWidget *parent = nullptr);
     ~CustomTitleBar();
+
+    void startDrag(QPoint localPos);
+
     QTabBar* tabBar;
     QToolButton* addTabButton;
 
@@ -44,14 +59,23 @@ public slots:
     void CloseWindow();
 
 protected:
+    #ifndef Q_OS_WIN
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
+    #endif
+
+    void paintEvent(QPaintEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 private:
-    QPoint clickPos;
-    bool isMoving;
+    QPushButton* minimizeButton;
+    QPushButton* maximizeButton;
+    QPushButton* closeButton;
+    
+    QPoint clickPos = QPoint(-1, -1);
+    bool isMoving = false;
 
 };
 
@@ -67,6 +91,10 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+
+#ifdef Q_OS_WIN
+    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
+#endif
 
 private slots:
     void onTabChanged(int index);

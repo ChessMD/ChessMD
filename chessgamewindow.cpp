@@ -514,6 +514,7 @@ void ChessGameWindow::openingSetup()
             if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
                 
                 //todo, make it play the move and create a variation maybe idk
+                
             }
         });
 

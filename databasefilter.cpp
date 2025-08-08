@@ -22,12 +22,18 @@ DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
     _filter.whiteFirst = ui->WhiteFirst->text();
     _filter.blackLast = ui->BlackLast->text();
     _filter.whiteLast = ui->WhiteLast->text();
-    _filter.ignoreColours = ui->IgnoreColour->isChecked();
-    _filter.winsOnly = ui->WinsOnly->isChecked();
-    _filter.eloMin = ui->EloMin->value();
-    _filter.eloMax = ui->EloMax->value();
     _filter.tournament = ui->TournamentEdit->text();
     _filter.annotator = ui->AnnotatorEdit->text();
+    _filter.ignoreColours = ui->IgnoreColour->isChecked();
+    _filter.winsOnly = ui->WinsOnly->isChecked();
+    _filter.dateCheck = ui->DateCheck->isChecked();
+    _filter.ecoCheck = ui->EcoCheck->isChecked();
+    _filter.movesCheck = ui->MovesCheck->isChecked();
+
+
+    _filter.eloMin = ui->EloMin->value();
+    _filter.eloMax = ui->EloMax->value();
+    
 
     return _filter;
 
