@@ -383,7 +383,8 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         QPoint vpPt = m_chartView->mapFromScene(scenePt);
         QPoint glPt = m_chartView->viewport()->mapToGlobal(vpPt);
 
-        QString tip = QString("%1\nEvaluation: %2").arg((m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : "Starting Position")).arg(p.y,0,'f',2);
+        QString prefix = QString::number((idx-1)/2+1) + QString(idx%2 ? "." : "...");
+        QString tip = QString("%1%2\nEvaluation: %3").arg(idx ? prefix : "").arg((m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : "Starting Position")).arg(p.y,0,'f',2);
         QToolTip::showText(glPt, tip, m_chartView);
 
         // vertical line
@@ -600,7 +601,6 @@ void GameReviewViewer::finalizeReview()
 
         double drop = std::abs(wb - wa);
         QSharedPointer<NotationMove> move = m_moves[i+1];
-        qDebug() << cpBefore << cpAfter << drop << move->moveText;
         if (drop >= 0.18) move->annotation1 = "??";
         else if (drop >= 0.12) move->annotation1 = "?";
         else if (drop >= 0.06) move->annotation1 = "?!";

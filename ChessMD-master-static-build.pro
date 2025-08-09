@@ -40,16 +40,13 @@ HEADERS += chessgamefilesdata.h \
            tabledelegate.h \
            uciengine.h \
            variationdialogue.h \
-		   gamereviewviewer.h \
-		   engineviewer.h \
-		   draggablecheckbox.h
+	   gamereviewviewer.h \
+	   engineviewer.h \
+	   draggablecheckbox.h
 
-FORMS += customtitlebar.ui \
-         databasefilter.ui \
+FORMS += databasefilter.ui \
          databaselibrary.ui \
          databaseuploader.ui \
-         databaseviewer.ui \
-         mainwindow.ui \
          pgnuploader.ui
 SOURCES += chessgamefilesdata.cpp \
            chessgametabdialog.cpp \

@@ -638,6 +638,9 @@
       </attribute>
      </widget>
      <widget class="QWidget" name="MaterialTab">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <attribute name="title">
        <string>Material</string>
       </attribute>
