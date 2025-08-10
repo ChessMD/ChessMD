@@ -286,6 +286,7 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
     newW->installEventFilter(this);
     connect(newW, &EngineLineWidget::moveClicked, this, &EngineWidget::onEngineMoveClicked);
     connect(newW, &EngineLineWidget::moveHovered, this, &EngineWidget::moveHovered);
+    connect(newW, &EngineLineWidget::noHover, this, &EngineWidget::noHover);
 
     int index = m_containerLay->indexOf(lineW);
     m_containerLay->insertWidget(index, newW);

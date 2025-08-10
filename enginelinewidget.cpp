@@ -179,7 +179,7 @@ void EngineLineWidget::mouseMoveEvent(QMouseEvent* event) {
         }
     }
     if (!newHover) {
-        emit moveHovered(nullptr);
+        emit noHover();
         setCursor(Qt::ArrowCursor);
     } else {
         setCursor(Qt::PointingHandCursor);
@@ -198,7 +198,7 @@ void EngineLineWidget::leaveEvent(QEvent* event) {
         m_hoveredSegment = nullptr;
         update();
     }
-    emit moveHovered(nullptr);
+    emit noHover();
     QWidget::leaveEvent(event);
 }
 

@@ -73,7 +73,7 @@ signals:
     void boardDataChanged();
     void requestPromotion(int sr, int sc, int dr, int dc);
     // Signals ChessGameWindow to append new move to current selected move
-    void moveMade(QSharedPointer<NotationMove> move);
+    void moveMade(QSharedPointer<NotationMove>& move);
     void isPreviewChanged(bool);
     void lastMoveChanged();
     void evalScoreChanged();

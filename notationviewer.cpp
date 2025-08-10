@@ -253,7 +253,7 @@ void NotationViewer::mousePressEvent(QMouseEvent *event)
         if (seg.rect.contains(pos)) {
             m_selectedMove = seg.move;
             emit moveSelected(m_selectedMove);
-            viewport()->update();
+            refresh(false);
             return;
         }
     }
@@ -265,7 +265,7 @@ void NotationViewer::selectPreviousMove()
     if (m_selectedMove != nullptr && m_selectedMove->m_previousMove != nullptr){
         m_selectedMove = m_selectedMove->m_previousMove;
         emit moveSelected(m_selectedMove);
-        viewport()->update();
+        refresh(false);
     }
 }
 
@@ -285,23 +285,21 @@ void NotationViewer::selectNextMove()
             }
         }
         emit moveSelected(m_selectedMove);
-        viewport()->update();
+        refresh(false);
     }
 }
 
 void NotationViewer::resizeEvent(QResizeEvent* event)
 {
     QAbstractScrollArea::resizeEvent(event);
-    layoutNotation();
-    viewport()->update();
+    refresh();
 }
 
-void NotationViewer::refresh()
+void NotationViewer::refresh(bool refreshLayout)
 {
-    layoutNotation();
+    if (refreshLayout) layoutNotation();
     viewport()->update();
 }
-
 
 void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
     m_isEdited = true;
@@ -412,23 +410,28 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
         });
     }
 
-    QAction *delVar =  new QAction(tr("Delete Variation"), &menu);
-    delVar->setShortcut(QKeySequence("Ctrl+D"));
-    delVar->setShortcutVisibleInContextMenu(true);
-    connect(delVar, &QAction::triggered, this, &NotationViewer::onActionDeleteVariation);
-    menu.addAction(delVar);
+    QAction *deleteVar =  new QAction(tr("Delete Variation"), &menu);
+    deleteVar->setShortcut(QKeySequence("Ctrl+D"));
+    deleteVar->setShortcutVisibleInContextMenu(true);
+    connect(deleteVar, &QAction::triggered, this, &NotationViewer::onActionDeleteVariation);
+    menu.addAction(deleteVar);
 
-    QAction *delMovesAfter =  new QAction(tr("Delete Moves After"), &menu);
-    delMovesAfter->setShortcut(QKeySequence("Delete"));
-    delMovesAfter->setShortcutVisibleInContextMenu(true);
-    connect(delMovesAfter, &QAction::triggered, this, &NotationViewer::onActionDeleteMovesAfter);
-    menu.addAction(delMovesAfter);
+    QAction *deleteMove =  new QAction(tr("Delete Move"), &menu);
+    deleteMove->setShortcut(QKeySequence("Delete"));
+    deleteMove->setShortcutVisibleInContextMenu(true);
+    connect(deleteMove, &QAction::triggered, this, &NotationViewer::onActionDeleteMove);
+    menu.addAction(deleteMove);
+
+    QAction *deleteCommentary =  new QAction(tr("Delete All Commentary"), &menu);
+    connect(deleteCommentary, &QAction::triggered, this, &NotationViewer::onActionDeleteAllCommentary);
+    menu.addAction(deleteCommentary);
 
     QAction *promoteVar =  new QAction(tr("Promote Variation"), &menu);
     promoteVar->setShortcut(QKeySequence("Ctrl+Up"));
     promoteVar->setShortcutVisibleInContextMenu(true);
     connect(promoteVar, &QAction::triggered, this, &NotationViewer::onActionPromoteVariation);
     menu.addAction(promoteVar);
+
 
     menu.exec(event->globalPos());
 }
@@ -440,12 +443,18 @@ void NotationViewer::onActionDeleteVariation() {
     refresh();
 }
 
-void NotationViewer::onActionDeleteMovesAfter() {
+void NotationViewer::onActionDeleteMove() {
     m_isEdited = true;
-    deleteMovesAfter(m_selectedMove);
+    m_selectedMove = deleteMove(m_selectedMove);
+    emit moveSelected(m_selectedMove);
     refresh();
 }
 
+void NotationViewer::onActionDeleteAllCommentary() {
+    m_isEdited = true;
+    deleteAllCommentary(m_rootMove);
+    refresh();
+}
 
 void NotationViewer::onActionPromoteVariation() {
     m_isEdited = true;

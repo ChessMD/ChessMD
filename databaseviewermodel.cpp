@@ -1,8 +1,6 @@
 #include "databaseviewermodel.h"
 #include "streamparser.h"
 
-#include <sstream>
-
 DatabaseViewerModel::DatabaseViewerModel(QObject *parent): QAbstractItemModel{parent} {
     mHeaders << "#" << "White" << "wElo" << "Black" << "bElo" << "Result" << "Moves" << "Event" << "Date";
 }

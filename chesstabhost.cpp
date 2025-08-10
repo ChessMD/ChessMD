@@ -363,18 +363,15 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
 
 void CustomTitleBar::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
-    
-    // QPainter painter(this);
-    
-    // painter.setPen(QPen(QColor("#000000"), 1)); 
-    // painter.drawLine(0, height() - 1, width(), height() - 1);
+
+    QPainter painter(this);
+    painter.setPen(QPen(QColor("#000000"), 1));
+    painter.drawLine(0, height() - 1, width(), height() - 1);
 }
 
 void CustomTitleBar::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
 }
-
-
 
 
 //initializes tab host window

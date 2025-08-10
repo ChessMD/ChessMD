@@ -55,7 +55,8 @@ public slots:
     void openingTeardown();
     void gameReviewSetup();
 
-    void onMoveHovered(QSharedPointer<NotationMove> move);
+    void onMoveHovered(QSharedPointer<NotationMove>& move);
+    void onNoHover();
 
 private:
     void updateEngineActions();
@@ -98,8 +99,8 @@ private:
 
 
 private slots:
-    void onMoveMade(QSharedPointer<NotationMove> move);
-    void onMoveSelected(QSharedPointer<NotationMove> move);
+    void onMoveMade(QSharedPointer<NotationMove>& move);
+    void onMoveSelected(QSharedPointer<NotationMove>& move);
     void onEvalScoreChanged(double evalScore);
 
     void onPrevMoveShortcut();

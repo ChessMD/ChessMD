@@ -29,7 +29,7 @@ public:
     QSharedPointer<NotationMove> getRootMove();
     QSharedPointer<NotationMove> getSelectedMove();
 
-    void refresh();
+    void refresh(bool refreshLayout = true);
 
     bool m_isEdited;
     PGNGame m_game;
@@ -41,8 +41,8 @@ public slots:
     void onEngineMoveClicked(QSharedPointer<NotationMove> &move);
 
 signals:
-    void moveSelected(const QSharedPointer<NotationMove>& move);
-    void moveHovered(QSharedPointer<NotationMove> move);
+    void moveSelected(QSharedPointer<NotationMove>& move);
+    void moveHovered(QSharedPointer<NotationMove>& move);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -54,8 +54,9 @@ protected:
 private slots:
     void onActionAddAnnotation();
     void onActionDeleteVariation();
-    void onActionDeleteMovesAfter();
+    void onActionDeleteMove();
     void onActionPromoteVariation();
+    void onActionDeleteAllCommentary();
 
 private:
     // DFS traverse notation tree

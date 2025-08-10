@@ -43,7 +43,9 @@ QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& mov
 // Appends a new NotationMove to the current
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
 // Deletes all NotationMoves after the current NotationMove
-void deleteMovesAfter(const QSharedPointer<NotationMove>& move);
+QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move);
+// Deletes all comments and annotations from entire game tree
+void deleteAllCommentary(QSharedPointer<NotationMove>& move);
 // Promotes the variation containing the current NotationMove up one branch
 void promoteVariation(const QSharedPointer<NotationMove>& move);
 // Deletes all NotationMove in the variation containing the current NotationMove

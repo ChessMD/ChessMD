@@ -48,9 +48,26 @@ void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<
 }
 
 // Deletes all moves after the current selected move
-void deleteMovesAfter(const QSharedPointer<NotationMove>& move)
+QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move)
 {
-    move->m_nextMoves.clear();
+    if (!move->m_previousMove) return move;
+    for (int i = 0; i < move->m_previousMove->m_nextMoves.size(); i++){
+        if (move->m_previousMove->m_nextMoves[i]->moveText == move->moveText){
+            move->m_previousMove->m_nextMoves.erase(move->m_previousMove->m_nextMoves.begin()+i);
+            break;
+        }
+    }
+    return move->m_previousMove;
+}
+
+void deleteAllCommentary(QSharedPointer<NotationMove>& move){
+    move->annotation1.clear();
+    move->annotation2.clear();
+    move->commentAfter.clear();
+    move->commentBefore.clear();
+    for (auto& childMove : move->m_nextMoves) {
+        deleteAllCommentary(childMove);
+    }
 }
 
 // Deletes the entire variation of the current selected move

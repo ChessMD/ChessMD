@@ -26,7 +26,8 @@ public:
 
 signals:
     void engineMoveClicked(QSharedPointer<NotationMove>& move);
-    void moveHovered(QSharedPointer<NotationMove> move);
+    void moveHovered(QSharedPointer<NotationMove>& move);
+    void noHover();
     void engineEvalScoreChanged(double evalScore);
 
 protected:

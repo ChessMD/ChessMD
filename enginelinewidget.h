@@ -19,7 +19,8 @@ public:
 
 signals:
     void moveClicked(QSharedPointer<NotationMove> &move);
-    void moveHovered(QSharedPointer<NotationMove> move);
+    void moveHovered(QSharedPointer<NotationMove> &move);
+    void noHover();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
