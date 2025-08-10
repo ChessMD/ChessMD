@@ -363,9 +363,35 @@ void MainWindow::fetchChesscomGamesAndSave(const QString &username, const int ma
         emit PGNReady(combinedPGN, filename);
     });
 
-    connect(worker, &QThread::finished, worker, &QObject::deleteLater);
+    connect(worker, &QThread::finished, this, [this, worker]() {
+        worker->deleteLater();
+        m_chesscomFetchRunning = false;
+        QMetaObject::invokeMethod(this, "startNextChesscomFetch", Qt::QueuedConnection);
+    });
+
     worker->start();
 }
+
+void MainWindow::enqueueChesscomFetch(const QString &username, int maxGames)
+{
+    m_chesscomFetchQueue.enqueue(qMakePair(username, maxGames));
+    if (!m_chesscomFetchRunning) {
+        startNextChesscomFetch();
+    }
+}
+
+void MainWindow::startNextChesscomFetch()
+{
+    if (m_chesscomFetchQueue.isEmpty()) {
+        m_chesscomFetchRunning = false;
+        return;
+    }
+
+    auto pair = m_chesscomFetchQueue.dequeue();
+    m_chesscomFetchRunning = true;
+    fetchChesscomGamesAndSave(pair.first, pair.second);
+}
+
 
 void MainWindow::onPGNReady(const QString &combinedPGN, const QString &filename)
 {
@@ -393,7 +419,7 @@ void MainWindow::onImportOnlineDatabase()
     int maxGames = QInputDialog::getInt(this, tr("Chess.com Import"), tr("Number of recent games to fetch:"), 20, 1, 1000, 1, &ok);
     if (!ok) return;
 
-    fetchChesscomGamesAndSave(username, maxGames);
+    enqueueChesscomFetch(username, maxGames);
 }
 
 void MainWindow::onAddGame()
