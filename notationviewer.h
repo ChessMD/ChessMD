@@ -33,7 +33,7 @@ public:
 
     bool m_isEdited;
     PGNGame m_game;
-    QSharedPointer<NotationMove> m_selectedMove; // Current move
+    QSharedPointer<NotationMove>  m_selectedMove; // Current move
 
 public slots:
     void selectPreviousMove();
@@ -52,7 +52,6 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
 
 private slots:
-    void onActionAddAnnotation();
     void onActionDeleteVariation();
     void onActionDeleteMove();
     void onActionPromoteVariation();
@@ -71,7 +70,6 @@ private:
     void drawTextSegment(QPainter &painter, const QString &text, int x, int &y, int indent, int availableWidth, QRect &outRect);
 
     QSharedPointer<NotationMove> m_rootMove;
-    QSharedPointer<NotationMove> m_contextMenuMove;
     QList<MoveSegment> m_moveSegments;   // Clickable segments    
 
     // Parameters for drawing

@@ -388,7 +388,6 @@ ChessTabHost::ChessTabHost(QWidget* parent)
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
-
     CustomTitleBar* titleBar = new CustomTitleBar(this);
 
     tabBar = titleBar->tabBar;
@@ -409,7 +408,7 @@ ChessTabHost::ChessTabHost(QWidget* parent)
 bool ChessTabHost::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
     if (eventType == "windows_generic_MSG") {
         MSG* msg = static_cast<MSG*>(message);
-        
+
         if (msg->message == WM_NCHITTEST) {
             QPoint cursorPos = mapFromGlobal(QCursor::pos());
             

@@ -315,96 +315,54 @@ void NotationViewer::onEngineMoveClicked(QSharedPointer<NotationMove> &move) {
 }
 
 void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
-    // Adjust for scroll offset
     QPoint pos = event->pos();
     pos.setY(pos.y() + verticalScrollBar()->value());
-
-    // Find which segment (if any) was clicked
     QSharedPointer<NotationMove> clickedMove;
-    for (const MoveSegment &seg : m_moveSegments) {
+    for (const MoveSegment &seg : std::as_const(m_moveSegments)) {
         if (seg.rect.contains(pos)) {
             clickedMove = seg.move;
             break;
         }
     }
-
     if (!clickedMove) {
-        // Nothing under the click → default behavior
         return QAbstractScrollArea::contextMenuEvent(event);
     }
 
-    // Remember the move for the slot handlers
-    m_contextMenuMove = clickedMove;
     m_selectedMove = clickedMove;
 
-    // Build the menu
     QMenu menu(this);
-
     menu.setToolTipsVisible(false);
     menu.setSeparatorsCollapsible(false);
 
-    // —— “Add Annotation…” submenu ——
-    struct Annot { QString text; bool secondary; QKeySequence seq; };
-    static const QVector<Annot> annots = {
-        { "(none)",    false, QKeySequence() },
-        { "!",         false, QKeySequence() },
-        { "?",         false, QKeySequence() },
-        { "!?",        false, QKeySequence() },
-        { "?!",        false, QKeySequence() },
-        { "!!",        false, QKeySequence() },
-        { "??",        false, QKeySequence() },
-    };
-
     QMenu *annotMenu = menu.addMenu(tr("Add Annotation"));
-    for (auto &a : annots) {
-        QAction *act = new QAction(a.text, annotMenu);
-        act->setShortcut(a.seq);
+    for (const AnnotationOption &annotation: ANNOTATION_OPTIONS) {
+        QAction *act = new QAction(annotation.text, annotMenu);
+        act->setShortcut(annotation.seq);
         act->setShortcutVisibleInContextMenu(true);
         annotMenu->addAction(act);
 
-        connect(act, &QAction::triggered, this, [this, a]() {
+        connect(act, &QAction::triggered, this, [this, annotation]() {
             m_isEdited = true;
-            if (!m_contextMenuMove) return;
-            if (a.text == "(none)") {
-                m_contextMenuMove->annotation1.clear();
-                m_contextMenuMove->annotation2.clear();
-            } else if (!a.secondary) {
-                m_contextMenuMove->annotation1 = a.text;
+            if (annotation.text == "(none)") {
+                m_selectedMove->annotation1.clear();
+                m_selectedMove->annotation2.clear();
+            } else if (!annotation.secondary) {
+                m_selectedMove->annotation1 = annotation.text;
             } else {
-                m_contextMenuMove->annotation2 = a.text;
+                m_selectedMove->annotation2 = annotation.text;
             }
             refresh();
         });
     }
 
-    struct CommentEntry {
-        QString actionText;
-        QString NotationMove::* member;
-    };
-
-    const QVector<CommentEntry> commentEntries = {
-        { tr("Enter Comment Before"), &NotationMove::commentBefore },
-        { tr("Enter Comment After"),  &NotationMove::commentAfter  }
-    };
-
-    for (auto &ce : commentEntries) {
-        QAction *act = menu.addAction(ce.actionText);
-        connect(act, &QAction::triggered, this, [this, ce]() {
-            if (!m_contextMenuMove) return;
-            bool ok = false;
-            // fetch the current comment to use as the default text
-            QString initial = (m_contextMenuMove.data()->*(ce.member));
-            QString text = QInputDialog::getText(
-                this,
-                ce.actionText,                            // dialog title
-                tr("Enter %1").arg(ce.actionText),       // prompt
-                QLineEdit::Normal,
-                initial,
-                &ok
-                );
+    for (auto &commentEntry : COMMENT_ENTRIES) {
+        QAction *act = menu.addAction(commentEntry.actionText);
+        connect(act, &QAction::triggered, this, [this, commentEntry]() {
+            QString initial = (m_selectedMove.data()->*(commentEntry.member)); bool ok = false;
+            QString text = QInputDialog::getText(this, commentEntry.actionText, tr("Enter %1").arg(commentEntry.actionText), QLineEdit::Normal, initial, &ok);
             if (ok) {
                 m_isEdited = true;
-                (m_contextMenuMove.data()->*(ce.member)) = text.trimmed();
+                m_selectedMove.data()->*(commentEntry.member) = text.trimmed();
                 refresh();
             }
         });
@@ -461,9 +419,3 @@ void NotationViewer::onActionPromoteVariation() {
     promoteVariation(m_selectedMove);
     refresh();
 }
-
-
-void NotationViewer::onActionAddAnnotation() {
-
-}
-

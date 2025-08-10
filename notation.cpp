@@ -8,6 +8,27 @@ March 18, 2025: File Creation
 
 #include <QDebug>
 
+// https://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c10
+const QMap<int, QString> NUMERIC_ANNOTATION_MAP = {
+    {1,  "!"},  {2,  "?"},  {3,  "!!"}, {4,  "??"}, {5,  "!?"}, {6,  "?!"},
+    };
+
+const QVector<AnnotationOption> ANNOTATION_OPTIONS = {
+    { "(none)", false, QKeySequence() },
+    { "!", false, QKeySequence() },
+    { "?", false, QKeySequence() },
+    { "!?", false, QKeySequence() },
+    { "?!", false, QKeySequence() },
+    { "!!", false, QKeySequence() },
+    { "??", false, QKeySequence() },
+    };
+
+const QVector<CommentEntry> COMMENT_ENTRIES = {
+    { QObject::tr("Enter Comment Before"), &NotationMove::commentBefore },
+    { QObject::tr("Enter Comment After"), &NotationMove::commentAfter }
+};
+
+
 NotationMove::NotationMove(const QString &text, ChessPosition &position)
 {
     moveText = text;

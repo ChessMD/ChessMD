@@ -6,14 +6,11 @@ March 18, 2025: File Creation
 #define NOTATION_H
 
 #include <QString>
+#include <QObject>
 #include <QList>
 #include <QSharedPointer>
 #include <QMap>
-
-// https://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c10
-static const QMap<int, QString> NUMERIC_ANNOTATION_MAP = {
-    {1,  "!"},  {2,  "?"},  {3,  "!!"}, {4,  "??"}, {5,  "!?"}, {6,  "?!"},
-};
+#include <QKeySequence>
 
 class ChessPosition;
 
@@ -37,6 +34,21 @@ public:
     QList<QSharedPointer<NotationMove>> m_nextMoves;
     QSharedPointer<NotationMove> m_previousMove;
 };
+
+struct AnnotationOption {
+    QString text;
+    bool secondary;
+    QKeySequence seq;
+};
+
+struct CommentEntry {
+    QString actionText;
+    QString NotationMove::* member;
+};
+
+extern const QMap<int, QString> NUMERIC_ANNOTATION_MAP;
+extern const QVector<AnnotationOption> ANNOTATION_OPTIONS ;
+extern const QVector<CommentEntry> COMMENT_ENTRIES;
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 

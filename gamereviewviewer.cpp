@@ -529,13 +529,18 @@ void GameReviewViewer::startNextEval()
 
 void GameReviewViewer::onInfoReceived(const QString& line)
 {
-    if (!m_isReviewing) return;
-    if (line.startsWith("info") && line.contains(" score cp ")) {
-        // parse cp token
-        auto toks = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-        int idx = toks.indexOf("cp");
-        if (idx >= 0 && idx+1 < toks.size())
-            m_lastCp = toks[idx+1].toDouble();
+    if (!m_isReviewing || !line.startsWith("info")) return;
+
+    QStringList tokens = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    int scoreIndex = tokens.indexOf("score");
+    if (scoreIndex < 0 || scoreIndex + 2 >= tokens.size()) return;
+
+    QString type = tokens.value(scoreIndex+1);
+    if (type == "cp"){
+        m_lastCp = tokens[scoreIndex+2].toDouble();
+    } else if (type == "mate"){
+        const double MATE_CP_SENTINEL = 100000.0;
+        m_lastCp = (tokens[scoreIndex+2].toInt() > 0) ? MATE_CP_SENTINEL - std::min(tokens[scoreIndex+2].toInt(), 900) : -MATE_CP_SENTINEL + std::min(tokens[scoreIndex+2].toInt(), 900);
     }
 }
 
