@@ -432,6 +432,7 @@ void ChessGameWindow::engineSetup()
 
     connect(m_engineViewer, &EngineWidget::engineMoveClicked, m_notationViewer, &NotationViewer::onEngineMoveClicked);
     connect(m_engineViewer, &EngineWidget::moveHovered, this, &ChessGameWindow::onMoveHovered);
+    connect(m_engineViewer, &EngineWidget::noHover, this, &ChessGameWindow::onNoHover);
     connect(m_engineViewer, &EngineWidget::engineEvalScoreChanged, this, &ChessGameWindow::onEvalScoreChanged);
 
     updateEngineActions();
@@ -483,7 +484,7 @@ void ChessGameWindow::gameReviewSetup()
 
 void ChessGameWindow::openingSetup()
 {
-    if (m_openingViewer){
+    if (m_openingDock){
         return;
     }
 
@@ -524,7 +525,7 @@ void ChessGameWindow::openingSetup()
 
 void ChessGameWindow::openingTeardown()
 {
-    if (!m_openingViewer){
+    if (!m_openingDock){
         return;
     }
 
@@ -589,37 +590,30 @@ void ChessGameWindow::onEvalScoreChanged(double evalScore){
     m_positionViewer->setEvalScore(evalScore);
 }
 
-void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove> move)
+void ChessGameWindow::onMoveHovered(QSharedPointer<NotationMove>& move)
 {
-    if (!move.isNull() && move->m_position) {
-        // preview that position
-        m_positionViewer->copyFrom(*move->m_position);
-        emit m_positionViewer->boardDataChanged();
-        emit m_positionViewer->lastMoveChanged();
-    } else {
-        // no hover, revert to the currently selected move’s position
-        if (!m_notationViewer->getSelectedMove().isNull()) {
-            m_positionViewer->copyFrom(*m_notationViewer->getSelectedMove()->m_position);
-            emit m_positionViewer->boardDataChanged();
-            emit m_positionViewer->lastMoveChanged();
-        }
-    }
+    // preview position of move
+    m_positionViewer->copyFrom(*move->m_position);
+    emit m_positionViewer->boardDataChanged();
+    emit m_positionViewer->lastMoveChanged();
+    m_positionViewer->setIsPreview(true);
+    m_positionViewer->copyFrom(*move->m_position);
+    emit m_positionViewer->boardDataChanged();
+}
 
-    bool preview = !move.isNull();
-    m_positionViewer->setIsPreview(preview);
-
-    if (preview) {
-        m_positionViewer->copyFrom(*move->m_position);
-    } else {
-        auto sel = m_notationViewer->getSelectedMove();
-        if (!sel.isNull())
-            m_positionViewer->copyFrom(*sel->m_position);
-    }
+void ChessGameWindow::onNoHover(){
+    // no hover, revert to the currently selected move’s position
+    m_positionViewer->copyFrom(*m_notationViewer->getSelectedMove()->m_position);
+    emit m_positionViewer->boardDataChanged();
+    emit m_positionViewer->lastMoveChanged();
+    m_positionViewer->setIsPreview(false);
+    QSharedPointer<NotationMove> selectedMove = m_notationViewer->getSelectedMove();
+    if (!selectedMove.isNull()) m_positionViewer->copyFrom(*selectedMove->m_position);
     emit m_positionViewer->boardDataChanged();
 }
 
 // Slot for when a new move is made on the board
-void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move)
+void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
 {
     m_notationViewer->m_isEdited = true;
     linkMoves(m_notationViewer->m_selectedMove, move);
@@ -629,10 +623,11 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove> move)
 }
 
 // Slot for when a move is selected
-void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove> move)
+void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove>& move)
 {
     if (!move.isNull() && move->m_position) {
         m_notationViewer->m_selectedMove = move;
+        m_notationViewer->refresh();
         m_positionViewer->copyFrom(*move->m_position);
         m_positionViewer->setIsPreview(false);
         emit m_positionViewer->boardDataChanged();
@@ -652,7 +647,8 @@ void ChessGameWindow::onNextMoveShortcut()
 
 void ChessGameWindow::onDeleteAfterShortcut()
 {
-    deleteMovesAfter(m_notationViewer->m_selectedMove);
+    m_notationViewer->m_selectedMove = deleteMove(m_notationViewer->m_selectedMove);
+    emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
     m_notationViewer->refresh();
 }
 

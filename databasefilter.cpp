@@ -7,7 +7,9 @@ DatabaseFilter::DatabaseFilter(QWidget *parent)
 {
     ui->setupUi(this);
     ui->WinsOnly->setEnabled(false);
-
+    // remove tabs for release since we have unfinished implementations
+    delete ui->MaterialTab;
+    delete ui->PositionTab;
 }
 
 DatabaseFilter::~DatabaseFilter()

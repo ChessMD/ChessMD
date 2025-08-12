@@ -29,11 +29,11 @@ public:
     QSharedPointer<NotationMove> getRootMove();
     QSharedPointer<NotationMove> getSelectedMove();
 
-    void refresh();
+    void refresh(bool refreshLayout = true);
 
     bool m_isEdited;
     PGNGame m_game;
-    QSharedPointer<NotationMove> m_selectedMove; // Current move
+    QSharedPointer<NotationMove>  m_selectedMove; // Current move
 
 public slots:
     void selectPreviousMove();
@@ -41,8 +41,8 @@ public slots:
     void onEngineMoveClicked(QSharedPointer<NotationMove> &move);
 
 signals:
-    void moveSelected(const QSharedPointer<NotationMove>& move);
-    void moveHovered(QSharedPointer<NotationMove> move);
+    void moveSelected(QSharedPointer<NotationMove>& move);
+    void moveHovered(QSharedPointer<NotationMove>& move);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -52,10 +52,10 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
 
 private slots:
-    void onActionAddAnnotation();
     void onActionDeleteVariation();
-    void onActionDeleteMovesAfter();
+    void onActionDeleteMove();
     void onActionPromoteVariation();
+    void onActionDeleteAllCommentary();
 
 private:
     // DFS traverse notation tree
@@ -70,7 +70,6 @@ private:
     void drawTextSegment(QPainter &painter, const QString &text, int x, int &y, int indent, int availableWidth, QRect &outRect);
 
     QSharedPointer<NotationMove> m_rootMove;
-    QSharedPointer<NotationMove> m_contextMenuMove;
     QList<MoveSegment> m_moveSegments;   // Clickable segments    
 
     // Parameters for drawing

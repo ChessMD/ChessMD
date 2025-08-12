@@ -29,5 +29,12 @@
         <file>img/database-upload-icon.png</file>
         <file>img/board-icon.png</file>
         <file>img/filter.png</file>
+        <file>img/best-icon.png</file>
+        <file>img/blunder-icon.png</file>
+        <file>img/brilliant-icon.png</file>
+        <file>img/great-icon.png</file>
+        <file>img/inaccuracy-icon.png</file>
+        <file>img/mistake-icon.png</file>
+        <file>img/cloud-file-download-icon.png</file>
     </qresource>
 </RCC>

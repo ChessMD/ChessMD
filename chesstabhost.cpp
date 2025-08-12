@@ -363,15 +363,15 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event){
 
 void CustomTitleBar::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
-    //used to have line    
 
+    QPainter painter(this);
+    painter.setPen(QPen(QColor("#000000"), 1));
+    painter.drawLine(0, height() - 1, width(), height() - 1);
 }
 
 void CustomTitleBar::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
 }
-
-
 
 
 //initializes tab host window
@@ -387,7 +387,6 @@ ChessTabHost::ChessTabHost(QWidget* parent)
     
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
-
 
     CustomTitleBar* titleBar = new CustomTitleBar(this);
 
@@ -409,7 +408,7 @@ ChessTabHost::ChessTabHost(QWidget* parent)
 bool ChessTabHost::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
     if (eventType == "windows_generic_MSG") {
         MSG* msg = static_cast<MSG*>(message);
-        
+
         if (msg->message == WM_NCHITTEST) {
             QPoint cursorPos = mapFromGlobal(QCursor::pos());
             

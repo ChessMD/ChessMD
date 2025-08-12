@@ -155,12 +155,10 @@ void PGNSaveDialog::setHeaders(const PGNGame &g)
 
 void PGNSaveDialog::applyTo(PGNGame &game)
 {
-    // 1) Build a lookup of all original headers
     QMap<QString, QString> headerMap;
     for (auto &kv : game.headerInfo)
         headerMap[kv.first] = kv.second;
 
-    // 2) Update or remove recognized keys based on the dialog
     auto setOrRemove = [&](const QString &key, const QString &val, bool use) {
         if (use && !val.isEmpty())
             headerMap[key] = val;
@@ -174,8 +172,8 @@ void PGNSaveDialog::applyTo(PGNGame &game)
     setOrRemove("ECO", m_ecoEdit->text(), m_ecoCheck->isChecked());
     setOrRemove("WhiteElo", QString::number(m_eloWhiteSpin->value()), m_eloWhiteCheck->isChecked());
     setOrRemove("BlackElo", QString::number(m_eloBlackSpin->value()), m_eloBlackCheck->isChecked());
-    setOrRemove("Round", QString::number(m_roundSpin->value()), true);
-    setOrRemove("Date", m_dateEdit->date().toString(Qt::ISODate), true);
+    setOrRemove("Round", QString::number(m_roundSpin->value()), m_roundCheck->isChecked());
+    setOrRemove("Date", m_dateEdit->date().toString(Qt::ISODate), m_dateCheck->isChecked());
 
     // Result
     static const QVector<QString> results = { "1-0", "1/2-1/2", "0-1", "*" };
@@ -185,7 +183,6 @@ void PGNSaveDialog::applyTo(PGNGame &game)
     else
         headerMap.remove("Result");
 
-    // 3) Rebuild headerInfo, preserving original unknown keys in order...
     QVector<QPair<QString,QString>> newInfo;
     QSet<QString> seen;
     for (auto &kv : game.headerInfo) {
@@ -195,7 +192,6 @@ void PGNSaveDialog::applyTo(PGNGame &game)
         }
     }
 
-    // ...then append any recognized keys that were newly added
     auto appendIfNew = [&](const QString &key) {
         if (!seen.contains(key) && headerMap.contains(key)) {
             newInfo.append({key, headerMap[key]});
@@ -207,7 +203,6 @@ void PGNSaveDialog::applyTo(PGNGame &game)
         appendIfNew(key);
     }
 
-    // 4) Finally, replace the game's headerInfo
     game.headerInfo = newInfo;
 }
 

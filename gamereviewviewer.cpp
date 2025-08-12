@@ -9,6 +9,7 @@
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QScrollArea>
 #include <QLabel>
 #include <QTimer>
 #include <QHeaderView>
@@ -22,9 +23,11 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     , m_rootMove(rootMove)
 {
     auto *lay = new QVBoxLayout(this);
-    m_whiteLabel = new QLabel(tr("White accuracy: –"), this);
-    m_blackLabel = new QLabel(tr("Black accuracy: –"), this);
-    m_whiteLabel->setStyleSheet(R"(
+    m_whiteAccuracyLabel = new QLabel(tr("White accuracy: –"), this);
+    m_blackAccuracyLabel = new QLabel(tr("Black accuracy: –"), this);
+    m_whiteAccuracyLabel->setFixedHeight(35);
+    m_blackAccuracyLabel->setFixedHeight(35);
+    m_whiteAccuracyLabel->setStyleSheet(R"(
         QLabel {
             background: white; //hcc
             color: black; //hcc
@@ -35,7 +38,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
             font-size: 14px;
         }
     )");
-        m_blackLabel->setStyleSheet(R"(
+    m_blackAccuracyLabel->setStyleSheet(R"(
         QLabel {
             background: #333; /*hcc*/
                     color: white; //hcc
@@ -47,8 +50,8 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         }
     )");
     auto *hLay = new QHBoxLayout;
-    hLay->addWidget(m_whiteLabel);
-    hLay->addWidget(m_blackLabel);
+    hLay->addWidget(m_whiteAccuracyLabel);
+    hLay->addWidget(m_blackAccuracyLabel);
     lay->addLayout(hLay);
 
     m_progressBar = new QProgressBar(this);
@@ -107,6 +110,8 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_blunderSeries->setBrush(QBrush(QColor(250, 65, 45))); //hcc
 
     m_chartView = new QChartView(m_chart, this);
+    m_chartView->setFixedHeight(250);
+    m_chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_chartView->setRenderHint(QPainter::Antialiasing);
     m_chartView->setMouseTracking(true);
     m_chartView->viewport()->setMouseTracking(true);
@@ -129,11 +134,8 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_vLine->setVisible(false);
     m_chart->scene()->addItem(m_vLine);
 
-    m_table = new QTableWidget(this);
-    m_table->setColumnCount(5);
-    m_table->setHorizontalHeaderLabels({tr("Move #"), tr("SAN"), tr("Win before"), tr("Win after"), tr("Accuracy")});
-    m_table->horizontalHeader()->setStretchLastSection(true);
-    lay->addWidget(m_table);
+    createSummaryGrid();
+    lay->addWidget(m_summaryWidget);
 
     auto *engineSelectLayout = new QHBoxLayout;
     m_engineLabel      = new QLabel(tr("Engine: <none>"), this);
@@ -203,21 +205,148 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
 
     // hide UI until game review is clicked
     m_progressBar->setVisible(false);
+    m_whiteAccuracyLabel->setVisible(false);
+    m_blackAccuracyLabel->setVisible(false);
     m_chartView->setVisible(false);
-    m_table->setVisible(false);
-    m_whiteLabel->setVisible(false);
-    m_blackLabel->setVisible(false);
+    m_summaryWidget->setVisible(false);
 
     connect(m_reviewBtn, &QPushButton::clicked, this, [this]() {
         m_reviewBtn->hide();
         m_progressBar->setVisible(true);
+        m_whiteAccuracyLabel->setVisible(true);
+        m_blackAccuracyLabel->setVisible(true);
         m_chartView->setVisible(true);
-        m_table->setVisible(true);
-        m_whiteLabel->setVisible(true);
-        m_blackLabel->setVisible(true);
+        m_summaryWidget->setVisible(true);
         m_selectEngineBtn->setVisible(false);
         reviewGame(m_rootMove);
     });
+}
+
+void GameReviewViewer::createSummaryGrid()
+{
+    m_summaryWidget = new QWidget(this);
+    m_summaryWidget->setObjectName("summaryPanel");
+    auto *lay = new QVBoxLayout(m_summaryWidget);
+    lay->setContentsMargins(6,6,6,6);
+    lay->setSpacing(6);
+
+    QWidget* gridW = new QWidget(m_summaryWidget);
+    auto *g = new QGridLayout(gridW);
+    g->setContentsMargins(0,0,0,0);
+    g->setHorizontalSpacing(8);
+    g->setVerticalSpacing(6);
+
+    QStringList columns = { "Brilliant", "Great", "Best", "Inaccuracy", "Mistake", "Blunder" };
+    QMap<QString, QString> colorMap;
+    colorMap["Brilliant"] = "#26C2A3";
+    colorMap["Great"] = "#749BBF";
+    colorMap["Best"] = "#81B64C";
+    colorMap["Inaccuracy"] = "#F7C631";
+    colorMap["Mistake"] = "#FFA459";
+    colorMap["Blunder"] = "#FA412D";
+
+    // sizing for value cells
+    const int valueCellWidth = 96;
+    const int valueCellHeight = 36;
+    const int leftLabelWidth = 72;
+
+    g->setColumnMinimumWidth(0, leftLabelWidth);
+    g->setColumnStretch(0, 0);
+
+    for (int c = 1; c <= columns.size(); ++c) {
+        g->setColumnMinimumWidth(c, valueCellWidth);
+        g->setColumnStretch(c, 0);
+    }
+
+    gridW->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+
+    const QString boldStyle = "font-weight:700;";
+
+    // top-left blank
+    QLabel* leftHeader = new QLabel(QString(), gridW);
+    leftHeader->setObjectName("leftHeader");
+    g->addWidget(leftHeader, 0, 0);
+
+    for (int i = 0; i < columns.size(); i++) {
+        QLabel* catLabel = new QLabel(QObject::tr(columns[i].toUtf8().constData()), gridW);
+        catLabel->setAlignment(Qt::AlignCenter);
+        catLabel->setMinimumSize(valueCellWidth, valueCellHeight);
+        catLabel->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
+        g->addWidget(catLabel, 0, i + 1, Qt::AlignCenter);
+    }
+
+    const int ICON_PX = 24;
+    for (int i = 0; i < columns.size(); i++) {
+        const QString cat = columns[i];
+        QLabel* header = new QLabel(gridW);
+        header->setAlignment(Qt::AlignCenter);
+        header->setMinimumSize(valueCellWidth, valueCellHeight);
+
+        QString iconName = QString(":/resource/img/%1-icon").arg(cat.toLower());
+        QIcon icon(iconName);
+        if (!icon.isNull()) {
+            header->setPixmap(icon.pixmap(ICON_PX, ICON_PX));
+        } else {
+            header->setText(cat);
+            header->setStyleSheet(QString("font-weight:700; font-size:12px; color:%1;").arg(colorMap.value(cat, "#444444")));
+        }
+        g->addWidget(header, 2, i + 1, Qt::AlignCenter);
+    }
+
+    QLabel* whiteLabel = new QLabel(QObject::tr("White:"), gridW);
+    whiteLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    whiteLabel->setMinimumWidth(leftLabelWidth);
+    whiteLabel->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
+    g->addWidget(whiteLabel, 1, 0, Qt::AlignVCenter);
+
+    QLabel* blackLabel = new QLabel(QObject::tr("Black:"), gridW);
+    blackLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    blackLabel->setMinimumWidth(leftLabelWidth);
+    blackLabel->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
+    g->addWidget(blackLabel, 3, 0, Qt::AlignVCenter);
+
+    auto makeValue = [&](QLabel*& out, const QString& cellName) -> QLabel* {
+        out = new QLabel(QStringLiteral("–"), gridW);
+        out->setObjectName(cellName); // "whiteCell" or "blackCell"
+        out->setMinimumSize(valueCellWidth, valueCellHeight);
+        out->setAlignment(Qt::AlignCenter);
+        out->setStyleSheet(QString("font-weight:700;"));
+        out->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        return out;
+    };
+
+    // add cells for each category
+    for (int i = 0; i < columns.size(); ++i) {
+        const int col = i + 1;
+        const QString category = columns[i];
+        if (category == "Brilliant") {
+            makeValue(m_whiteBrilliantLabel, "whiteCell"); g->addWidget(m_whiteBrilliantLabel, 1, col, Qt::AlignCenter);
+            makeValue(m_blackBrilliantLabel, "blackCell"); g->addWidget(m_blackBrilliantLabel, 3, col, Qt::AlignCenter);
+        } else if (category == "Great") {
+            makeValue(m_whiteGreatLabel, "whiteCell"); g->addWidget(m_whiteGreatLabel, 1, col, Qt::AlignCenter);
+            makeValue(m_blackGreatLabel, "blackCell"); g->addWidget(m_blackGreatLabel, 3, col, Qt::AlignCenter);
+        } else if (category == "Best") {
+            makeValue(m_whiteBestLabel, "whiteCell"); g->addWidget(m_whiteBestLabel, 1, col, Qt::AlignCenter);
+            makeValue(m_blackBestLabel, "blackCell"); g->addWidget(m_blackBestLabel, 3, col, Qt::AlignCenter);
+        } else if (category == "Inaccuracy") {
+            makeValue(m_whiteInaccuracyLabel, "whiteCell"); g->addWidget(m_whiteInaccuracyLabel, 1, col, Qt::AlignCenter);
+            makeValue(m_blackInaccuracyLabel, "blackCell"); g->addWidget(m_blackInaccuracyLabel, 3, col, Qt::AlignCenter);
+        } else if (category == "Mistake") {
+            makeValue(m_whiteMistakeLabel, "whiteCell"); g->addWidget(m_whiteMistakeLabel, 1, col, Qt::AlignCenter);
+            makeValue(m_blackMistakeLabel, "blackCell"); g->addWidget(m_blackMistakeLabel, 3, col, Qt::AlignCenter);
+        } else if (category == "Blunder") {
+            makeValue(m_whiteBlunderLabel, "whiteCell"); g->addWidget(m_whiteBlunderLabel, 1, col, Qt::AlignCenter);
+            makeValue(m_blackBlunderLabel, "blackCell"); g->addWidget(m_blackBlunderLabel, 3, col, Qt::AlignCenter);
+        }
+    }
+
+    lay->addWidget(gridW, 0, Qt::AlignHCenter);
+    const QString qss = R"(
+        QWidget#summaryPanel { background: transparent; }
+        QLabel#whiteCell { background: #FFFFFF; color: #111111; border: 1px solid rgba(0,0,0,0.06); border-radius:6px; font-size:18px; padding:2px; }
+        QLabel#blackCell { background: #0F0F0F; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.06); border-radius:6px; font-size:18px; padding:2px; }
+    )";
+    gridW->setStyleSheet(qss);
 }
 
 bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
@@ -254,7 +383,8 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         QPoint vpPt = m_chartView->mapFromScene(scenePt);
         QPoint glPt = m_chartView->viewport()->mapToGlobal(vpPt);
 
-        QString tip = QString("%1\nEvaluation: %2").arg((m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : "Starting Position")).arg(p.y,0,'f',2);
+        QString prefix = QString::number((idx-1)/2+1) + QString(idx%2 ? "." : "...");
+        QString tip = QString("%1%2\nEvaluation: %3").arg(idx ? prefix : "").arg((m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : "Starting Position")).arg(p.y,0,'f',2);
         QToolTip::showText(glPt, tip, m_chartView);
 
         // vertical line
@@ -399,13 +529,18 @@ void GameReviewViewer::startNextEval()
 
 void GameReviewViewer::onInfoReceived(const QString& line)
 {
-    if (!m_isReviewing) return;
-    if (line.startsWith("info") && line.contains(" score cp ")) {
-        // parse cp token
-        auto toks = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-        int idx = toks.indexOf("cp");
-        if (idx >= 0 && idx+1 < toks.size())
-            m_lastCp = toks[idx+1].toDouble();
+    if (!m_isReviewing || !line.startsWith("info")) return;
+
+    QStringList tokens = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    int scoreIndex = tokens.indexOf("score");
+    if (scoreIndex < 0 || scoreIndex + 2 >= tokens.size()) return;
+
+    QString type = tokens.value(scoreIndex+1);
+    if (type == "cp"){
+        m_lastCp = tokens[scoreIndex+2].toDouble();
+    } else if (type == "mate"){
+        const double MATE_CP_SENTINEL = 100000.0;
+        m_lastCp = (tokens[scoreIndex+2].toInt() > 0) ? MATE_CP_SENTINEL - std::min(tokens[scoreIndex+2].toInt(), 900) : -MATE_CP_SENTINEL + std::min(tokens[scoreIndex+2].toInt(), 900);
     }
 }
 
@@ -458,9 +593,10 @@ void GameReviewViewer::finalizeReview()
     disconnect(m_engine, nullptr, this, nullptr);
     m_progressBar->setVisible(false);
 
+    int whiteInacc = 0, whiteMist = 0, whiteBlund = 0, whiteBest = 0;
+    int blackInacc = 0, blackMist = 0, blackBlund = 0, blackBest = 0;
     std::vector<double> winPercentages, evals;
     int moves = m_results.size() - 1;
-    m_table->setRowCount(moves);
     for (int i = 0; i < moves; i++) {
         double cpBefore = m_results[i];
         double cpAfter = -m_results[i+1];
@@ -470,7 +606,6 @@ void GameReviewViewer::finalizeReview()
 
         double drop = std::abs(wb - wa);
         QSharedPointer<NotationMove> move = m_moves[i+1];
-        qDebug() << cpBefore << cpAfter << drop << move->moveText;
         if (drop >= 0.18) move->annotation1 = "??";
         else if (drop >= 0.12) move->annotation1 = "?";
         else if (drop >= 0.06) move->annotation1 = "?!";
@@ -483,12 +618,17 @@ void GameReviewViewer::finalizeReview()
             evals.push_back(-cpAfter/100.0);
         }
 
-        int row = i;
-        m_table->setItem(row, 0, new QTableWidgetItem(QString::number(i+1)));
-        m_table->setItem(row, 1, new QTableWidgetItem(move->moveText));
-        m_table->setItem(row, 2, new QTableWidgetItem((QString::number(wb*100, 'f', 3))+"%"));
-        m_table->setItem(row, 3, new QTableWidgetItem((QString::number(wa*100, 'f', 3))+"%"));
-        m_table->setItem(row, 4, new QTableWidgetItem((QString::number(acc, 'f', 1))+"%"));
+        if (i % 2 == 0) {
+            if (move->annotation1 == "?!") whiteInacc++;
+            else if (move->annotation1 == "?") whiteMist++;
+            else if (move->annotation1 == "??") whiteBlund++;
+            if (acc >= 95.0) whiteBest++;
+        } else {
+            if (move->annotation1 == "?!") blackInacc++;
+            else if (move->annotation1 == "?") blackMist++;
+            else if (move->annotation1 == "??") blackBlund++;
+            if (acc >= 95.0) blackBest++;
+        }
     }
 
     // adjust evaluation to be white's perspective
@@ -499,9 +639,26 @@ void GameReviewViewer::finalizeReview()
     }
 
     auto [avgW, avgB] = gameAccuracy(winPercentages, true);
-    m_whiteLabel->setText(tr("White accuracy: %1 %").arg(QString::number(avgW, 'f', 1)));
-    m_blackLabel->setText(tr("Black accuracy: %1 %").arg(QString::number(avgB, 'f', 1)));
+    m_whiteAccuracyLabel->setText(tr("White accuracy: %1%").arg(QString::number(avgW, 'f', 1)));
+    m_blackAccuracyLabel->setText(tr("Black accuracy: %1%").arg(QString::number(avgB, 'f', 1)));
 
+    auto setCellText = [](QLabel* lbl, const QString &text){
+        if (!lbl) return;
+        lbl->setText(text);
+    };
+
+    setCellText(m_whiteBrilliantLabel, QString("?"));
+    setCellText(m_blackBrilliantLabel, QString("?"));
+    setCellText(m_whiteGreatLabel, QString("?"));
+    setCellText(m_blackGreatLabel, QString("?"));
+    setCellText(m_whiteBestLabel, QString::number(whiteBest));
+    setCellText(m_blackBestLabel, QString::number(blackBest));
+    setCellText(m_whiteInaccuracyLabel, QString::number(whiteInacc));
+    setCellText(m_blackInaccuracyLabel, QString::number(blackInacc));
+    setCellText(m_whiteMistakeLabel, QString::number(whiteMist));
+    setCellText(m_blackMistakeLabel, QString::number(blackMist));
+    setCellText(m_whiteBlunderLabel, QString::number(whiteBlund));
+    setCellText(m_blackBlunderLabel, QString::number(blackBlund));
 
     m_origPts.clear();
     m_areaPts.clear();
@@ -523,9 +680,9 @@ void GameReviewViewer::finalizeReview()
             }
         }
     }
-    for (auto *ser : m_areaSeries) {
-        m_chart->removeSeries(ser);
-        delete ser;
+    for (auto *series : std::as_const(m_areaSeries)) {
+        m_chart->removeSeries(series);
+        delete series;
     }
     m_areaSeries.clear();
 

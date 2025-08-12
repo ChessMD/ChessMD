@@ -7,6 +7,7 @@
 #include <QMenuBar>
 #include <QMenu>
 #include <QStatusBar>
+#include <QQueue>
 
 class DatabaseLibrary;
 
@@ -29,18 +30,25 @@ private:
     void setupToolbar();
     QWidget* setupSidebar();
 
+    void fetchChesscomGamesAndSave(const QString &username, const int maxGames);
+    void enqueueChesscomFetch(const QString &username, int maxGames);
+
     DatabaseLibrary* m_dbLibrary;
     QMenuBar* m_menuBar;
     QHash<QString, QThread*> m_saveThreads;
-
+    QQueue<QPair<QString, int>> m_chesscomFetchQueue;
+    bool m_chesscomFetchRunning = false;
 
 private slots:
     void onAddGame();
     void onSettings();
-
+    void onImportOnlineDatabase();
+    void startNextChesscomFetch();
+    void onPGNReady(const QString &combinedPGN, const QString &suggestedFilename);
 
 signals:
-
+    void PGNFetchError(const QString &errorMessage);
+    void PGNReady(const QString &combinedPGN, const QString &suggestedFilename);
 
 };
 

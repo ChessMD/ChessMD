@@ -6,14 +6,11 @@ March 18, 2025: File Creation
 #define NOTATION_H
 
 #include <QString>
+#include <QObject>
 #include <QList>
 #include <QSharedPointer>
 #include <QMap>
-
-// https://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c10
-static const QMap<int, QString> NUMERIC_ANNOTATION_MAP = {
-    {1,  "!"},  {2,  "?"},  {3,  "!!"}, {4,  "??"}, {5,  "!?"}, {6,  "?!"},
-};
+#include <QKeySequence>
 
 class ChessPosition;
 
@@ -38,12 +35,29 @@ public:
     QSharedPointer<NotationMove> m_previousMove;
 };
 
+struct AnnotationOption {
+    QString text;
+    bool secondary;
+    QKeySequence seq;
+};
+
+struct CommentEntry {
+    QString actionText;
+    QString NotationMove::* member;
+};
+
+extern const QMap<int, QString> NUMERIC_ANNOTATION_MAP;
+extern const QVector<AnnotationOption> ANNOTATION_OPTIONS ;
+extern const QVector<CommentEntry> COMMENT_ENTRIES;
+
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 
 // Appends a new NotationMove to the current
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
 // Deletes all NotationMoves after the current NotationMove
-void deleteMovesAfter(const QSharedPointer<NotationMove>& move);
+QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move);
+// Deletes all comments and annotations from entire game tree
+void deleteAllCommentary(QSharedPointer<NotationMove>& move);
 // Promotes the variation containing the current NotationMove up one branch
 void promoteVariation(const QSharedPointer<NotationMove>& move);
 // Deletes all NotationMove in the variation containing the current NotationMove
