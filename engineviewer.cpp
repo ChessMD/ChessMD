@@ -27,7 +27,7 @@ EngineWidget::EngineWidget(QWidget *parent)
     m_ignoreHover(false)
 {
     setAttribute(Qt::WA_Hover, true);
-    setMouseTracking(true);
+    setMouseTracking(true);  
 
     m_evalButton = new QPushButton("0.00", this);
     m_evalButton->setEnabled(false);
@@ -118,6 +118,12 @@ EngineWidget::EngineWidget(QWidget *parent)
     engineLayout->addLayout(linesHeader);
 
     m_container = new QWidget(this);
+    m_container->setStyleSheet(R"(
+        QWidget {
+            background-color: palette(base);
+        }
+    )");  
+
     m_containerLay = new QVBoxLayout(m_container);
     m_containerLay->setContentsMargins(0,0,0,0);
     m_containerLay->setSpacing(4);

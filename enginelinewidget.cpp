@@ -1,12 +1,14 @@
 #include "enginelinewidget.h"
 #include "chessposition.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QTimer>
 #include <QShowEvent>
+#include <QPalette>
 
 EngineLineWidget::EngineLineWidget(const QString &eval, const QString &pv, const QSharedPointer<NotationMove> &rootMove, QWidget *parent)
     : QWidget(parent)
@@ -112,7 +114,7 @@ void EngineLineWidget::paintEvent(QPaintEvent *event) {
             x = m_evalBtn->geometry().right()+8;
             y += lineH;
         }
-        p.setPen(Qt::black);
+        p.setPen(palette().color(QPalette::Text));
         p.drawText(x, y + fm.ascent(), tok);
         MoveSegment seg;
         seg.rect = QRect(x, y, w, lineH);
@@ -122,8 +124,8 @@ void EngineLineWidget::paintEvent(QPaintEvent *event) {
     }
 
     if (m_hoveredSegment) {
-        QColor col(255, 255, 0, 100);
-        QPen pen(Qt::black, 1);
+        QColor col(255, 255, 0, 100); //hcc
+        QPen pen(palette().color(QPalette::Text), 1);
         p.setPen(pen);
         p.setBrush(col);
         QRect r = m_hoveredSegment->rect.adjusted(-1,0,1,0);
