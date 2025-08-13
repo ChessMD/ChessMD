@@ -14,6 +14,8 @@ Jan 15, 2025 - Program Creation
 #include <QDir>
 #include <QDockWidget>
 #include "mainwindow.h"
+#include "theme.h"
+
 
 
 int main(int argc, char *argv[])
@@ -26,12 +28,11 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("ChessMD");
     QApplication app(argc, argv);
     
+    Theme::applyTheme(app);
 
     QDir dir;
     if (!dir.exists("./opening")) dir.mkdir("./opening");
     
-
-
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
 

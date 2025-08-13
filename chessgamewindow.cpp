@@ -234,7 +234,7 @@ void ChessGameWindow::notationSetup()
     headerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     headerWidget->setStyleSheet(R"(
         QWidget#gameInfoHeader {
-            background: #fff;
+            background: #fff; /*hcc*/
             font-weight: bold;
             font-size: 12pt;
         }
@@ -257,20 +257,20 @@ void ChessGameWindow::notationSetup()
         edit->setPlaceholderText(placeholder);
         edit->setTextMargins(0, 0, 0, 0);
         QPalette pal = edit->palette();
-        pal.setColor(QPalette::PlaceholderText, QColor(160, 160, 160));
+        pal.setColor(QPalette::PlaceholderText, QColor(160, 160, 160)); //hcc
         edit->setPalette(pal);
         edit->setStyleSheet(R"(
             QLineEdit {
                 border: none;
                 font-size: 12pt;
                 font-weight: bold;
-                background: #fff;
+                background: #fff; /*hcc*/
             }
             QLineEdit[editable="true"] {
-                border: 1px solid #aaa;
+                border: 1px solid #aaa; /*hcc*/
                 font-size: 12pt;
                 font-weight: bold;
-                background: #fff;
+                background: #fff; /*hcc*/
             }
         )");
         edit->style()->unpolish(edit);

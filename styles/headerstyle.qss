@@ -7,8 +7,8 @@ QLineEdit {
 }
 
 QLineEdit[editable="true"] {
-    border: 1px solid #888;
-    background-color: #fff;
+    border: 1px solid #888; /*hcc*/
+    background-color: #fff; /*hcc*/
 }
 
 QLabel#vsLabel {

@@ -27,7 +27,7 @@ EngineWidget::EngineWidget(QWidget *parent)
     m_ignoreHover(false)
 {
     setAttribute(Qt::WA_Hover, true);
-    setMouseTracking(true);
+    setMouseTracking(true);  
 
     m_evalButton = new QPushButton("0.00", this);
     m_evalButton->setEnabled(false);
@@ -36,7 +36,7 @@ EngineWidget::EngineWidget(QWidget *parent)
         QPushButton {
             font-size: 24px;
             font-weight: bold;
-            border: 1px solid #888;
+            border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 8px 16px;
         }
@@ -45,12 +45,12 @@ EngineWidget::EngineWidget(QWidget *parent)
     QString buttonStyle = R"(
         QToolButton {
             font-size: 24px;
-            border: 1px solid #888;
+            border: 1px solid #888; /*hcc*/
             border-radius: 4px;
             padding: 8px 16px;
         }
         QToolButton:hover {
-            background: #f0f0f0;
+            background: #f0f0f0; /*hcc*/
         }
     )";
 
@@ -118,6 +118,12 @@ EngineWidget::EngineWidget(QWidget *parent)
     engineLayout->addLayout(linesHeader);
 
     m_container = new QWidget(this);
+    m_container->setStyleSheet(R"(
+        QWidget {
+            background-color: palette(base);
+        }
+    )");  
+
     m_containerLay = new QVBoxLayout(m_container);
     m_containerLay->setContentsMargins(0,0,0,0);
     m_containerLay->setSpacing(4);
@@ -304,13 +310,13 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
         m_currentMove->m_position->setEvalScore(qMax(4.0, qMin(-4.0, evalScore)));
         emit engineEvalScoreChanged(evalScore);
 
-        QString bg = info.positive ? QStringLiteral("white") : QStringLiteral("#333");
-        QString fg = info.positive ? QStringLiteral("black") : QStringLiteral("white");
+        QString bg = info.positive ? QStringLiteral("white") : QStringLiteral("#333"); //hcc
+        QString fg = info.positive ? QStringLiteral("black") : QStringLiteral("white"); //hcc
         m_evalButton->setStyleSheet(QStringLiteral(R"(
             QPushButton {
                 font-size: 24px;
                 font-weight: bold;
-                border: 1px solid #888;
+                border: 1px solid #888; /*hcc*/
                 border-radius: 4px;
                 padding: 8px 16px;
                 background: %1;

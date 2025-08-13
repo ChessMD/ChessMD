@@ -91,7 +91,7 @@ void NotationViewer::paintEvent(QPaintEvent *event)
     if (!m_selectedMove.isNull()) {
         for (const MoveSegment &seg : m_moveSegments) {
             if (seg.move == m_selectedMove) {
-                painter.setBrush(QColor(200, 200, 255, 128));
+                painter.setBrush(QColor(200, 200, 255, 128)); //hcc
                 painter.setPen(Qt::NoPen);
                 painter.drawRect(seg.rect);
             }
@@ -118,7 +118,7 @@ void drawManuallyWrappedText(QPainter &painter, const QString &text, int indent,
             x = indent;
             y += lineHeight;
         }
-        painter.setPen(QColor(126,158,126));
+        painter.setPen(QColor(126,158,126)); //hcc
         painter.drawText(x, y + fm.ascent(), tok + ' ');
         x += tokWidth;
     }
@@ -160,11 +160,11 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
 
     QPen oldPen = painter.pen();
     QPen colorPen = oldPen;
-    if (currentMove->annotation1 == "?!")  colorPen.setColor(QColor(247,198,49));
-    else if (currentMove->annotation1 == "?") colorPen.setColor(QColor(255,164,89));
-    else if (currentMove->annotation1 == "??") colorPen.setColor(QColor(250,65,45));
-    else if (currentMove->annotation1 == "!!") colorPen.setColor(QColor(38,194,163));
-    else if (currentMove->annotation1 == "!") colorPen.setColor(QColor(116,155,191));
+    if (currentMove->annotation1 == "?!")  colorPen.setColor(QColor(247,198,49)); //hcc
+    else if (currentMove->annotation1 == "?") colorPen.setColor(QColor(255,164,89)); //hcc
+    else if (currentMove->annotation1 == "??") colorPen.setColor(QColor(250,65,45)); //hcc
+    else if (currentMove->annotation1 == "!!") colorPen.setColor(QColor(38,194,163)); //hcc
+    else if (currentMove->annotation1 == "!") colorPen.setColor(QColor(116,155,191)); //hcc
     painter.setPen(colorPen);
 
     painter.drawText(x, y + fm.ascent(), moveStr + ' ');

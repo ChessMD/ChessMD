@@ -45,22 +45,22 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
         "    padding: 0px;"  
         "}"
         "QTabBar::tab {"
-        "    background-color: #adaeb0;"  
+        "    background-color: palette(alternate-base);" 
         "    border-top-left-radius: 8px;"
         "    border-top-right-radius: 8px;"
         "    margin-right: 2px;"
         "    margin-top: 20px;"
         "    min-height: 30px;"
-        "    color: #5f6368;"
+        "    color: palette(text);" 
         "}"
         "QTabBar::tab:selected {"
         "    background-color: palette(window);"  
-        "    color: #202124;"
-        "    border: 1px solid #343536;"  
+        "    color: palette(text);"
+        "    border: 1px solid palette(text);" 
         "    border-bottom: none;"        
         "}"
         "QTabBar::tab:hover:!selected {"
-        "    background-color: #d2d4d5;"  
+        "    background-color: rgba(128, 128, 128, 0.25);"
         "}"
     );
 }
@@ -81,10 +81,10 @@ void CustomTabBar::addCloseButton(int index) {
         "    border-radius: 8px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e0e0e0;"
+        "    background-color: rgba(128, 128, 128, 0.2);" 
         "}"
         "QPushButton:pressed {"
-        "    background-color: #d0d0d0;"
+        "    background-color: rgba(128, 128, 128, 0.3);" 
         "}"
     );
     
@@ -253,10 +253,10 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
         "    padding: 0px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e0e0e0;"  
+        "    background-color: rgba(128, 128, 128, 0.2);"
         "}"
         "QPushButton:pressed {"
-        "    background-color: #d0d0d0;"  
+        "    background-color: rgba(128, 128, 128, 0.3);" 
         "}";
 
     //red styling for close
@@ -272,10 +272,10 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
         "}"
         "QPushButton:hover {"
         "    background-color: #e81123;" 
-        "    color: white;"
+        "    color: white;" 
         "}"
         "QPushButton:pressed {"
-        "    background-color: #c50e1f;"  
+        "    background-color: #c50e1f;" 
         "}";
 
     minimizeButton->setStyleSheet(buttonStyle);

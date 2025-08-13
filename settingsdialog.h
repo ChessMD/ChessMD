@@ -8,6 +8,7 @@ class QListWidget;
 class QStackedWidget;
 class QLabel;
 class QPushButton;
+class QComboBox;
 
 class SettingsDialog : public QDialog {
     Q_OBJECT
@@ -18,12 +19,14 @@ public:
 private slots:
     void onLoadPgnClicked();
     void onSelectEngineClicked();
+    void onThemeChanged();
 
 private:
     QListWidget* mCategoryList;
     QStackedWidget* mStackedWidget;
     QLabel* mOpeningsPathLabel;
     QLabel* mEnginePathLabel;
+    QComboBox* mThemeComboBox;
     QString mOpeningsPath;
 };
 

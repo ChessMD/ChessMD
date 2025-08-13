@@ -6,7 +6,7 @@ pragma ComponentBehavior: Bound
 Rectangle {
     id: recRoot
     anchors.fill: parent
-    color: "#3f538a"
+    color: "#3f538a" /*hcc*/
 
     property int padding: 16
 
@@ -25,7 +25,7 @@ Rectangle {
             margins: padding
         }
         width: 20
-        color: "#000000"
+        color: "#000000" /*hcc*/
         radius: width / 2
     }
 
@@ -37,7 +37,7 @@ Rectangle {
         }
         width: evalBarBg.width - 4
         x: evalBarBg.x + 2
-        color: "#ffffff"
+        color: "#ffffff" /*hcc*/
         radius: width / 2
 
         height: {
@@ -94,8 +94,8 @@ Rectangle {
         width: board.cellSize
         height: 4*board.cellSize
         background: Rectangle {
-            color: "#FFFFFF"
-            border.color: "#000000"
+            color: "#FFFFFF" /*hcc*/
+            border.color: "#000000" /*hcc*/
             border.width: 4
         }
 
@@ -144,7 +144,7 @@ Rectangle {
             anchors.fill: parent
             color: "transparent"
             border.width: 2
-            border.color: "#000000"
+            border.color: "#000000" /*hcc*/
             z: 100
         }
     }
@@ -174,7 +174,7 @@ Rectangle {
                 property int row: Math.floor(index / 8)
                 property int col: index % 8
 
-                color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#EEE" : "#999999"
+                color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#EEE" : "#999999" /*hcc*/
                 x: col * board.cellSize
                 y: row * board.cellSize
 
@@ -182,7 +182,7 @@ Rectangle {
                     anchors.fill: parent
                     color: {
                         if (!chessPosition) return "00000000";
-                        return chessPosition.isPreview ? "yellow" : "blue"
+                        return chessPosition.isPreview ? "yellow" : "blue" //hcc
                     }
                     opacity: 0.2
 
