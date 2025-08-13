@@ -4,7 +4,6 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 */
 
 #include <string>
-#include <regex>
 #include <QDebug>
 #include <QRegularExpression>
 
@@ -26,27 +25,20 @@ void dfsParse(QString &bodyText, int &pos, QSharedPointer<VariationNode> &curVar
 
     while (!terminated && pos < n) {
         QChar c = bodyText[pos++];
-
-        // Create tokens separated by spaces and punctuation
-        if (!c.isSpace() && c != ')' && c != '(') {
-            token += c;
+        if (!c.isSpace() && c != ')' && c != '(' && c != '{' && c != '}') {
+            token += c; // separate by spaces and punctuation
         }
-
-        // Enter nested variation
         if (c == '(') {
             QSharedPointer<VariationNode> newVariation = QSharedPointer<VariationNode>::create();
             curVariation->variations.append(qMakePair(plyCount, newVariation));
             dfsParse(bodyText, pos, newVariation);
         }
-
-        // Closing a variation
         if (c == ')') {
             terminated = true;
         }
 
-        // Process token if delimiter or end-of-text
-        if (!token.isEmpty() && (c.isSpace() || pos >= n || c == ')')) {
-            // Check for game termination markers
+        // process token if delimiter or end-of-text
+        if (!token.isEmpty() && (c.isSpace() || pos >= n || c == ')' || c == '(' || c == '{' || c == '}')) {
             if (token == "1-0" || token == "0-1" || token == "1/2-1/2" || token == "*") {
                 terminated = true;
             } else {
@@ -54,6 +46,13 @@ void dfsParse(QString &bodyText, int &pos, QSharedPointer<VariationNode> &curVar
                 plyCount++;
             }
             token.clear();
+        }
+
+        if (c == '{'){ // comment, skip everything until end-of-comment
+            while (pos < n && bodyText[pos] != '}'){
+                c = bodyText[pos++];
+                token += c;
+            }
         }
     }
 
@@ -121,7 +120,7 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
         while ((c = streamBuffer.peek()) != EOF && c != '['){
             std::string line;
             std::getline(streamBuffer, line);
-            bodyText += line;
+            bodyText += line + " ";
         }
 
         game.bodyText = QString::fromStdString(bodyText);
