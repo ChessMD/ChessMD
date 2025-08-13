@@ -63,6 +63,13 @@ The user may click on the “Filter” button which will open a dialogue with fi
 **Figure 2.2.4a**: Filter dialogue with game information  
 ![Figure 2.2.4a](screenshots/Figure_2.2.4a.png)
 
+### 2.2.5 Customizing Headers
+
+The user may right-click on any header to access the header customization menu. The user may then add, remove, and reorder the shown headers.
+
+**Figure 2.2.5a**: Custom headers dialogue
+![Figure 2.2.5a](screenshots/Figure_2.2.5a.png)
+
 ---
 
 ## 2.3 Board Menu
