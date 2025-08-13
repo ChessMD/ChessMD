@@ -25,30 +25,32 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     auto *lay = new QVBoxLayout(this);
     m_whiteAccuracyLabel = new QLabel(tr("White accuracy: –"), this);
     m_blackAccuracyLabel = new QLabel(tr("Black accuracy: –"), this);
+    m_whiteAccuracyLabel->setObjectName("whiteAccuracy");
+    m_blackAccuracyLabel->setObjectName("blackAccuracy");
     m_whiteAccuracyLabel->setFixedHeight(35);
     m_blackAccuracyLabel->setFixedHeight(35);
-    m_whiteAccuracyLabel->setStyleSheet(R"(
-        QLabel {
-            background: white; //hcc
-            color: black; //hcc
-            border: 1px solid #888; /*hcc*/
+    QString headerQss = R"(
+        QLabel#whiteAccuracy {
+            background-color: #ffffff;
+            color: #111111;
+            border: 1px solid rgba(0,0,0,0.06);
             border-radius: 4px;
             padding: 4px 8px;
-            font-weight: bold;
+            font-weight: 700;
             font-size: 14px;
         }
-    )");
-    m_blackAccuracyLabel->setStyleSheet(R"(
-        QLabel {
-            background: #333; /*hcc*/
-                    color: white; //hcc
-            border: 1px solid #888; /*hcc*/
+        QLabel#blackAccuracy {
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.06);
             border-radius: 4px;
             padding: 4px 8px;
-            font-weight: bold;
+            font-weight: 700;
             font-size: 14px;
         }
-    )");
+    )";
+    this->setStyleSheet(headerQss);
+
     auto *hLay = new QHBoxLayout;
     hLay->addWidget(m_whiteAccuracyLabel);
     hLay->addWidget(m_blackAccuracyLabel);
@@ -344,7 +346,7 @@ void GameReviewViewer::createSummaryGrid()
     const QString qss = R"(
         QWidget#summaryPanel { background: transparent; }
         QLabel#whiteCell { background: #FFFFFF; color: #111111; border: 1px solid rgba(0,0,0,0.06); border-radius:6px; font-size:18px; padding:2px; }
-        QLabel#blackCell { background: #0F0F0F; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.06); border-radius:6px; font-size:18px; padding:2px; }
+        QLabel#blackCell { background: #333333; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.06); border-radius:6px; font-size:18px; padding:2px; }
     )";
     gridW->setStyleSheet(qss);
 }
@@ -355,7 +357,7 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         if (m_origPts.empty() || m_axisX->min() >= m_axisX->max() || m_axisY->min() >= m_axisY->max()) {
             return false;
         }
-        QMouseEvent  *me = static_cast<QMouseEvent*>(event);
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
         QRectF plotArea = m_chart->plotArea();
         m_chartView->viewport()->setCursor(Qt::PointingHandCursor);
         if (!plotArea.contains(me->pos())) {

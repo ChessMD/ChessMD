@@ -228,9 +228,6 @@ void DatabaseLibrary::showContextMenu(const QPoint& pos)
 {
     QModelIndex index = listView->currentIndex();
 
-    if (index.row() == 0 && index.column() == 0) // don't show context menu for first one (Add game)
-        return;
-
     QPoint globalPos = listView->viewport()->mapToGlobal(pos);
 
     QMenu rightClickMenu(listView);
