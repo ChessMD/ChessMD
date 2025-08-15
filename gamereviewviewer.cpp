@@ -1,6 +1,7 @@
 #include "gamereviewviewer.h"
 #include "chessposition.h"
 #include "chessqsettings.h"
+#include "helpers.h"
 
 #include <algorithm>
 #include <cmath>
@@ -145,7 +146,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     lay->addLayout(engineSelectLayout);
 
     m_reviewBtn = new QPushButton(tr("Start Game Review"), this);
-    m_reviewBtn->setIcon(QIcon(":/resource/img/sparkles.png"));
+    m_reviewBtn->setIcon(QIcon(getIconPath("sparkles.png")));
     m_reviewBtn->setIconSize(QSize(48,48));
     m_reviewBtn->setMinimumHeight(100);
     m_reviewBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);

@@ -5,4 +5,7 @@
 
 QString getStyle(QString s);
 
+QString getIconPath(const QString& name);
+
+
 #endif // HELPERS_H

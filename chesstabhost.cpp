@@ -9,6 +9,7 @@ March 18, 2025 - Program Creation
 #include "chessgamewindow.h"
 #include "databaseviewer.h"
 #include "databaselibrary.h"
+#include "helpers.h"
 
 #include <QPushButton>
 #include <QMouseEvent>
@@ -71,7 +72,7 @@ void CustomTabBar::addCloseButton(int index) {
     container->setFixedSize(30, 30); 
     
     QPushButton* closeButton = new QPushButton(container);
-    closeButton->setIcon(QIcon(":/resource/img/close.png"));
+    closeButton->setIcon(QIcon(getIconPath("close.png")));
     closeButton->setIconSize(QSize(12, 12));
     closeButton->setFixedSize(12, 12);
     closeButton->setStyleSheet(
@@ -234,9 +235,9 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     maximizeButton = new QPushButton(this);
     closeButton = new QPushButton(this);
 
-    minimizeButton->setIcon(QIcon(":/resource/img/minimize.png"));
-    maximizeButton->setIcon(QIcon(":/resource/img/maximize.png"));
-    closeButton->setIcon(QIcon(":/resource/img/close.png"));
+    minimizeButton->setIcon(QIcon(getIconPath("minimize.png")));
+    maximizeButton->setIcon(QIcon(getIconPath("maximize.png")));
+    closeButton->setIcon(QIcon(getIconPath("close.png")));
 
     minimizeButton->setIconSize(QSize(16, 16));
     maximizeButton->setIconSize(QSize(16, 16));

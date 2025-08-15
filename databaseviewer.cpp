@@ -16,6 +16,7 @@ March 18, 2025 - Program Creation
 #include "pgngamedata.h"
 #include "draggablecheckbox.h"
 
+
 #include <fstream>
 #include <vector>
 #include <QResizeEvent>
@@ -147,8 +148,8 @@ void DatabaseViewer::setupUI()
     toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     toolbar->setIconSize(QSize(24, 24));
     
-    QAction* filterAction = new QAction(QIcon(":/resource/img/filter.png"), "Filter", this);
-    QAction* addGameAction = new QAction(QIcon(":/resource/img/board-icon.png"), "Add Game", this);
+    QAction* filterAction = new QAction(QIcon(getIconPath("filter.png")), "Filter", this);
+    QAction* addGameAction = new QAction(QIcon(getIconPath("board-icon.png")), "Add Game", this);
     
     toolbar->addAction(filterAction);
     toolbar->addAction(addGameAction);

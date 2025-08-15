@@ -4,6 +4,7 @@
 #include "databaselibrary.h"
 #include "mainwindow.h"
 #include "settingsdialog.h"
+#include "helpers.h"
 
 #include <QToolBar>
 #include <QToolButton>
@@ -52,22 +53,22 @@ void MainWindow::setupToolbar() {
     toolbar->setIconSize(QSize(32,32));
     toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-    QAction* importAct = new QAction(QIcon(":/resource/img/database-upload-icon.png"), tr("Import Database"), this);
+    QAction* importAct = new QAction(QIcon(getIconPath("database-upload-icon.png")), tr("Import Database"), this);
     importAct->setToolTip(tr("Import Database"));
     connect(importAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::importDatabase);
     toolbar->addAction(importAct);
 
-    QAction* newDbAct = new QAction(QIcon(":/resource/img/database-add-icon.png"), tr("New Database"), this);
+    QAction* newDbAct = new QAction(QIcon(getIconPath("database-add-icon.png")), tr("New Database"), this);
     newDbAct->setToolTip(tr("New Database"));
     connect(newDbAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newDatabase);
     toolbar->addAction(newDbAct);
 
-    QAction* newBoardAct = new QAction(QIcon(":/resource/img/board-icon.png"), tr("New Board"), this);
+    QAction* newBoardAct = new QAction(QIcon(getIconPath("board-icon.png")), tr("New Board"), this);
     newBoardAct->setToolTip(tr("New Chessboard"));
     connect(newBoardAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newChessboard);
     toolbar->addAction(newBoardAct);
 
-    QAction* chessComAct = new QAction(QIcon(":/resource/img/cloud-file-download-icon.png"), tr("Import Online Database"), this);
+    QAction* chessComAct = new QAction(QIcon(getIconPath("cloud-file-download-icon.png")), tr("Import Online Database"), this);
     chessComAct->setToolTip(tr("Import games from Chess.com"));
     connect(chessComAct, &QAction::triggered, this, &MainWindow::onImportOnlineDatabase);
     toolbar->addAction(chessComAct);
@@ -106,7 +107,7 @@ QWidget* MainWindow::setupSidebar() {
     v->addWidget(spacer);
 
     QToolButton* aboutButton = new QToolButton(this);
-    aboutButton->setIcon(QIcon(":/resource/img/help-circle.png"));
+    aboutButton->setIcon(QIcon(getIconPath("help-circle.png")));
     aboutButton->setToolTip(tr("About ChessMD"));
     aboutButton->setIconSize(QSize(32,32));
     aboutButton->setAutoRaise(true);
@@ -137,7 +138,7 @@ QWidget* MainWindow::setupSidebar() {
 
     // settings
     QToolButton* settingsButton = new QToolButton(this);
-    settingsButton->setIcon(QIcon(":/resource/img/settings.png"));
+    settingsButton->setIcon(QIcon(getIconPath("settings.png")));
     settingsButton->setToolTip(tr("Settings"));
     settingsButton->setIconSize(QSize(32,32));
     settingsButton->setAutoRaise(true);

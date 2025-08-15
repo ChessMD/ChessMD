@@ -9,6 +9,7 @@ March 18, 2025: File Creation
 #include "chessposition.h"
 #include "engineviewer.h"
 #include "pgnsavedialog.h"
+#include "helpers.h"
 
 #include <QDebug>
 #include <QLabel>
@@ -173,7 +174,7 @@ void ChessGameWindow::refreshHeader() {
 void ChessGameWindow::toggleEditMode() {
     m_inEditMode = !m_inEditMode;
     // swap pencil/check icon
-    m_toggleEditBtn->setIcon(QIcon(m_inEditMode ? ":/resource/img/check.png" : ":/resource/img/edit.png"));
+    m_toggleEditBtn->setIcon(QIcon(m_inEditMode ? getIconPath("check.png") : getIconPath("edit.png")));
     // toggle each field
     auto toggleField = [&](QLineEdit* e){
         e->setProperty("editable", m_inEditMode);
@@ -304,7 +305,7 @@ void ChessGameWindow::notationSetup()
     topHBox->addStretch();
 
     m_toggleEditBtn = new QToolButton(topRow);
-    m_toggleEditBtn->setIcon(QIcon(":/resource/img/edit.png"));
+    m_toggleEditBtn->setIcon(QIcon(getIconPath("edit.png")));
     m_toggleEditBtn->setIconSize(QSize(20,20));
     m_toggleEditBtn->setAutoRaise(true);
     m_toggleEditBtn->setToolTip(tr("Edit game info"));
@@ -366,19 +367,19 @@ void ChessGameWindow::toolbarSetup()
     m_Toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
     QAction* back = m_Toolbar->addAction("Back (Left Arrow)");
-    back->setIcon(QIcon(":/resource/img/arrow-left.png"));
+    back->setIcon(QIcon(getIconPath("arrow-left.png")));
     connect(back, &QAction::triggered, this, &ChessGameWindow::onPrevMoveShortcut);
 
     QAction* forward = m_Toolbar->addAction("Forward (Right Arrow)");
-    forward->setIcon(QIcon(":/resource/img/arrow-right.png"));
+    forward->setIcon(QIcon(getIconPath("arrow-right.png")));
     connect(forward, &QAction::triggered, this, &ChessGameWindow::onNextMoveShortcut);
 
     QAction* save = m_Toolbar->addAction("Save (Ctrl+S)");
-    save->setIcon(QIcon(":/resource/img/savegame.png"));
+    save->setIcon(QIcon(getIconPath("savegame.png")));
     connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
 
     QAction* review = m_Toolbar->addAction("Game Review");
-    review->setIcon(QIcon(":/resource/img/sparkles.png"));
+    review->setIcon(QIcon(getIconPath("sparkles.png")));
     connect(review, &QAction::triggered, this, [this]() {
         if (!m_gameReviewDock) return;
         bool visible = m_gameReviewDock->isVisible();
@@ -386,19 +387,19 @@ void ChessGameWindow::toolbarSetup()
     });
 
     m_startEngineAction = m_Toolbar->addAction("Start Engine");
-    m_startEngineAction->setIcon(QIcon(":/resource/img/engine-start.png"));
+    m_startEngineAction->setIcon(QIcon(getIconPath("engine-start.png")));
     connect(m_startEngineAction, &QAction::triggered, this, &ChessGameWindow::engineSetup);
 
     m_stopEngineAction = m_Toolbar->addAction("Stop engine");
-    m_stopEngineAction->setIcon(QIcon(":/resource/img/engine-stop.png"));
+    m_stopEngineAction->setIcon(QIcon(getIconPath("engine-stop.png")));
     connect(m_stopEngineAction, &QAction::triggered, this, &ChessGameWindow::engineTeardown);
 
     m_openOpeningExplorerAction = m_Toolbar->addAction("Open Opening Explorer");
-    m_openOpeningExplorerAction->setIcon(QIcon(":/resource/img/book.png"));
+    m_openOpeningExplorerAction->setIcon(QIcon(getIconPath("book.png")));
     connect(m_openOpeningExplorerAction, &QAction::triggered, this, &ChessGameWindow::openingSetup);
 
     m_closeOpeningExplorerAction = m_Toolbar->addAction("Close Opening Explorer");
-    m_closeOpeningExplorerAction->setIcon(QIcon(":/resource/img/book-off.png"));
+    m_closeOpeningExplorerAction->setIcon(QIcon(getIconPath("book-off.png")));
     connect(m_closeOpeningExplorerAction, &QAction::triggered, this, &ChessGameWindow::openingTeardown);
     addToolBar(m_Toolbar);
 }

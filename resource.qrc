@@ -6,8 +6,6 @@
         <file>img/maxedmaximize.png</file>
         <file>img/maximize.png</file>
         <file>img/minimize.png</file>
-        <file>img/arrow-left.png</file>
-        <file>img/arrow-right.png</file>
         <file>img/addfile.png</file>
         <file>img/enginedebug.png</file>
         <file>img/engineupload.png</file>
@@ -19,7 +17,6 @@
         <file>img/engine.png</file>
         <file>img/settings.png</file>
         <file>img/help-circle.png</file>
-        <file>img/book.png</file>
         <file>img/book-off.png</file>
         <file>img/database-add-icon.png</file>
         <file>img/check.png</file>
@@ -36,5 +33,28 @@
         <file>img/inaccuracy-icon.png</file>
         <file>img/mistake-icon.png</file>
         <file>img/cloud-file-download-icon.png</file>
+        <file>img/white_icons/arrow-left.png</file>
+        <file>img/white_icons/arrow-right.png</file>
+        <file>img/white_icons/board-icon.png</file>
+        <file>img/white_icons/book-off.png</file>
+        <file>img/white_icons/book.png</file>
+        <file>img/white_icons/check.png</file>
+        <file>img/white_icons/cloud-file-download-icon.png</file>
+        <file>img/white_icons/database-add-icon.png</file>
+        <file>img/white_icons/database-upload-icon.png</file>
+        <file>img/white_icons/edit.png</file>
+        <file>img/white_icons/engine-start.png</file>
+        <file>img/white_icons/engine-stop.png</file>
+        <file>img/white_icons/engine.png</file>
+        <file>img/white_icons/enginedebug.png</file>
+        <file>img/white_icons/filter.png</file>
+        <file>img/white_icons/help-circle.png</file>
+        <file>img/white_icons/savegame.png</file>
+        <file>img/white_icons/settings.png</file>
+        <file>img/white_icons/sparkles.png</file>
+        <file>img/white_icons/close.png</file>
+        <file>img/white_icons/maxedmaximize.png</file>
+        <file>img/white_icons/maximize.png</file>
+        <file>img/white_icons/minimize.png</file>
     </qresource>
 </RCC>
