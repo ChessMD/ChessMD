@@ -47,14 +47,11 @@ void ChessPosition::copyFrom(const ChessPosition &other)
 
 bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol) const
 {
-    if (oldRow < 0 || oldRow >= 8 || oldCol < 0 || oldCol >= 8 ||
-        newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8 ||
-        (oldRow == newRow && oldCol == newCol))
-    {
+    if (oldRow < 0 || oldRow >= 8 || oldCol < 0 || oldCol >= 8 || newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8 || (oldRow == newRow && oldCol == newCol)){
         return false;
     }
 
-    const QString &fromSq = m_boardData[oldRow][oldCol];
+    QString fromSq = m_boardData[oldRow][oldCol];
     if (fromSq.isEmpty())
         return false;
 
@@ -65,7 +62,7 @@ bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol)
     if (color.toLatin1() != m_sideToMove)
         return false;
 
-    const QString &dstSq = m_boardData[newRow][newCol];
+    QString dstSq = m_boardData[newRow][newCol];
     bool capture = !dstSq.isEmpty();
     if (capture && dstSq[0] == color)
         return false;
@@ -257,7 +254,6 @@ void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)
 }
 
 bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) {
-
     san = san.trimmed();
     while (!san.isEmpty() && (san.endsWith('+') || san.endsWith('#'))){
         san.chop(1);
@@ -276,7 +272,6 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
         int newKC = kingSide?6:2;
         int oldRC = kingSide?7:0;
         int newRC = kingSide?5:3;
-        // Validate
         if (!validateMove(row, oldKC, row, newKC)) return false;
         move->lanText = QString("%1%2%3%4").arg(QChar('a' + oldKC)).arg(8 - row).arg(QChar('a' + newKC)).arg(8 - row);
         applyMove(row, oldKC, row, newKC, '\0');
@@ -522,7 +517,6 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
             }
         }
         if (token.startsWith('{')) {
-            // strip leading '{'
             token.remove(0, 1);
             while (!token.endsWith('}')) {
                 comment += token + " ";
@@ -530,12 +524,10 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
                 if (i >= plyCount) break;
                 token = varNode->moves[i];
             }
-            // strip trailing '}'
             if (token.endsWith('}')) {
                 token.chop(1);
                 comment += token;
             }
-            // qDebug() << comment;
             if (!comment.isEmpty()) {
                 parentMove->commentAfter = comment;
                 comment.clear();
@@ -546,7 +538,7 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
         while (variationIdx < varNode->variations.size() && varNode->variations[variationIdx].first == i)
         {
             auto subNode = varNode->variations[variationIdx].second;
-            buildNotationTree(subNode,  parentMove->m_previousMove);
+            buildNotationTree(subNode, parentMove->m_previousMove);
             variationIdx++;
         }
 
@@ -555,8 +547,7 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
         QSharedPointer<NotationMove> childMove = QSharedPointer<NotationMove>::create(token, *clonePos);
 
         if (!clonePos->tryMakeMove(token, childMove)) {
-            parentMove->commentAfter += token;
-            // qDebug() << "Illegal move skipped:" << token;
+            parentMove->commentAfter += token; // illegal move, let's just add it as a comment
             delete clonePos;
             continue;
         }

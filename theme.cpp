@@ -15,7 +15,7 @@ void Theme::applyTheme(QApplication& app) {
 }
 
 void Theme::applyDarkTheme(QApplication& app) {
-    app.setStyle(QStyleFactory::create("Fusion"));
+    // app.setStyle(QStyleFactory::create("Fusion"));
     
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(25, 25, 25)); //hcc
@@ -42,7 +42,7 @@ void Theme::applyDarkTheme(QApplication& app) {
 }
 
 void Theme::applyLightTheme(QApplication& app) {
-    app.setStyle(QStyleFactory::create("Fusion"));
+    // app.setStyle(QStyleFactory::create("Fusion"));
     
     QPalette lightPalette;
     lightPalette.setColor(QPalette::Window, QColor(240, 240, 240)); //hcc
