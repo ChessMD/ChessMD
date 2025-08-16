@@ -26,13 +26,15 @@ int main(int argc, char *argv[])
 
     QCoreApplication::setOrganizationName("ChessMD");
     QCoreApplication::setApplicationName("ChessMD");
+    QCoreApplication::setApplicationVersion("v1.0-beta.3");
     QApplication app(argc, argv);
     
     Theme::applyTheme(app);
 
     QDir dir;
     if (!dir.exists("./opening")) dir.mkdir("./opening");
-    
+    if (!dir.exists("./engine")) dir.mkdir("./engine");
+
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
 

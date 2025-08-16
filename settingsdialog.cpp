@@ -29,7 +29,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     mCategoryList = new QListWidget(this);
     mCategoryList->addItem(tr("Engine"));
     mCategoryList->addItem(tr("Opening"));
-    mCategoryList->addItem(tr("Theme"));
+    // mCategoryList->addItem(tr("Theme"));
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
@@ -56,7 +56,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QString openingText = QString("Current opening database: ") + ( (QFileInfo::exists("./opening/openings.bin") && QFileInfo::exists("./opening/openings.headers") ) ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
     mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);
-    QLabel* info = new QLabel(tr("Warning! In v1.0-beta, 1 GB of memory (RAM) is required for every 3 MB of a PGN database."), openingsPage);
+    QLabel* info = new QLabel(tr("Warning! In %1, 1 GB of memory (RAM) is required for every 3 MB of a PGN database.").arg(QCoreApplication::applicationVersion()), openingsPage);
     openingsLayout->addWidget(mOpeningsPathLabel);
     openingsLayout->addWidget(loadPgnBtn);
     openingsLayout->addWidget(info);
@@ -81,15 +81,18 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     themeLayout->addWidget(mThemeComboBox);
     themeLayout->addWidget(themeInfo);
     themeLayout->addStretch();
-    mStackedWidget->addWidget(themePage);
+    // mStackedWidget->addWidget(themePage);
+    themePage->setVisible(false);
     
+
+
     mainLayout->addWidget(mStackedWidget);
 
     connect(mCategoryList, &QListWidget::currentRowChanged, mStackedWidget, &QStackedWidget::setCurrentIndex);
     mCategoryList->setCurrentRow(0);
     connect(loadPgnBtn, &QPushButton::clicked, this, &SettingsDialog::onLoadPgnClicked);
     connect(selectEngineBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectEngineClicked);
-    connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
+    // connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
     
     ChessQSettings settings;
     QString enginePath = settings.getEngineFile();

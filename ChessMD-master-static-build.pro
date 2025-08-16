@@ -42,12 +42,14 @@ HEADERS += chessgamefilesdata.h \
            variationdialogue.h \
 	   gamereviewviewer.h \
 	   engineviewer.h \
-	   draggablecheckbox.h
+	   draggablecheckbox.h \
+	   theme.h 
 
 FORMS += databasefilter.ui \
          databaselibrary.ui \
          databaseuploader.ui \
          pgnuploader.ui
+
 SOURCES += chessgamefilesdata.cpp \
            chessgametabdialog.cpp \
            chessgamewindow.cpp \
@@ -75,9 +77,11 @@ SOURCES += chessgamefilesdata.cpp \
            tabledelegate.cpp \
            uciengine.cpp \
            variationdialogue.cpp \
-		   gamereviewviewer.cpp \
-		   engineviewer.cpp \
-		   draggablecheckbox.cpp
+	   gamereviewviewer.cpp \
+	   engineviewer.cpp \
+	   draggablecheckbox.cpp \
+	   theme.cpp 
+
 RESOURCES += img.qrc qml.qrc resource.qrc resources.qrc
 
 QT += widgets quickwidgets graphs charts
