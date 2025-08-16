@@ -16,6 +16,7 @@ March 18, 2025 - Program Creation
 #include <QCloseEvent>
 #include <QPainter>
 #include <QRect>
+#include <QPalette>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -52,12 +53,12 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
         "    margin-right: 2px;"
         "    margin-top: 20px;"
         "    min-height: 30px;"
-        "    color: palette(text);" 
+        "    color: palette(midlight);" 
         "}"
         "QTabBar::tab:selected {"
         "    background-color: palette(window);"  
         "    color: palette(text);"
-        "    border: 1px solid palette(text);" 
+        "    border: 1px solid palette(midlight);" 
         "    border-bottom: none;"        
         "}"
         "QTabBar::tab:hover:!selected {"
@@ -366,7 +367,7 @@ void CustomTitleBar::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 
     QPainter painter(this);
-    painter.setPen(QPen(QColor("#000000"), 1));
+    painter.setPen(QPen(palette().color(QPalette::Midlight), 1));
     painter.drawLine(0, height() - 1, width(), height() - 1);
 }
 

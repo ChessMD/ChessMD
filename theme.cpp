@@ -15,25 +15,26 @@ void Theme::applyTheme(QApplication& app) {
 }
 
 void Theme::applyDarkTheme(QApplication& app) {
-    // app.setStyle(QStyleFactory::create("Fusion"));
     
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(25, 25, 25)); //hcc
-    darkPalette.setColor(QPalette::WindowText, Qt::white);
+    darkPalette.setColor(QPalette::WindowText, QColor(220,220,220));
     darkPalette.setColor(QPalette::Base, QColor(53, 53, 53)); //hcc
     darkPalette.setColor(QPalette::AlternateBase, QColor(25, 25, 25)); //hcc
     darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
     darkPalette.setColor(QPalette::ToolTipText, Qt::black);
-    darkPalette.setColor(QPalette::Text, Qt::white);
+    darkPalette.setColor(QPalette::Text, QColor(220,220,220));
     darkPalette.setColor(QPalette::Button, QColor(25, 25, 25)); //hcc
-    darkPalette.setColor(QPalette::ButtonText, Qt::white);
+    darkPalette.setColor(QPalette::ButtonText, QColor(220,220,220));
     darkPalette.setColor(QPalette::BrightText, Qt::red);
     darkPalette.setColor(QPalette::Link, QColor(42, 130, 218)); //hcc
     darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218)); //hcc
     darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+    darkPalette.setColor(QPalette::PlaceholderText, QColor(120,120,120)); //hcc
+
     
-    darkPalette.setColor(QPalette::Light, QColor(80, 80, 80)); //hcc
-    darkPalette.setColor(QPalette::Midlight, QColor(65, 65, 65)); //hcc
+    darkPalette.setColor(QPalette::Light, QColor(200, 200, 200)); //hcc
+    darkPalette.setColor(QPalette::Midlight, QColor(150, 150, 150)); //hcc
     darkPalette.setColor(QPalette::Dark, QColor(15, 15, 15)); //hcc
     darkPalette.setColor(QPalette::Mid, QColor(40, 40, 40)); //hcc
     darkPalette.setColor(QPalette::Shadow, QColor(0, 0, 0)); //hcc
@@ -42,7 +43,6 @@ void Theme::applyDarkTheme(QApplication& app) {
 }
 
 void Theme::applyLightTheme(QApplication& app) {
-    // app.setStyle(QStyleFactory::create("Fusion"));
     
     QPalette lightPalette;
     lightPalette.setColor(QPalette::Window, QColor(240, 240, 240)); //hcc
@@ -58,6 +58,7 @@ void Theme::applyLightTheme(QApplication& app) {
     lightPalette.setColor(QPalette::Link, QColor(0, 0, 255)); //hcc
     lightPalette.setColor(QPalette::Highlight, QColor(0, 120, 215)); //hcc
     lightPalette.setColor(QPalette::HighlightedText, Qt::white);
+    lightPalette.setColor(QPalette::PlaceholderText, QColor(160, 160, 160));
     
     lightPalette.setColor(QPalette::Light, QColor(255, 255, 255)); //hcc
     lightPalette.setColor(QPalette::Midlight, QColor(245, 245, 245)); //hcc

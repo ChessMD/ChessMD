@@ -15,6 +15,7 @@ March 18, 2025: File Creation
 #include <QTextLayout>
 #include <QInputDialog>
 #include <QRegularExpression>
+#include <QPalette>
 
 NotationViewer::NotationViewer(PGNGame game, QWidget* parent)
     : QAbstractScrollArea(parent)
@@ -81,7 +82,7 @@ void NotationViewer::paintEvent(QPaintEvent *event)
     QFontMetrics fm(painter.font());
     painter.setFont(font());
     painter.translate(0, -verticalScrollBar()->value());
-    painter.fillRect(viewport()->rect().translated(0, verticalScrollBar()->value()), Qt::white);
+    painter.fillRect(viewport()->rect().translated(0, verticalScrollBar()->value()), palette().color(QPalette::Base));
     clearLayout();
     int x = 0, y = 0, lineHeight = fm.height() + m_lineSpacing;
     if (m_rootMove) {
@@ -101,12 +102,12 @@ void NotationViewer::paintEvent(QPaintEvent *event)
     QFont boldFont = painter.font();
     boldFont.setBold(true);
     painter.setFont(boldFont);
-    painter.setPen(Qt::black);
+    painter.setPen(palette().color(QPalette::Text));
     painter.setBrush(Qt::NoBrush);
     painter.drawText(0, y, m_game.result);
 }
 
-void drawManuallyWrappedText(QPainter &painter, const QString &text, int indent, int &x, int &y, int availWidth, int lineSpacing)
+void drawManuallyWrappedText(QPainter &painter, const QString &text, int indent, int &x, int &y, int availWidth, int lineSpacing, const QPalette& pal)
 {
     QFontMetrics fm(painter.font());
     int lineHeight = fm.height() + lineSpacing;
@@ -122,7 +123,7 @@ void drawManuallyWrappedText(QPainter &painter, const QString &text, int indent,
         painter.drawText(x, y + fm.ascent(), tok + ' ');
         x += tokWidth;
     }
-    painter.setPen(Qt::black);
+    painter.setPen(pal.color(QPalette::Text));
 }
 
 
@@ -151,7 +152,7 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
     QString postComment = currentMove->commentAfter;
     QString fullMove = preComment + moveStr + postComment + " ";
 
-    drawManuallyWrappedText(painter, preComment, indent, x, y, availWidth, m_lineSpacing);
+    drawManuallyWrappedText(painter, preComment, indent, x, y, availWidth, m_lineSpacing, palette());
 
     if (x - indent + fm.horizontalAdvance(moveStr + ' ') > availWidth) {
         x = indent;
@@ -174,7 +175,7 @@ void NotationViewer::drawMove(QPainter &painter, const QSharedPointer<NotationMo
     m_moveSegments.append({seg});
     x += fm.horizontalAdvance(moveStr + ' ');
 
-    drawManuallyWrappedText(painter, postComment, indent, x, y, availWidth, m_lineSpacing);
+    drawManuallyWrappedText(painter, postComment, indent, x, y, availWidth, m_lineSpacing, palette());
 
     if (isMain){
         QFont unbold = normal;

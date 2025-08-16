@@ -13,6 +13,7 @@ Jan 15, 2025 - Program Creation
 #include <QFile>
 #include <QDir>
 #include <QDockWidget>
+#include <QSettings>
 #include "mainwindow.h"
 #include "theme.h"
 
@@ -20,9 +21,8 @@ Jan 15, 2025 - Program Creation
 
 int main(int argc, char *argv[])
 {
-#ifdef Q_OS_WIN
-    qputenv("QT_QPA_PLATFORM", "windows:darkmode=0");
-#endif
+    QSettings settings;
+    QString theme = settings.value("theme", "light").toString();
 
     QCoreApplication::setOrganizationName("ChessMD");
     QCoreApplication::setApplicationName("ChessMD");

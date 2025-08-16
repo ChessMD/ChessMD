@@ -66,17 +66,23 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     // theme page
     QWidget* themePage = new QWidget(this);
     QVBoxLayout* themeLayout = new QVBoxLayout(themePage);
-    
+
     QLabel* themeLabel = new QLabel(tr("Theme:"), themePage);
     mThemeComboBox = new QComboBox(themePage);
     mThemeComboBox->addItem(tr("Light"));
     mThemeComboBox->addItem(tr("Dark"));
     mThemeComboBox->addItem(tr("System"));
-    mThemeComboBox->setCurrentIndex(0);
-    
+
+    QSettings tsettings;
+    QString currentTheme = tsettings.value("theme").toString();
+    if (currentTheme == "light") mThemeComboBox->setCurrentIndex(0);
+    else if (currentTheme == "dark") mThemeComboBox->setCurrentIndex(1);
+    else if (currentTheme == "system") mThemeComboBox->setCurrentIndex(2);
+    else mThemeComboBox->setCurrentIndex(0);
+
     QLabel* themeInfo = new QLabel(tr("Theme changes will be applied when you restart the application."), themePage);
     themeInfo->setStyleSheet("color: #666; font-size: 11px;"); //hcc
-    
+
     themeLayout->addWidget(themeLabel);
     themeLayout->addWidget(mThemeComboBox);
     themeLayout->addWidget(themeInfo);
