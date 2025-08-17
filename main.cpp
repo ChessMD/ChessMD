@@ -16,6 +16,7 @@ Jan 15, 2025 - Program Creation
 #include <QSettings>
 #include "mainwindow.h"
 #include "theme.h"
+#include "helpers.h"
 
 
 
@@ -31,25 +32,8 @@ int main(int argc, char *argv[])
     Theme::applyTheme(app);
 
     //global style cuz of weird default styling
-    app.setStyleSheet(
-        "QPushButton {"
-        "  border: 1px solid gray;"
-        "  border-radius: 6px;"
-        "  padding: 3px 8px;"
-        "  background-color: palette(button);"
-        "  color: palette(button-text);"
-        "  font-size: 12px;"
-        "}"
-        "QPushButton:focus {"
-        "  border: 2px solid palette(highlight);"
-        "}"
-        "QPushButton:hover {"
-        "  background-color: rgba(128,128,128,0.3);"
-        "}"
-        "QPushButton:pressed {"
-        "  background-color: palette(mid);"
-        "}"
-    );
+    QString globalStyle = getStyle(":/resource/styles/globalstyle.qss");
+    app.setStyleSheet(globalStyle);
 
     QDir dir;
     if (!dir.exists("./opening")) dir.mkdir("./opening");

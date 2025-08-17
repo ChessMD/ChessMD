@@ -1,0 +1,73 @@
+QPushButton {
+    border: 1px solid gray;
+    border-radius: 6px;
+    padding: 3px 8px;
+    background-color: palette(button);
+    color: palette(button-text);
+    font-size: 12px;
+}
+QPushButton:focus {
+    border: 2px solid palette(highlight);
+}
+QPushButton:hover {
+    background-color: rgba(128,128,128,0.3);
+}
+QPushButton:pressed {
+    background-color: palette(mid);
+}
+
+QToolButton {
+    background-color: palette(button);
+    color: palette(button-text);
+    font-size: 12px;
+}
+QToolButton:focus {
+    border: 2px solid palette(highlight);
+}
+QToolButton:hover {
+    background-color: rgba(128,128,128,0.3);
+}
+QToolButton:pressed {
+    background-color: palette(mid);
+}
+
+QListView {
+    background-color: palette(base);
+}
+
+QListView::item {
+    padding: 6px 12px;
+}
+
+QListView::item:selected {
+    background: rgba(128,128,128,0.5);
+}
+
+QListView::item:hover {
+    background: rgba(128,128,128,0.3);
+}
+
+QMenu {
+    background-color: palette(base);
+    color: palette(window-text);
+    border-bottom: 2px solid gray;
+    border-right: 2px solid gray;
+    border-top: 1px solid gray;
+    border-left: 1px solid gray;
+    border-radius: 8px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: palette(window-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+QMenu::item:selected {
+    background-color: rgba(128,128,128,0.3);
+}
+
+QTableView::item:selected {
+    background: rgba(128,128,128,0.5);
+}

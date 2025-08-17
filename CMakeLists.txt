@@ -35,9 +35,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         ${PROJECT_SOURCES}
 
 
-
+        styles/globalstyle.qss
         databaseviewer.h databaseviewer.cpp
-        styles/tablestyle.qss
         tabledelegate.h tabledelegate.cpp
         pgnuploader.h pgnuploader.cpp pgnuploader.ui
 
@@ -79,7 +78,6 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         pgnsavedialog.h pgnsavedialog.cpp
         gamereviewviewer.h gamereviewviewer.cpp
         settingsdialog.h settingsdialog.cpp
-        styles/headerstyle.qss
         draggablecheckbox.h draggablecheckbox.cpp
         theme.cpp
         theme.h

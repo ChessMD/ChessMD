@@ -56,7 +56,7 @@ void Theme::applyLightTheme(QApplication& app) {
     lightPalette.setColor(QPalette::ButtonText, Qt::black);
     lightPalette.setColor(QPalette::BrightText, Qt::red);
     lightPalette.setColor(QPalette::Link, QColor(0, 0, 255)); //hcc
-    lightPalette.setColor(QPalette::Highlight, QColor(0, 120, 215)); //hcc
+    lightPalette.setColor(QPalette::Highlight, QColor(180, 200, 240)); //hcc
     lightPalette.setColor(QPalette::HighlightedText, Qt::black);
     lightPalette.setColor(QPalette::PlaceholderText, QColor(160, 160, 160));
     

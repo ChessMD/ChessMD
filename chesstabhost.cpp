@@ -58,7 +58,7 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
         "QTabBar::tab:selected {"
         "    background-color: palette(window);"  
         "    color: palette(text);"
-        "    border: 1px solid palette(midlight);" 
+        "    border: 1px solid rgba(128, 128, 128, 1);" 
         "    border-bottom: none;"        
         "}"
         "QTabBar::tab:hover:!selected {"
@@ -367,7 +367,7 @@ void CustomTitleBar::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 
     QPainter painter(this);
-    painter.setPen(QPen(palette().color(QPalette::Midlight), 1));
+    painter.setPen(QPen(QColor(128, 128, 128)));
     painter.drawLine(0, height() - 1, width(), height() - 1);
 }
 
