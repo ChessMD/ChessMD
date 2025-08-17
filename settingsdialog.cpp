@@ -83,7 +83,6 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     themeLayout->addStretch();
     // mStackedWidget->addWidget(themePage);
     themePage->setVisible(false);
-    
 
 
     mainLayout->addWidget(mStackedWidget);

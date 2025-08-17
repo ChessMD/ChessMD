@@ -53,7 +53,7 @@ void Theme::applyLightTheme(QApplication& app) {
     lightPalette.setColor(QPalette::BrightText, Qt::red);
     lightPalette.setColor(QPalette::Link, QColor(0, 0, 255)); //hcc
     lightPalette.setColor(QPalette::Highlight, QColor(0, 120, 215)); //hcc
-    lightPalette.setColor(QPalette::HighlightedText, Qt::white);
+    lightPalette.setColor(QPalette::HighlightedText, Qt::black);
     
     lightPalette.setColor(QPalette::Light, QColor(255, 255, 255)); //hcc
     lightPalette.setColor(QPalette::Midlight, QColor(245, 245, 245)); //hcc
