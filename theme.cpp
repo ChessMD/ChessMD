@@ -17,14 +17,14 @@ void Theme::applyTheme(QApplication& app) {
 void Theme::applyDarkTheme(QApplication& app) {
 
     QPalette darkPalette;
-    darkPalette.setColor(QPalette::Window, QColor(25, 25, 25)); //hcc
+    darkPalette.setColor(QPalette::Window, QColor(30, 30, 30)); //hcc
     darkPalette.setColor(QPalette::WindowText, QColor(220,220,220));
-    darkPalette.setColor(QPalette::Base, QColor(53, 53, 53)); //hcc
-    darkPalette.setColor(QPalette::AlternateBase, QColor(25, 25, 25)); //hcc
+    darkPalette.setColor(QPalette::Base, QColor(60, 60, 60)); //hcc
+    darkPalette.setColor(QPalette::AlternateBase, QColor(30, 30, 30)); //hcc
     darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
     darkPalette.setColor(QPalette::ToolTipText, Qt::black);
     darkPalette.setColor(QPalette::Text, QColor(220,220,220));
-    darkPalette.setColor(QPalette::Button, QColor(25, 25, 25)); //hcc
+    darkPalette.setColor(QPalette::Button, QColor(30, 30, 30)); //hcc
     darkPalette.setColor(QPalette::ButtonText, QColor(220,220,220));
     darkPalette.setColor(QPalette::BrightText, Qt::red);
     darkPalette.setColor(QPalette::Link, QColor(42, 130, 218)); //hcc
@@ -36,7 +36,7 @@ void Theme::applyDarkTheme(QApplication& app) {
     darkPalette.setColor(QPalette::Light, QColor(200, 200, 200)); //hcc
     darkPalette.setColor(QPalette::Midlight, QColor(150, 150, 150)); //hcc
     darkPalette.setColor(QPalette::Dark, QColor(15, 15, 15)); //hcc
-    darkPalette.setColor(QPalette::Mid, QColor(40, 40, 40)); //hcc
+    darkPalette.setColor(QPalette::Mid, QColor(45, 45, 45)); //hcc
     darkPalette.setColor(QPalette::Shadow, QColor(0, 0, 0)); //hcc
     
     app.setPalette(darkPalette);

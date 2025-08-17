@@ -29,7 +29,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     mCategoryList = new QListWidget(this);
     mCategoryList->addItem(tr("Engine"));
     mCategoryList->addItem(tr("Opening"));
-    // mCategoryList->addItem(tr("Theme"));
+    mCategoryList->addItem(tr("Theme"));
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
@@ -90,8 +90,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     themeLayout->addWidget(mThemeComboBox);
     themeLayout->addWidget(themeInfo);
     themeLayout->addStretch();
-    // mStackedWidget->addWidget(themePage);
-    themePage->setVisible(false);
+    mStackedWidget->addWidget(themePage);
 
 
     mainLayout->addWidget(mStackedWidget);
@@ -100,7 +99,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     mCategoryList->setCurrentRow(0);
     connect(loadPgnBtn, &QPushButton::clicked, this, &SettingsDialog::onLoadPgnClicked);
     connect(selectEngineBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectEngineClicked);
-    // connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
+    connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
     
     ChessQSettings settings;
     QString enginePath = settings.getEngineFile();
