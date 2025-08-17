@@ -21,8 +21,6 @@
         <file>img/database-add-icon.png</file>
         <file>img/check.png</file>
         <file>img/edit.png</file>
-        <file>styles/headerstyle.qss</file>
-        <file>styles/tablestyle.qss</file>
         <file>img/database-upload-icon.png</file>
         <file>img/board-icon.png</file>
         <file>img/filter.png</file>
@@ -56,5 +54,9 @@
         <file>img/white_icons/maxedmaximize.png</file>
         <file>img/white_icons/maximize.png</file>
         <file>img/white_icons/minimize.png</file>
+        <file>img/arrow-left.png</file>
+        <file>img/arrow-right.png</file>
+        <file>img/book.png</file>
+        <file>styles/globalstyle.qss</file>
     </qresource>
 </RCC>

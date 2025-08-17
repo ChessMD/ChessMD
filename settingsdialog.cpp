@@ -45,6 +45,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QString engineText = "Current engine: " + ((!engineSaved.isEmpty() && QFileInfo::exists(engineSaved)) ? engineSaved : "None");
     mEnginePathLabel = new QLabel(engineText, enginePage);
     QPushButton* selectEngineBtn = new QPushButton(tr("Select Engine..."), enginePage);
+
     engineLayout->addWidget(mEnginePathLabel);
     engineLayout->addWidget(selectEngineBtn);
     engineLayout->addStretch();
@@ -62,6 +63,8 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     openingsLayout->addWidget(info);
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
+
+    
     
     // theme page
     QWidget* themePage = new QWidget(this);
@@ -81,7 +84,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     else mThemeComboBox->setCurrentIndex(0);
 
     QLabel* themeInfo = new QLabel(tr("Theme changes will be applied when you restart the application."), themePage);
-    themeInfo->setStyleSheet("color: #666; font-size: 11px;"); //hcc
+    themeInfo->setStyleSheet("color: palette(text); font-size: 11px;"); 
 
     themeLayout->addWidget(themeLabel);
     themeLayout->addWidget(mThemeComboBox);

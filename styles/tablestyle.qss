@@ -1,8 +1,0 @@
-QHeaderView::section {
-        background-color:  rgb(78, 120, 55); /*hcc*/
-        border-style: none;
-}
-
-QTableView{
-        background: #2c2b29; /*hcc*/
-}

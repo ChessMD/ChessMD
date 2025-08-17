@@ -18,6 +18,7 @@
 #include <QMouseEvent>
 #include <QCursor>
 #include <QOperatingSystemVersion>
+#include <QPalette>
 
 GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent)
     : QWidget(parent)
@@ -30,9 +31,10 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_blackAccuracyLabel->setObjectName("blackAccuracy");
     m_whiteAccuracyLabel->setFixedHeight(35);
     m_blackAccuracyLabel->setFixedHeight(35);
+    //hcc
     QString headerQss = R"(
         QLabel#whiteAccuracy {
-            background-color: #ffffff;
+            background-color: palette(light);
             color: #111111;
             border: 1px solid rgba(0,0,0,0.06);
             border-radius: 4px;
@@ -108,9 +110,9 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         s->setPen(outlinePen);
     }
 
-    m_inaccuracySeries->setBrush(QBrush(QColor(247,198,49))); //hcc
-    m_mistakeSeries->setBrush(QBrush(QColor(255,164,89))); //hcc
-    m_blunderSeries->setBrush(QBrush(QColor(250, 65, 45))); //hcc
+    m_inaccuracySeries->setBrush(QBrush(QColor(247,198,49)));
+    m_mistakeSeries->setBrush(QBrush(QColor(255,164,89)));
+    m_blunderSeries->setBrush(QBrush(QColor(250, 65, 45)));
 
     m_chartView = new QChartView(m_chart, this);
     m_chartView->setFixedHeight(250);
@@ -346,7 +348,7 @@ void GameReviewViewer::createSummaryGrid()
     lay->addWidget(gridW, 0, Qt::AlignHCenter);
     const QString qss = R"(
         QWidget#summaryPanel { background: transparent; }
-        QLabel#whiteCell { background: #FFFFFF; color: #111111; border: 1px solid rgba(0,0,0,0.06); border-radius:6px; font-size:18px; padding:2px; }
+        QLabel#whiteCell { background: palette(light); color: #111111; border: 1px solid rgba(0,0,0,0.06); border-radius:6px; font-size:18px; padding:2px; }
         QLabel#blackCell { background: #333333; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.06); border-radius:6px; font-size:18px; padding:2px; }
     )";
     gridW->setStyleSheet(qss);

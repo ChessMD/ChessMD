@@ -29,7 +29,7 @@ void Theme::applyDarkTheme(QApplication& app) {
     darkPalette.setColor(QPalette::BrightText, Qt::red);
     darkPalette.setColor(QPalette::Link, QColor(42, 130, 218)); //hcc
     darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218)); //hcc
-    darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+    darkPalette.setColor(QPalette::HighlightedText, Qt::white);
     darkPalette.setColor(QPalette::PlaceholderText, QColor(120,120,120)); //hcc
 
     
@@ -43,7 +43,7 @@ void Theme::applyDarkTheme(QApplication& app) {
 }
 
 void Theme::applyLightTheme(QApplication& app) {
-    
+
     QPalette lightPalette;
     lightPalette.setColor(QPalette::Window, QColor(240, 240, 240)); //hcc
     lightPalette.setColor(QPalette::WindowText, Qt::black);
@@ -57,7 +57,7 @@ void Theme::applyLightTheme(QApplication& app) {
     lightPalette.setColor(QPalette::BrightText, Qt::red);
     lightPalette.setColor(QPalette::Link, QColor(0, 0, 255)); //hcc
     lightPalette.setColor(QPalette::Highlight, QColor(0, 120, 215)); //hcc
-    lightPalette.setColor(QPalette::HighlightedText, Qt::white);
+    lightPalette.setColor(QPalette::HighlightedText, Qt::black);
     lightPalette.setColor(QPalette::PlaceholderText, QColor(160, 160, 160));
     
     lightPalette.setColor(QPalette::Light, QColor(255, 255, 255)); //hcc

@@ -257,9 +257,6 @@ void ChessGameWindow::notationSetup()
         edit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         edit->setPlaceholderText(placeholder);
         edit->setTextMargins(0, 0, 0, 0);
-        // QPalette pal = edit->palette();
-        // pal.setColor(QPalette::PlaceholderText, QColor(160, 160, 160)); //hcc
-        // edit->setPalette(pal);
         edit->setStyleSheet(R"(
             QLineEdit {
                 border: none;

@@ -130,6 +130,7 @@ QWidget* MainWindow::setupSidebar() {
         if (auto *label = msg.findChild<QLabel*>("qt_msgbox_label")) {
             label->setOpenExternalLinks(true);
         }
+        qDebug() << "Highlight color:" << palette().color(QPalette::Highlight);
 
         msg.exec();
     });
