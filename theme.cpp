@@ -15,7 +15,7 @@ void Theme::applyTheme(QApplication& app) {
 }
 
 void Theme::applyDarkTheme(QApplication& app) {
-    
+
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(25, 25, 25)); //hcc
     darkPalette.setColor(QPalette::WindowText, QColor(220,220,220));

@@ -13,6 +13,7 @@
 #include <QHBoxLayout>
 #include <QThread>
 #include <QInputDialog>
+#include <QCoreApplication>
 
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -124,7 +125,7 @@ QWidget* MainWindow::setupSidebar() {
                         "<p>© 2025 ChessMD</p>"
                         "<p>A lightweight PGN database viewer and analysis tool.</p>"
                         "<p>Visit our <a href=\"https://chessmd.org/\">website</a> for more info.</p>"
-                        ).arg("v1.0-beta.2"));
+                        ).arg(QCoreApplication::applicationVersion()));
 
         // find the internal QLabel and enable external link opening
         if (auto *label = msg.findChild<QLabel*>("qt_msgbox_label")) {
@@ -199,7 +200,8 @@ void MainWindow::fetchChesscomGamesAndSave(const QString &username, const int ma
 
         QUrl profileUrl(QString("https://api.chess.com/pub/player/%1").arg(username));
         QNetworkRequest profileRequest(profileUrl);
-        profileRequest.setRawHeader("User-Agent", "ChessMD.org");
+        QString agentInfo = QString("ChessMD/%2 (Contact: support@chessmd.org)").arg(QCoreApplication::applicationVersion());
+        profileRequest.setRawHeader("User-Agent", agentInfo.toUtf8());
         QNetworkReply *profileReply = networkManager.get(profileRequest);
         if (!profileReply) {
             emit PGNFetchError(tr("Failed to start network request for '%1'.").arg(username));
@@ -353,7 +355,7 @@ void MainWindow::fetchChesscomGamesAndSave(const QString &username, const int ma
             }
 
             PGNReply->deleteLater();
-            QThread::msleep(100); // small delay to be nice to the API
+            QThread::msleep(200); // small delay to be nice to the API
         }
 
         if (combinedPGN.isEmpty()) {

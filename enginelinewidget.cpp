@@ -36,6 +36,7 @@ EngineLineWidget::EngineLineWidget(const QString &eval, const QString &pv, const
     m_truncLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_truncLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     m_truncLabel->setWordWrap(false);
+    m_truncLabel->setStyleSheet("background: transparent;");
 
     m_arrow->setText(">");
     m_arrow->setAutoRaise(true);
@@ -203,4 +204,3 @@ void EngineLineWidget::leaveEvent(QEvent* event) {
     emit noHover();
     QWidget::leaveEvent(event);
 }
-

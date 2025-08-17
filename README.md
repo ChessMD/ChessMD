@@ -19,6 +19,10 @@ A Qt-based chess game and database viewer. This application allows users to brow
 
 For detailed instructions on how to use the software, see the [User Guide](./user-guide.md).
 
+Alternatively, you may watch the following tutorial:
+
+[![Watch the video](https://img.youtube.com/vi/sOwOgN4ewTo/hqdefault.jpg)](https://www.youtube.com/embed/sOwOgN4ewTo)
+
 ## Download Link
 
 Download from [chessmd.org](https://chessmd.org/download)
