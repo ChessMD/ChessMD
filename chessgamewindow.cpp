@@ -263,6 +263,7 @@ void ChessGameWindow::notationSetup()
                 font-size: 12pt;
                 font-weight: bold;
                 background: palette(alternate-base); 
+                padding: 0;
             }
             QLineEdit[editable="true"] {
                 border: 1px solid palette(text); 

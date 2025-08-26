@@ -507,6 +507,15 @@
              <property name="title">
               <string>Elo</string>
              </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
+             </property>
+             <property name="checkable">
+              <bool>false</bool>
+             </property>
              <layout class="QGridLayout" name="gridLayout_12">
               <item row="0" column="0">
                <layout class="QVBoxLayout" name="verticalLayout_26">

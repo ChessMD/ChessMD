@@ -58,5 +58,8 @@
         <file>img/arrow-right.png</file>
         <file>img/book.png</file>
         <file>styles/globalstyle.qss</file>
+        <file>img/down-arrow.png</file>
+        <file>img/up-arrow.png</file>
+        <file>img/checkmark.png</file>
     </qresource>
 </RCC>
