@@ -24,7 +24,14 @@ if (WIN32)
 SET(PROJECT_SOURCES ${PROJECT_SOURCES}
     app_ico.o
 )
+elseif (APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE logo.icns)
+    set(macos_app_icon "img/logo.icns")
+    set_source_files_properties(${macos_app_icon} PROPERTIES
+               MACOSX_PACKAGE_LOCATION "Resources")
+    set(PROJECT_SOURCES ${PROJECT_SOURCES} ${macos_app_icon})
 endif()
+
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
@@ -125,6 +132,14 @@ install(TARGETS ChessMD
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if(APPLE)
+    set_target_properties(ChessMD PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
+endif()
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ChessMD)
