@@ -61,5 +61,7 @@
         <file>img/down-arrow.png</file>
         <file>img/up-arrow.png</file>
         <file>img/checkmark.png</file>
+        <file>img/trash-icon.png</file>
+        <file>img/white_icons/trash-icon.png</file>
     </qresource>
 </RCC>

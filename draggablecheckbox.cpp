@@ -1,4 +1,5 @@
 #include "draggablecheckbox.h"
+#include "helpers.h"
 
 #include <QApplication>
 #include <QDrag>
@@ -31,7 +32,8 @@ DraggableCheckBox::DraggableCheckBox(const QString& text, QWidget *parent)
     layout->addStretch();
 
     mDeleteButton = new QPushButton(this);
-    mDeleteButton->setText("🗑");
+    mDeleteButton->setIcon(QIcon(getIconPath("trash-icon.png")));
+    mDeleteButton->setIconSize(QSize(14,14));
     mDeleteButton->setFixedSize(20, 20);
     mDeleteButton->setCursor(Qt::PointingHandCursor);  
     mDeleteButton->setStyleSheet(

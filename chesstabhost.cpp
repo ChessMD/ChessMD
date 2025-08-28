@@ -35,6 +35,7 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     setMovable(true);
     setExpanding(false);
     setDocumentMode(true);
+    setFocusPolicy(Qt::NoFocus);
 
     QTabBar::setDrawBase(false);
 

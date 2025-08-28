@@ -57,10 +57,7 @@ QListView::item:hover {
 QMenu {
     background-color: palette(base);
     color: palette(window-text);
-    border-bottom: 2px solid gray;
-    border-right: 2px solid gray;
-    border-top: 1px solid gray;
-    border-left: 1px solid gray;
+    border: 1px solid gray;
     border-radius: 8px;
     padding: 4px;
 }
