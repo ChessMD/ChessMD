@@ -2,6 +2,7 @@
 #define DATABASEFILTER_H
 
 #include <QDialog>
+#include <QDate>
 
 namespace Ui {
 class DatabaseFilter;
@@ -16,9 +17,10 @@ private:
     Ui::DatabaseFilter *ui;
 
     struct Filter {
-        QString whiteFirst, whiteLast, blackFirst, blackLast, tournament, annotator;
+        QString whiteFirst, whiteLast, blackFirst, blackLast, tournament, annotator, ecoMin, ecoMax;
         bool winsOnly, ignoreColours, dateCheck, ecoCheck, movesCheck;
         int eloMin, eloMax, movesMin, movesMax;
+        QDate dateMin, dateMax;
     } _filter;
 
 

@@ -266,6 +266,7 @@ void DatabaseViewer::filter(){
         proxyModel->setTextFilter("Annotator", filters.annotator);
         
     if(filters.movesCheck) proxyModel->setRangeFilter("Moves", filters.movesMin, filters.movesMax);
+    if(filters.dateCheck) proxyModel->setDateFilter(filters.dateMin, filters.dateMax);
 
         
     }

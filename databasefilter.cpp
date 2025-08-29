@@ -26,6 +26,13 @@ DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
     _filter.whiteLast = ui->WhiteLast->text();
     _filter.tournament = ui->TournamentEdit->text();
     _filter.annotator = ui->AnnotatorEdit->text();
+    _filter.eloMin = ui->EloMin->value();
+    _filter.eloMax = ui->EloMax->value();
+    _filter.dateMin = ui->DateMin->date();
+    _filter.dateMax = ui->DateMax->date();
+    _filter.ecoMin = ui->EcoMin->text();
+    _filter.ecoMax = ui->EcoMax->text();
+
     _filter.ignoreColours = ui->IgnoreColour->isChecked();
     _filter.winsOnly = ui->WinsOnly->isChecked();
     _filter.dateCheck = ui->DateCheck->isChecked();
@@ -33,8 +40,6 @@ DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
     _filter.movesCheck = ui->MovesCheck->isChecked();
 
 
-    _filter.eloMin = ui->EloMin->value();
-    _filter.eloMax = ui->EloMax->value();
     
 
     return _filter;

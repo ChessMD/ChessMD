@@ -2,6 +2,7 @@
 #define DATABASEFILTERPROXYMODEL_H
 
 #include <QSortFilterProxyModel>
+#include <QDate>
 
 // Model for efficient search and sort of a table
 class DatabaseFilterProxyModel : public QSortFilterProxyModel
@@ -13,7 +14,7 @@ public:
     void setTextFilter(QString header, const QString &pattern);
     void setRangeFilter(QString header, int lower, int higher);
     void setPlayerFilter(const QString& whiteFirst, const QString& whiteLast, const QString& blackFirst, const QString& blackLast, bool ignoreColor);
-
+    void setDateFilter(const QDate &minDate, const QDate &maxDate);
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
@@ -24,8 +25,11 @@ private:
 
     QString mWhiteFirst, mWhiteLast;
     QString mBlackFirst, mBlackLast;
+    QDate mDateMin, mDateMax;
+
     bool mIgnoreColour = false;
     bool mHasPlayerFilter = false;
+    bool mHasDateFilter = false;
 
     
 };
