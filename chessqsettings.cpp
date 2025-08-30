@@ -4,7 +4,7 @@
 
 ChessQSettings::ChessQSettings()
 {
-    m_settingsFile = QApplication::applicationDirPath() + "/settings.ini";
+    m_settingsFile = "./settings.ini";
 }
 
 void ChessQSettings::loadSettings()

@@ -86,7 +86,11 @@ RESOURCES += img.qrc qml.qrc resource.qrc resources.qrc
 
 QT += widgets quickwidgets graphs charts
 
-LIBS     += -static-libgcc -static-libstdc++ -static
+win32 {
+	LIBS    += -static-libgcc -static-libstdc++ -static
+} unix {
+	CONFIG  += static
+}
 
 INCLUDEPATH+=$$[QT_INSTALL_HEADERS]/QtQuick
 INCLUDEPATH+=$$[QT_INSTALL_HEADERS]/QtQuickWidgets
