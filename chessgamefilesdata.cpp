@@ -4,7 +4,7 @@
 
 ChessGameFilesData::ChessGameFilesData()
 {
-    m_dataFile = QApplication::applicationDirPath() + "/chessgamefiles.ini";
+    m_dataFile = "./chessgamefiles.ini";
 }
 
 void ChessGameFilesData::loadData()

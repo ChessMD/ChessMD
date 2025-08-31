@@ -50,20 +50,18 @@ struct Continuation {
 
 enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
 
-
-
 class OpeningTree{
 public:
     OpeningTree();
     ~OpeningTree();
 
     void insertGame(const QVector<quint16>& moves, int gameID, GameResult result);
-
     bool serialize(const QString& path);
 
     bool load(const QString& file);
     void reset();
     bool play(quint16 moveCode);
+
     quint32 gamesReached() const;
     QVector<Continuation> continuations() const;
     QVector<int> getIds() const;

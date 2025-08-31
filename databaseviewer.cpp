@@ -68,7 +68,8 @@ DatabaseViewer::DatabaseViewer(QString filePath, QWidget *parent)
     proxyModel->sort(0, Qt::AscendingOrder);
 
     // set preview to a placeholder game (warms-up QML, stopping the window from blinking when a game is previewed)
-    QSharedPointer<NotationMove> rootMove(new NotationMove("", *new ChessPosition));
+    ChessPosition startPos;
+    QSharedPointer<NotationMove> rootMove(new NotationMove("", startPos));
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
     PGNGame game;
     ChessGameWindow *embed = new ChessGameWindow(this, game);

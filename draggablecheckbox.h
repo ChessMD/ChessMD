@@ -5,7 +5,7 @@
 #include <QCheckBox>
 #include <QPoint>
 #include <QVBoxLayout>
-#include <QPixMap>
+#include <QPixmap>
 #include <QPushButton>
 #include <QLabel>
 

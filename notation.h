@@ -30,9 +30,9 @@ public:
 
     bool isVarRoot = false; // Indicates if first move in variation
 
-    ChessPosition *m_position; // Full chess position (after this move)
+    QSharedPointer<ChessPosition> m_position; // Full chess position (after this move)
     QList<QSharedPointer<NotationMove>> m_nextMoves;
-    QSharedPointer<NotationMove> m_previousMove;
+    QWeakPointer<NotationMove> m_previousMove;
 };
 
 struct AnnotationOption {
