@@ -259,14 +259,15 @@ void DatabaseViewer::filter(){
     // apply filters    
     if(filterWindow.exec() == QDialog::Accepted){
         auto filters = filterWindow.getNameFilters();
+        proxyModel->resetFilters();
 
         proxyModel->setPlayerFilter(filters.whiteFirst, filters.whiteLast, filters.blackFirst, filters.blackLast, filters.ignoreColours);
         proxyModel->setRangeFilter("Elo", filters.eloMin, filters.eloMax);
         proxyModel->setTextFilter("Tournament", filters.tournament);
         proxyModel->setTextFilter("Annotator", filters.annotator);
         
-    if(filters.movesCheck) proxyModel->setRangeFilter("Moves", filters.movesMin, filters.movesMax);
-    if(filters.dateCheck) proxyModel->setDateFilter(filters.dateMin, filters.dateMax);
+        if(filters.movesCheck) proxyModel->setRangeFilter("Moves", filters.movesMin, filters.movesMax);
+        if(filters.dateCheck) proxyModel->setDateFilter(filters.dateMin, filters.dateMax);
 
         
     }

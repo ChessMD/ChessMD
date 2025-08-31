@@ -27,7 +27,6 @@ private:
 public:
     explicit DatabaseFilter(QWidget *parent = nullptr);
     ~DatabaseFilter();
-
     Filter getNameFilters();
 
 

@@ -64,6 +64,26 @@ void DatabaseFilterProxyModel::setDateFilter(const QDate &minDate, const QDate &
     invalidateFilter();
 }
 
+// reset/clear all filters
+void DatabaseFilterProxyModel::resetFilters()
+{
+    textFilters.clear();
+    rangeFilters.clear();
+
+    mWhiteFirst.clear();
+    mWhiteLast.clear();
+    mBlackFirst.clear();
+    mBlackLast.clear();
+    mIgnoreColour = false;
+    mHasPlayerFilter = false;
+
+    mDateMin = QDate();
+    mDateMax = QDate();
+    mHasDateFilter = false;
+
+    invalidateFilter();
+}
+
 // Translate filters to display
 bool DatabaseFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const{
 
