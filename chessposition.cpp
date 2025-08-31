@@ -91,10 +91,10 @@ bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol)
         return true;
     }
 
-    ChessPosition* temp = new ChessPosition;
-    temp->copyFrom(*this);
-    temp->applyMove(oldRow, oldCol, newRow, newCol, '\0');
-    if (temp->inCheck(color))
+    ChessPosition temp;
+    temp.copyFrom(*this);
+    temp.applyMove(oldRow, oldCol, newRow, newCol, '\0');
+    if (temp.inCheck(color))
         return false;
 
     switch (piece.toLatin1()) {
@@ -207,20 +207,20 @@ bool ChessPosition::squareAttacked(int row, int col, QChar attacker) const
 
 void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
 {
-    ChessPosition* newPos = new ChessPosition;
-    newPos->copyFrom(*this);
-    newPos->applyMove(sr, sc, dr, dc, promo);
+    ChessPosition newPos;
+    newPos.copyFrom(*this);
+    newPos.applyMove(sr, sc, dr, dc, promo);
 
     QString moveText;
-    if (newPos->m_boardData[dr][dc][1] != 'P'){
-        moveText = QString("%1").arg(newPos->m_boardData[dr][dc][1]);
+    if (newPos.m_boardData[dr][dc][1] != 'P'){
+        moveText = QString("%1").arg(newPos.m_boardData[dr][dc][1]);
     }
     moveText += QString("%1%2").arg(QChar('a' + dc)).arg(8 - dr);
     if (promo != '\0') {
         moveText += "=" + QString(promo);
     }
 
-    QSharedPointer<NotationMove> newMove(new NotationMove(moveText, *newPos));
+    QSharedPointer<NotationMove> newMove(new NotationMove(moveText, newPos));
     newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
 
     emit moveMade(newMove);
@@ -542,13 +542,9 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
             variationIdx++;
         }
 
-        ChessPosition *clonePos = new ChessPosition;
-        clonePos->copyFrom(*parentMove->m_position);
-        QSharedPointer<NotationMove> childMove = QSharedPointer<NotationMove>::create(token, *clonePos);
-
-        if (!clonePos->tryMakeMove(token, childMove)) {
+        QSharedPointer<NotationMove> childMove = QSharedPointer<NotationMove>::create(token, *parentMove->m_position);
+        if (!childMove->m_position->tryMakeMove(token, childMove)) {
             parentMove->commentAfter += token; // illegal move, let's just add it as a comment
-            delete clonePos;
             continue;
         }
 
@@ -717,11 +713,12 @@ QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer
             int sc = token.at(0).toLatin1() - 'a', sr = 8 - token.at(1).digitValue();
             int dc = token.at(2).toLatin1() - 'a', dr = 8 - token.at(3).digitValue();
             QChar promo = (token.length() == 5 ? token.at(4) : QChar('\0'));
-            ChessPosition* clonePos = new ChessPosition;
-            clonePos->copyFrom(*tempMove->m_position);
-            if (!clonePos->validateMove(sr, sc, dr, dc)) break; // error parsing
-            clonePos->applyMove(sr, sc, dr, dc, promo);
-            newMove = QSharedPointer<NotationMove>::create(token, *clonePos);
+
+            QSharedPointer<NotationMove> newMove = QSharedPointer<NotationMove>::create(token, *tempMove->m_position);
+            if (!newMove->m_position->validateMove(sr, sc, dr, dc)) {
+                break;
+            }
+            newMove->m_position->applyMove(sr, sc, dr, dc, promo);
             newMove->moveText = tempMove->m_position->lanToSan(sr, sc, dr, dc, promo);
             newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
 

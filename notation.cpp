@@ -32,16 +32,18 @@ const QVector<CommentEntry> COMMENT_ENTRIES = {
 NotationMove::NotationMove(const QString &text, ChessPosition &position)
 {
     moveText = text;
-    m_position = &position;
+    QSharedPointer<ChessPosition> pos = QSharedPointer<ChessPosition>::create();
+    pos->copyFrom(position);
+    m_position = pos;
 }
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move)
 {
     if (!move) return nullptr;
 
-    ChessPosition* posCopy = new ChessPosition;
-    posCopy->copyFrom(*move->m_position);
-    auto copy = QSharedPointer<NotationMove>::create(move->moveText, *posCopy);
+    ChessPosition newPos;
+    newPos.copyFrom(*move->m_position);
+    auto copy = QSharedPointer<NotationMove>::create(move->moveText, newPos);
     copy->FEN = move->FEN;
     copy->lanText = move->lanText;
     copy->commentBefore = move->commentBefore;
@@ -72,9 +74,9 @@ void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move)
 {
     if (!move->m_previousMove) return move;
-    for (int i = 0; i < move->m_previousMove->m_nextMoves.size(); i++){
-        if (move->m_previousMove->m_nextMoves[i]->moveText == move->moveText){
-            move->m_previousMove->m_nextMoves.erase(move->m_previousMove->m_nextMoves.begin()+i);
+    for (int i = 0; i < move->m_previousMove.toStrongRef()->m_nextMoves.size(); i++){
+        if (move->m_previousMove.toStrongRef()->m_nextMoves[i]->moveText == move->moveText){
+            move->m_previousMove.toStrongRef()->m_nextMoves.erase(move->m_previousMove.toStrongRef()->m_nextMoves.begin()+i);
             break;
         }
     }
@@ -100,9 +102,9 @@ QSharedPointer<NotationMove> deleteVariation(const QSharedPointer<NotationMove>&
     }
     if (temp->m_previousMove != nullptr){
         // Find the required variation and remove it
-        for (int i = 0; i < temp->m_previousMove->m_nextMoves.size(); i++){
-            if (temp->m_previousMove->m_nextMoves[i]->moveText == temp->moveText){
-                temp->m_previousMove->m_nextMoves.erase(temp->m_previousMove->m_nextMoves.begin()+i);
+        for (int i = 0; i < temp->m_previousMove.toStrongRef()->m_nextMoves.size(); i++){
+            if (temp->m_previousMove.toStrongRef()->m_nextMoves[i]->moveText == temp->moveText){
+                temp->m_previousMove.toStrongRef()->m_nextMoves.erase(temp->m_previousMove.toStrongRef()->m_nextMoves.begin()+i);
                 break;
             }
         }
@@ -121,10 +123,10 @@ void promoteVariation(const QSharedPointer<NotationMove>& move)
     temp->isVarRoot = false;
     if (temp->m_previousMove != nullptr){
         // Find the required variation and remove it
-        for (int i = 0; i < temp->m_previousMove->m_nextMoves.size(); i++){
-            if (temp->m_previousMove->m_nextMoves[i]->moveText == temp->moveText){
-                temp->m_previousMove->m_nextMoves[0]->isVarRoot = true;
-                swap(temp->m_previousMove->m_nextMoves[0], temp->m_previousMove->m_nextMoves[i]);
+        for (int i = 0; i < temp->m_previousMove.toStrongRef()->m_nextMoves.size(); i++){
+            if (temp->m_previousMove.toStrongRef()->m_nextMoves[i]->moveText == temp->moveText){
+                temp->m_previousMove.toStrongRef()->m_nextMoves[0]->isVarRoot = true;
+                swap(temp->m_previousMove.toStrongRef()->m_nextMoves[0], temp->m_previousMove.toStrongRef()->m_nextMoves[i]);
                 break;
             }
         }

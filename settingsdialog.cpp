@@ -132,69 +132,68 @@ void SettingsDialog::onSelectEngineClicked() {
 
 void SettingsDialog::onLoadPgnClicked() {
     QString file = QFileDialog::getOpenFileName(this, tr("Select a chess PGN file"), QString(), tr("PGN files (*.pgn)"));
-    if (!file.isEmpty()) {
-        mOpeningsPath = file;
-        mOpeningsPathLabel->setText(tr("Processing PGN file..."));
+    if (file.isEmpty()) return;
 
-        // progress bar
-        QProgressBar* progressBar = new QProgressBar(this);
-        QVBoxLayout* openingsLayout = qobject_cast<QVBoxLayout*>(mStackedWidget->currentWidget()->layout());
-        openingsLayout->insertWidget(2, progressBar); 
-        
-        std::ifstream ss(file.toStdString());
-        if(ss.fail()) {
-            progressBar->deleteLater();
-            mOpeningsPathLabel->setText(tr("Failed to open file"));
-            return;
-        }
+    mOpeningsPath = file;
+    mOpeningsPathLabel->setText(tr("Processing PGN file..."));
 
-        StreamParser parser(ss);
-        std::vector<PGNGame> database = parser.parseDatabase();
-        
-        progressBar->setMaximum(database.size());
-        progressBar->setValue(0);
+    // progress bar
+    QProgressBar* progressBar = new QProgressBar(this);
+    QVBoxLayout* openingsLayout = qobject_cast<QVBoxLayout*>(mStackedWidget->currentWidget()->layout());
+    openingsLayout->insertWidget(2, progressBar);
 
-        OpeningTree tree;
-
-        for (int i = 0; i < database.size(); i++) {
-            auto &game = database[i];
-            
-            // every 100 games update bar
-            if (i % 100 == 0) {
-                progressBar->setValue(i);
-                QApplication::processEvents();
-            }
-            
-            if(!game.isParsed){
-                parseBodyText(game.bodyText, game.rootMove);
-                game.isParsed = true;
-            }
-            QVector<quint16> moveCodes;
-
-            QSharedPointer<NotationMove> move = game.rootMove;
-            while(!move->m_nextMoves.isEmpty()){
-                move = move->m_nextMoves.front();
-                moveCodes.push_back(OpeningViewer::encodeMove(move->lanText));
-            }
-
-            GameResult result = UNKNOWN;
-            if (game.result == "1-0") result = WHITE_WIN;
-            else if (game.result == "0-1") result = BLACK_WIN;
-            else if (game.result == "1/2-1/2") result = DRAW;
-            tree.insertGame(moveCodes, i, result);
-        }
-        
-        progressBar->setValue(database.size());
-        mOpeningsPathLabel->setText(tr("Serializing database..."));
-        QApplication::processEvents();
-        
-        tree.serialize("./opening/openings.bin");
-        
-        PGNGame::serializeHeaderData("./opening/openings.headers", database);
-        
+    std::ifstream ss(file.toStdString());
+    if(ss.fail()) {
         progressBar->deleteLater();
-        mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));
+        mOpeningsPathLabel->setText(tr("Failed to open file"));
+        return;
     }
+
+    StreamParser parser(ss);
+    std::vector<PGNGame> database = parser.parseDatabase();
+
+    progressBar->setMaximum(database.size());
+    progressBar->setValue(0);
+
+    OpeningTree tree;
+
+    for (int i = 0; i < database.size(); i++) {
+        auto &game = database[i];
+
+        // every 100 games update bar
+        if (i % 100 == 0) {
+            progressBar->setValue(i);
+            QApplication::processEvents();
+        }
+
+        parseBodyText(game.bodyText, game.rootMove);
+        QVector<quint16> moveCodes;
+
+        QSharedPointer<NotationMove> move = game.rootMove;
+        while(!move->m_nextMoves.isEmpty()){
+            move = move->m_nextMoves.front();
+            moveCodes.push_back(OpeningViewer::encodeMove(move->lanText));
+        }
+
+        GameResult result = UNKNOWN;
+        if (game.result == "1-0") result = WHITE_WIN;
+        else if (game.result == "0-1") result = BLACK_WIN;
+        else if (game.result == "1/2-1/2") result = DRAW;
+        tree.insertGame(moveCodes, i, result);
+        game.rootMove.clear();
+        game.bodyText.clear();
+    }
+
+    progressBar->setValue(database.size());
+    mOpeningsPathLabel->setText(tr("Serializing database..."));
+    QApplication::processEvents();
+
+    tree.serialize("./opening/openings.bin");
+
+    PGNGame::serializeHeaderData("./opening/openings.headers", database);
+
+    progressBar->deleteLater();
+    mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));
 }
 
 QString SettingsDialog::getOpeningsPath() const {
