@@ -7,6 +7,12 @@ March 20, 2025: File Creation
 #include <QRegularExpression>
 #include <QDebug>
 
+quint64 Zobrist_Piece[12][64];
+quint64 Zobrist_Castling[16];
+quint64 Zobrist_EnPassantFile[8];
+quint64 Zobrist_SideToMove = 0;
+const QHash<char,int> PIECE_INDEX_LOOKUP = {{'P', 0}, {'N', 1}, {'B', 2}, {'R', 3}, {'Q', 4}, {'K', 5}};
+
 ChessPosition::ChessPosition(QObject *parent)
     : QObject(parent)
 {
@@ -733,4 +739,53 @@ QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer
         }
     }
     return rootMove;
+}
+
+// Determinisic pseduo-random number generator for consistent zobrist hashes
+static quint64 splitmix64_next(quint64 &state)
+{
+    state += 0x9E3779B97F4A7C15ull;
+    quint64 z = state;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+    z ^= (z >> 31);
+    return z;
+}
+
+void initZobristTables()
+{
+    quint64 seed = 0xC0FFEE5EED1234ABull;
+    for (int i = 0; i < 12; i++){
+        for (int j = 0; j < 64; j++) {
+            Zobrist_Piece[i][j] = splitmix64_next(seed);
+        }
+    }
+    for (int i = 0; i < 16; i++) Zobrist_Castling[i] = splitmix64_next(seed);
+    for (int i = 0; i < 8; i++) Zobrist_EnPassantFile[i] = splitmix64_next(seed);
+    Zobrist_SideToMove = splitmix64_next(seed);
+}
+
+quint64 ChessPosition::computeZobrist() const
+{
+    quint64 hash = 0;
+    for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            QString sq = m_boardData[r][c];
+            if (sq.isEmpty()) continue;
+            int ind = PIECE_INDEX_LOOKUP.value(sq[1].toLatin1(), -100) + (sq[0].toLatin1() == 'w' ? 0 : 6);
+            if (ind >= 0) {
+                hash ^= Zobrist_Piece[ind][r*8+c];
+            }
+        }
+    }
+    int cmask = 0;
+    if (m_castling.blackKing) cmask |= 1;
+    if (m_castling.blackQueen) cmask |= 2;
+    if (m_castling.whiteKing) cmask |= 4;
+    if (m_castling.whiteQueen) cmask |= 8;
+    hash ^= Zobrist_Castling[cmask];
+    int ep = m_enPassantTarget[0].toLatin1() - 'a';
+    if (!m_enPassantTarget.isEmpty() && ep >= 0 && ep < 8) hash ^= Zobrist_EnPassantFile[ep];
+    if (m_sideToMove == 'b') hash ^= Zobrist_SideToMove;
+    return hash;
 }

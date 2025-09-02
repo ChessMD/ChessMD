@@ -58,6 +58,7 @@ public:
     // Copies all internal state from another ChessPosition
     void copyFrom(const ChessPosition &other);
     QString positionToFEN() const;
+    quint64 computeZobrist() const;
 
     // Tries to make a new move from the current position given a SAN string
     bool tryMakeMove(QString san, QSharedPointer<NotationMove> move);
@@ -101,6 +102,8 @@ private:
     bool m_isPreview = false;
     double m_evalScore = 0;
 };
+
+void initZobristTables();
 
 QString buildMoveText(const QSharedPointer<NotationMove>& move);
 void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount);

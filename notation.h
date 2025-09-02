@@ -11,15 +11,18 @@ March 18, 2025: File Creation
 #include <QSharedPointer>
 #include <QMap>
 #include <QKeySequence>
+#include <QtGlobal>
 
 class ChessPosition;
 
+// Individual node inside the chess game tree, containing information of the position that is reached after playing a move
 class NotationMove
 {
 public:
     NotationMove(const QString &text, ChessPosition &position);
 
-    QString FEN; // FEN string of chess position (after this move)
+    QString FEN;
+    quint64 m_zobristHash = 0;
 
     QString commentBefore;
     QString moveText;
@@ -28,9 +31,9 @@ public:
     QString annotation2;
     QString commentAfter;
 
-    bool isVarRoot = false; // Indicates if first move in variation
+    bool isVarRoot = false;
 
-    QSharedPointer<ChessPosition> m_position; // Full chess position (after this move)
+    QSharedPointer<ChessPosition> m_position;
     QList<QSharedPointer<NotationMove>> m_nextMoves;
     QWeakPointer<NotationMove> m_previousMove;
 };
@@ -52,15 +55,10 @@ extern const QVector<CommentEntry> COMMENT_ENTRIES;
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 
-// Appends a new NotationMove to the current
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
-// Deletes all NotationMoves after the current NotationMove
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move);
-// Deletes all comments and annotations from entire game tree
 void deleteAllCommentary(QSharedPointer<NotationMove>& move);
-// Promotes the variation containing the current NotationMove up one branch
 void promoteVariation(const QSharedPointer<NotationMove>& move);
-// Deletes all NotationMove in the variation containing the current NotationMove
 QSharedPointer<NotationMove> deleteVariation(const QSharedPointer<NotationMove>& move);
 
 #endif // NOTATION_H
