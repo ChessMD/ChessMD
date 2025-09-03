@@ -38,7 +38,7 @@ public:
     }
 };
 
-//using quint16 etc. so its ez to count space for mmap offset
+// using quint16 etc. so its ez to count space for mmap offset
 
 struct Continuation {
     quint16 moveCode;
@@ -46,6 +46,12 @@ struct Continuation {
     float whitePct;
     float drawPct;
     float blackPct;
+};
+
+struct PositionWinrate {
+    int whiteWin;
+    int blackWin;
+    int draw;
 };
 
 enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
@@ -66,6 +72,8 @@ public:
     QVector<Continuation> continuations() const;
     QVector<int> getIds() const;
 
+    QHash<quint64, QVector<quint32>> openingGameHash;
+    QHash<quint64, PositionWinrate> openingWinrateHash;
 
 private:
     struct BuildNode {

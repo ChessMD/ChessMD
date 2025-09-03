@@ -12,7 +12,9 @@ OpeningTree::OpeningTree()
     : mRoot(new BuildNode),
       mMappedBase(nullptr),
       mCurOffset(0)
-{}
+{
+
+}
 
 OpeningTree::~OpeningTree() {
     if (mMappedBase) mFile.unmap(reinterpret_cast<uchar*>(const_cast<char*>(mMappedBase)));
@@ -31,7 +33,7 @@ void OpeningTree::insertGame(const QVector<quint16>& moves, int gameID, GameResu
         // find move in trie
         auto it = std::find_if(node->children.begin(), node->children.end(), [=](auto &pr){return pr.first ==m;});
         if(it == node->children.end()){
-            //not alreaqy exist
+            // not alreaqy exist
             auto* child = new BuildNode;
             child->gamesReached = 1;
 
@@ -42,7 +44,7 @@ void OpeningTree::insertGame(const QVector<quint16>& moves, int gameID, GameResu
             node = child;
         }
         else{
-            //increment gamesreached if already there
+            // increment gamesreached if already there
             it->second->gamesReached++;
 
             if (result == WHITE_WIN) it->second->whiteWins++;
@@ -57,7 +59,7 @@ void OpeningTree::insertGame(const QVector<quint16>& moves, int gameID, GameResu
     }
 }
 
-//serialize
+// serialize
 bool OpeningTree::serialize(const QString& path){
     assignOffsets();
     QFile f(path);
@@ -90,13 +92,11 @@ bool OpeningTree::serialize(const QString& path){
             out << id;
         }
     }
-
     
     return true;
-
 }
 
-//load from serialized
+// load from serialized
 bool OpeningTree::load(const QString& path) {
     mFile.setFileName(path);
     if (!mFile.open(QIODevice::ReadOnly)) return false;
@@ -108,9 +108,7 @@ bool OpeningTree::load(const QString& path) {
     return true;
 }
 
-//
 // navigate
-//
 
 void OpeningTree::reset(){
     mCurOffset = 0;
@@ -125,7 +123,7 @@ bool OpeningTree::play(quint16 moveCode){
         }
     }
 
-    //no games
+    // no games
     return 0;
 }
  
@@ -181,7 +179,7 @@ void OpeningTree::collectGameIds(quint64 nodeOffset, QVector<int>& ids) const {
 }
 
 void OpeningTree::deleteSubtree(BuildNode* n) {
-    //delete node recursively
+    // delete node recursively
     for(auto& pr: n->children) deleteSubtree(pr.second);
     delete n;
 }
@@ -216,16 +214,16 @@ OpeningTree::NodeView OpeningTree::readNode(quint64 off) const {
 OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
 {   
-    //load opening book
+    // load opening book
     mOpeningBookLoaded = mTree.load("./opening/openings.bin");
 
     //
-    //ui
+    // ui
     //
 
     QHBoxLayout* mainLayout = new QHBoxLayout();
 
-    //moves list side
+    // moves list side
     QVBoxLayout* listsLayout = new QVBoxLayout();
 
     mPositionLabel = new QLabel("Starting Position");
@@ -248,7 +246,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mainLayout->addLayout(listsLayout);
     
     
-    //games list side
+    // games list side
     mGamesLabel = new QLabel(tr("Games"));
     mGamesLabel->setStyleSheet("font-weight: bold; font-size: 12px;");
     
@@ -271,7 +269,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     setLayout(mainLayout);
     
     
-    //styles
+    // styles
     QString styleSheet = R"(
         QTreeWidget, QTableWidget {
             border: 1px solid palette(mid);
@@ -312,7 +310,7 @@ void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
     for (const QString& uci: uciMoves){
         quint16 code = encodeMove(uci);
         if(!mTree.play(code)){
-            //no games
+            // no games
             mMovesList->clear();
             mGamesList->setRowCount(0);
             mGamesLabel->setText("Games: 0 of 0 shown");
@@ -378,7 +376,7 @@ void OpeningViewer::updateGamesList()
     
 }
 
-//helper
+// helper
 void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct)
 {
     MoveListItem* item = new MoveListItem(mMovesList);
@@ -386,7 +384,7 @@ void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct
     item->setText(0, move);
     item->setText(1, QString::number(games));
 
-    //colour bars
+    // colour bars
     QString percentText = QString("%1% / %2% / %3%").arg(whitePct, 0, 'f', 1).arg(drawPct, 0, 'f', 1).arg(blackPct, 0, 'f', 1);
 
     item->setText(2, percentText);

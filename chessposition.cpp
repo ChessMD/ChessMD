@@ -7,10 +7,10 @@ March 20, 2025: File Creation
 #include <QRegularExpression>
 #include <QDebug>
 
-quint64 Zobrist_Piece[12][64];
-quint64 Zobrist_Castling[16];
-quint64 Zobrist_EnPassantFile[8];
-quint64 Zobrist_SideToMove = 0;
+quint64 ZOBRIST_PIECE[12][64];
+quint64 ZOBRIST_CASTLING[16];
+quint64 ZOBRIST_EN_PASSANT_FILE[8];
+quint64 ZOBRIST_SIDE_TO_MOVE = 0;
 const QHash<char,int> PIECE_INDEX_LOOKUP = {{'P', 0}, {'N', 1}, {'B', 2}, {'R', 3}, {'Q', 4}, {'K', 5}};
 
 ChessPosition::ChessPosition(QObject *parent)
@@ -757,12 +757,12 @@ void initZobristTables()
     quint64 seed = 0xC0FFEE5EED1234ABull;
     for (int i = 0; i < 12; i++){
         for (int j = 0; j < 64; j++) {
-            Zobrist_Piece[i][j] = splitmix64_next(seed);
+            ZOBRIST_PIECE[i][j] = splitmix64_next(seed);
         }
     }
-    for (int i = 0; i < 16; i++) Zobrist_Castling[i] = splitmix64_next(seed);
-    for (int i = 0; i < 8; i++) Zobrist_EnPassantFile[i] = splitmix64_next(seed);
-    Zobrist_SideToMove = splitmix64_next(seed);
+    for (int i = 0; i < 16; i++) ZOBRIST_CASTLING[i] = splitmix64_next(seed);
+    for (int i = 0; i < 8; i++) ZOBRIST_EN_PASSANT_FILE[i] = splitmix64_next(seed);
+    ZOBRIST_SIDE_TO_MOVE = splitmix64_next(seed);
 }
 
 quint64 ChessPosition::computeZobrist() const
@@ -774,7 +774,7 @@ quint64 ChessPosition::computeZobrist() const
             if (sq.isEmpty()) continue;
             int ind = PIECE_INDEX_LOOKUP.value(sq[1].toLatin1(), -100) + (sq[0].toLatin1() == 'w' ? 0 : 6);
             if (ind >= 0) {
-                hash ^= Zobrist_Piece[ind][r*8+c];
+                hash ^= ZOBRIST_PIECE[ind][r*8+c];
             }
         }
     }
@@ -783,9 +783,9 @@ quint64 ChessPosition::computeZobrist() const
     if (m_castling.blackQueen) cmask |= 2;
     if (m_castling.whiteKing) cmask |= 4;
     if (m_castling.whiteQueen) cmask |= 8;
-    hash ^= Zobrist_Castling[cmask];
+    hash ^= ZOBRIST_CASTLING[cmask];
     int ep = m_enPassantTarget[0].toLatin1() - 'a';
-    if (!m_enPassantTarget.isEmpty() && ep >= 0 && ep < 8) hash ^= Zobrist_EnPassantFile[ep];
-    if (m_sideToMove == 'b') hash ^= Zobrist_SideToMove;
+    if (!m_enPassantTarget.isEmpty() && ep >= 0 && ep < 8) hash ^= ZOBRIST_EN_PASSANT_FILE[ep];
+    if (m_sideToMove == 'b') hash ^= ZOBRIST_SIDE_TO_MOVE;
     return hash;
 }

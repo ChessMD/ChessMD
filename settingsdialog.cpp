@@ -17,7 +17,6 @@
 #include <QComboBox>
 #include <fstream>
 
-
 SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent), mOpeningsPath("")
 {
@@ -160,7 +159,7 @@ void SettingsDialog::onLoadPgnClicked() {
     for (int i = 0; i < database.size(); i++) {
         auto &game = database[i];
 
-        // every 100 games update bar
+        // update progress bar every 100 games
         if (i % 100 == 0) {
             progressBar->setValue(i);
             QApplication::processEvents();
@@ -168,10 +167,12 @@ void SettingsDialog::onLoadPgnClicked() {
 
         parseBodyText(game.bodyText, game.rootMove);
         QVector<quint16> moveCodes;
+        QVector<quint32> zobristHashes;
 
         QSharedPointer<NotationMove> move = game.rootMove;
         while(!move->m_nextMoves.isEmpty()){
             move = move->m_nextMoves.front();
+            zobristHashes.push_back(move->m_zobristHash);
             moveCodes.push_back(OpeningViewer::encodeMove(move->lanText));
         }
 
@@ -179,7 +180,20 @@ void SettingsDialog::onLoadPgnClicked() {
         if (game.result == "1-0") result = WHITE_WIN;
         else if (game.result == "0-1") result = BLACK_WIN;
         else if (game.result == "1/2-1/2") result = DRAW;
+
+        QHash<quint64, bool> visitedPositions;
+        for (int j = 0; j < qMin(35, zobristHashes.size()); j++){
+            if (!visitedPositions.count(zobristHashes[j]) && tree.openingGameHash[zobristHashes[j]].size() < 1000) {
+                tree.openingGameHash[zobristHashes[j]].push_back(i);
+                visitedPositions[zobristHashes[j]] = 1;
+            }
+            tree.openingWinrateHash[zobristHashes[j]].whiteWin += (result == WHITE_WIN);
+            tree.openingWinrateHash[zobristHashes[j]].blackWin += (result == BLACK_WIN);
+            tree.openingWinrateHash[zobristHashes[j]].draw += (result == DRAW);
+        }
+
         tree.insertGame(moveCodes, i, result);
+
         game.rootMove.clear();
         game.bodyText.clear();
     }
