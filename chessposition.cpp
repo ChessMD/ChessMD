@@ -467,6 +467,28 @@ QVector<QPair<int,int>> ChessPosition::findPieceOrigins(QChar piece, const QStri
     return vec;
 }
 
+QVector<SimpleMove> ChessPosition::generateLegalMoves() const {
+    QVector<SimpleMove> legalMoves;
+    legalMoves.reserve(128);
+    const char promo[4] = { 'N', 'B', 'R', 'Q'};
+    for (int sr = 0; sr < 8; sr++){
+        for (int sc = 0; sc < 8; sc++){
+            if (m_boardData[sr][sc].size() < 2) continue;
+            for (int dr = 0; dr < 8; dr++){
+                for (int dc = 0; dc < 8; dc++){
+                    if (!validateMove(sr, sc, dr, dc)) continue;
+                    if (sr == (m_sideToMove == 'w' ? 1 : 6) && m_boardData[sr][sc][1] == 'P'){
+                        for (auto c: promo) legalMoves.push_back({sr, sc, dr, dc, c});
+                    } else {
+                        legalMoves.push_back({sr, sc, dr, dc, '\0'});
+                    }
+                }
+            }
+        }
+    }
+    return legalMoves;
+}
+
 QString buildMoveText(const QSharedPointer<NotationMove>& move)
 {
     QString fullMoveText;
@@ -553,7 +575,7 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
             parentMove->commentAfter += token; // illegal move, let's just add it as a comment
             continue;
         }
-
+        childMove->m_zobristHash = childMove->m_position->computeZobrist();
         linkMoves(parentMove, childMove);
         parentMove = childMove;
     }

@@ -217,6 +217,13 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     // load opening book
     mOpeningBookLoaded = mTree.load("./opening/openings.bin");
 
+    mTree.mOpeningInfo.deserialize("./opening/serialtest.bin");
+    for (int i = 0; i < mTree.mOpeningInfo.zobristPositions.size(); i++){
+        int prevInd = (i == 0 ? 0 : mTree.mOpeningInfo.prefixSum.back());
+        int gameCount = mTree.mOpeningInfo.whiteWin[i] + mTree.mOpeningInfo.blackWin[i] + mTree.mOpeningInfo.draw[i];
+        mTree.mOpeningInfo.prefixSum.push_back(prevInd + gameCount);
+    }
+
     //
     // ui
     //
@@ -296,40 +303,92 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     connect(mGamesList, &QTableWidget::cellDoubleClicked, this, &OpeningViewer::onGameSelected);
 }
 
-void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
+void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position)
 {
-    if (!mOpeningBookLoaded) {
-        mPositionLabel->setText(tr("No opening database loaded"));
-        mStatsLabel->setText(tr(""));
+    auto winrate = getWinrate(zobrist);
+    int total = winrate.whiteWin + winrate.blackWin + winrate.draw;
+    if (total == 0){
         mMovesList->clear();
-        mGamesList->clear();
+        mGamesList->setRowCount(0);
+        mGamesLabel->setText("Games: 0 of 0 shown");
+        mStatsLabel->setText(tr("0 Games"));
         return;
     }
 
-    mTree.reset();
-    for (const QString& uci: uciMoves){
-        quint16 code = encodeMove(uci);
-        if(!mTree.play(code)){
-            // no games
-            mMovesList->clear();
-            mGamesList->setRowCount(0);
-            mGamesLabel->setText("Games: 0 of 0 shown");
-            mStatsLabel->setText(tr("0 Games"));
-            return;
+    mStatsLabel->setText(tr("%1 Games").arg(total));
+    mMovesList->clear();
+
+    auto legalMoves = position->generateLegalMoves();
+    // legalMoves.clear();
+    for (const auto [sr, sc, dr, dc, promo]: std::as_const(legalMoves)){
+        ChessPosition tempPos;
+        tempPos.copyFrom(*position);
+        tempPos.applyMove(sr, sc, dr, dc, QChar(promo));
+        auto newWin = getWinrate(tempPos.computeZobrist());
+        int total = newWin.whiteWin + newWin.blackWin + newWin.draw;
+        if (total){
+            float whitePct = newWin.whiteWin / total, blackPct = newWin.blackWin / total, drawPct = newWin.blackWin / total;
+            addMoveToList(position->lanToSan(sr, sc, dr, dc, QChar(promo)), total, whitePct, drawPct, blackPct);
         }
     }
 
-    quint32 total = mTree.gamesReached();
-    mStatsLabel->setText(tr("%1 Games").arg(total));
-
-    mMovesList->clear();
-    for(auto cont: mTree.continuations()) {
-        QString uci = decodeMove(cont.moveCode);
-        addMoveToList(uci, cont.count, cont.whitePct, cont.drawPct, cont.blackPct);
-    }
-    
     updateGamesList();
 }
+
+PositionWinrate OpeningViewer::getWinrate(const quint64 zobrist)
+{
+    PositionWinrate winrate = {0, 0, 0};
+    int low = 0, high = mTree.mOpeningInfo.zobristPositions.size()-1;
+    while (low < high){
+        int mid = (low + high)/2;
+        if (mTree.mOpeningInfo.zobristPositions[mid] < zobrist){
+            low = mid+1;
+        } else {
+            high = mid;
+        }
+    }
+    if (zobrist == mTree.mOpeningInfo.zobristPositions[low]) {
+        winrate.whiteWin += mTree.mOpeningInfo.whiteWin[low];
+        winrate.blackWin += mTree.mOpeningInfo.blackWin[low];
+        winrate.draw += mTree.mOpeningInfo.draw[low];
+    }
+    return winrate;
+}
+
+// void OpeningViewer::updatePosition(const QVector<QString>& uciMoves)
+// {
+//     if (!mOpeningBookLoaded) {
+//         mPositionLabel->setText(tr("No opening database loaded"));
+//         mStatsLabel->setText(tr(""));
+//         mMovesList->clear();
+//         mGamesList->clear();
+//         return;
+//     }
+
+//     mTree.reset();
+//     for (const QString& uci: uciMoves){
+//         quint16 code = encodeMove(uci);
+//         if(!mTree.play(code)){
+//             // no games
+//             mMovesList->clear();
+//             mGamesList->setRowCount(0);
+//             mGamesLabel->setText("Games: 0 of 0 shown");
+//             mStatsLabel->setText(tr("0 Games"));
+//             return;
+//         }
+//     }
+
+//     quint32 total = mTree.gamesReached();
+//     mStatsLabel->setText(tr("%1 Games").arg(total));
+
+//     mMovesList->clear();
+//     for(auto cont: mTree.continuations()) {
+//         QString uci = decodeMove(cont.moveCode);
+//         addMoveToList(uci, cont.count, cont.whitePct, cont.drawPct, cont.blackPct);
+//     }
+    
+//     updateGamesList();
+// }
 
 void OpeningViewer::updateGamesList()
 {

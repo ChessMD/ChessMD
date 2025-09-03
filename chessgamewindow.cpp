@@ -488,7 +488,7 @@ void ChessGameWindow::openingSetup()
     }
 
     m_openingViewer = new OpeningViewer(this);
-    m_openingViewer->updatePosition(QVector<QString>());
+    // m_openingViewer->updatePosition(QVector<QString>());
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
     m_openingDock->setWidget(m_openingViewer);
     m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -498,15 +498,16 @@ void ChessGameWindow::openingSetup()
     connect(m_notationViewer, &NotationViewer::moveSelected, 
         [this](QSharedPointer<NotationMove> move) {
             //update openingviewer when notation viewer changed
-            QVector<QString> moveSequence;
-            QSharedPointer<NotationMove> currentMove = move;
-            int moveCount = 0;
-            while (currentMove && !currentMove->lanText.isEmpty()) {
-                moveSequence.prepend(currentMove->lanText);
-                currentMove = currentMove->m_previousMove;
-                moveCount++;
-            }
-            m_openingViewer->updatePosition(moveSequence);
+            // QVector<QString> moveSequence;
+            // QSharedPointer<NotationMove> currentMove = move;
+            // int moveCount = 0;
+            // while (currentMove && !currentMove->lanText.isEmpty()) {
+            //     moveSequence.prepend(currentMove->lanText);
+            //     currentMove = currentMove->m_previousMove;
+            //     moveCount++;
+            // }
+            // m_openingViewer->updatePosition(moveSequence);
+            m_openingViewer->updatePosition(move->m_zobristHash, move->m_position);
         });
     
     connect(m_openingViewer, &OpeningViewer::moveClicked,

@@ -167,9 +167,10 @@ void SettingsDialog::onLoadPgnClicked() {
 
         parseBodyText(game.bodyText, game.rootMove);
         QVector<quint16> moveCodes;
-        QVector<quint32> zobristHashes;
+        QVector<quint64> zobristHashes;
 
         QSharedPointer<NotationMove> move = game.rootMove;
+        zobristHashes.push_back(move->m_zobristHash);
         while(!move->m_nextMoves.isEmpty()){
             move = move->m_nextMoves.front();
             zobristHashes.push_back(move->m_zobristHash);
@@ -183,28 +184,53 @@ void SettingsDialog::onLoadPgnClicked() {
 
         QHash<quint64, bool> visitedPositions;
         for (int j = 0; j < qMin(35, zobristHashes.size()); j++){
-            if (!visitedPositions.count(zobristHashes[j]) && tree.openingGameHash[zobristHashes[j]].size() < 1000) {
-                tree.openingGameHash[zobristHashes[j]].push_back(i);
-                visitedPositions[zobristHashes[j]] = 1;
+            if (!visitedPositions.count(zobristHashes[j]) && tree.openingGameMap[zobristHashes[j]].size() < 1000) {
+                tree.openingGameMap[zobristHashes[j]].push_back(i);
             }
-            tree.openingWinrateHash[zobristHashes[j]].whiteWin += (result == WHITE_WIN);
-            tree.openingWinrateHash[zobristHashes[j]].blackWin += (result == BLACK_WIN);
-            tree.openingWinrateHash[zobristHashes[j]].draw += (result == DRAW);
+            tree.openingWinrateMap[zobristHashes[j]].whiteWin += (result == WHITE_WIN);
+            tree.openingWinrateMap[zobristHashes[j]].blackWin += (result == BLACK_WIN);
+            tree.openingWinrateMap[zobristHashes[j]].draw += (result == DRAW);
+            visitedPositions[zobristHashes[j]] = 1;
         }
 
-        tree.insertGame(moveCodes, i, result);
+        // tree.insertGame(moveCodes, i, result);
 
         game.rootMove.clear();
         game.bodyText.clear();
     }
 
     progressBar->setValue(database.size());
+
     mOpeningsPathLabel->setText(tr("Serializing database..."));
+    tree.mOpeningInfo.zobristPositions.reserve(tree.openingGameMap.size());
+    tree.mOpeningInfo.whiteWin.reserve(tree.openingGameMap.size());
+    tree.mOpeningInfo.blackWin.reserve(tree.openingGameMap.size());
+    tree.mOpeningInfo.draw.reserve(tree.openingGameMap.size());
+    tree.mOpeningInfo.gameIDs.reserve(tree.openingGameMap.size());
+    for (auto it = tree.openingGameMap.begin(); it != tree.openingGameMap.end(); it++) {
+        quint64 zobrist = it.key();
+        QVector<quint32> games = it.value();
+        tree.mOpeningInfo.zobristPositions.push_back(zobrist);
+        for (quint32 gameID: games) tree.mOpeningInfo.gameIDs.push_back(gameID);
+    }
+    for (auto winrates: std::as_const(tree.openingWinrateMap)) {
+        tree.mOpeningInfo.whiteWin.push_back(winrates.whiteWin);
+        tree.mOpeningInfo.blackWin.push_back(winrates.blackWin);
+        tree.mOpeningInfo.draw.push_back(winrates.draw);
+    }
+
     QApplication::processEvents();
+    // for (auto it: tree.mOpeningInfo.zobristPositions) qDebug() << it;
 
-    tree.serialize("./opening/openings.bin");
 
-    PGNGame::serializeHeaderData("./opening/openings.headers", database);
+    tree.mOpeningInfo.serialize("./opening/serialtest.bin");
+    // for (auto it: tree.mOpeningInfo.zobristPositions) qDebug() << it;
+
+
+
+    // tree.serialize("./opening/openings.bin");
+
+    // PGNGame::serializeHeaderData("./opening/openings.headers", database);
 
     progressBar->deleteLater();
     mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));

@@ -14,6 +14,8 @@
 #include <QByteArray>
 #include <QTableWidget>
 
+#include "chessposition.h"
+
 // for sorting purposes
 class MoveListItem : public QTreeWidgetItem {
 public:
@@ -72,8 +74,53 @@ public:
     QVector<Continuation> continuations() const;
     QVector<int> getIds() const;
 
-    QHash<quint64, QVector<quint32>> openingGameHash;
-    QHash<quint64, PositionWinrate> openingWinrateHash;
+    QMap<quint64, QVector<quint32>> openingGameMap;
+    QMap<quint64, PositionWinrate> openingWinrateMap;
+
+    // given N positions (quint64 zobrist keys), zobristPositions coordinate compresses them into indices from 0...N-1
+    // where draw[i] + blackWin[i] + whiteWin[i] gives the number of games played at that position from its corresponding compressed zobrist key
+    // during lookup, use binary search + prefix sum to find range of corresponding gameIDs in O(logN+K), where K is the number of games that reached the position
+    struct OpeningInfo {
+        QVector<quint32> gameIDs;
+        QVector<quint64> zobristPositions;
+        QVector<int> prefixSum;
+        QVector<int> whiteWin;
+        QVector<int> blackWin;
+        QVector<int> draw;
+
+        bool serialize(const QString& path) const {
+            QFile file(path);
+            if (!file.open(QIODevice::WriteOnly)) return false;
+            QDataStream out(&file);
+            out.setVersion(QDataStream::Qt_6_5); // set version for compatibility
+
+            // write arrays
+            out << gameIDs;
+            out << zobristPositions;
+            out << whiteWin;
+            out << blackWin;
+            out << draw;
+
+            return out.status() == QDataStream::Ok;
+        }
+
+        bool deserialize(const QString& path) {
+            QFile file(path);
+            if (!file.open(QIODevice::ReadOnly)) return false;
+            QDataStream in(&file);
+            in.setVersion(QDataStream::Qt_6_5);
+
+            in >> gameIDs;
+            in >> zobristPositions;
+            in >> whiteWin;
+            in >> blackWin;
+            in >> draw;
+
+            return in.status() == QDataStream::Ok;
+        }
+    };
+
+    OpeningInfo mOpeningInfo;
 
 private:
     struct BuildNode {
@@ -124,12 +171,13 @@ class OpeningViewer : public QWidget
 public:
     explicit OpeningViewer(QWidget *parent = nullptr);
     
-    void updatePosition(const QVector<QString>& uciMoves);
+    void updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position);
+    PositionWinrate getWinrate(const quint64 zobrist);
 
     // static helpers
     static quint16 encodeMove(const QString& uciCode);
     static QString decodeMove(quint16 code);
-    
+
 signals:
     void moveClicked(const QString& move);
     void gameSelected(int gameId); 

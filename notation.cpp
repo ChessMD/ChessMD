@@ -34,7 +34,6 @@ NotationMove::NotationMove(const QString &text, ChessPosition &position)
     QSharedPointer<ChessPosition> pos = QSharedPointer<ChessPosition>::create();
     pos->copyFrom(position);
     m_position = pos;
-    m_zobristHash = pos->computeZobrist();
 }
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move)

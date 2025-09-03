@@ -20,6 +20,11 @@ struct CastlingRights {
     bool blackQueen = false;
 };
 
+struct SimpleMove {
+    int sr, sc, dr, dc;
+    char promo;
+};
+
 // Represents a chess position
 class ChessPosition: public QObject
 {
@@ -66,6 +71,8 @@ public:
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
+
+    QVector<SimpleMove> generateLegalMoves() const;
 
     char m_sideToMove;
 
