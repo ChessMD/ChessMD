@@ -470,20 +470,150 @@ QVector<QPair<int,int>> ChessPosition::findPieceOrigins(QChar piece, const QStri
 QVector<SimpleMove> ChessPosition::generateLegalMoves() const {
     QVector<SimpleMove> legalMoves;
     legalMoves.reserve(128);
-    const char promo[4] = { 'N', 'B', 'R', 'Q'};
+    const char promo[4] = {'N', 'B', 'R', 'Q'};
+
+    auto insertValid = [&](int sr, int sc, int dr, int dc, char promo = '\0') {
+        // apply move in place, check legality, undo
+        if (validateMove(sr, sc, dr, dc)){
+            legalMoves.push_back({sr, sc, dr, dc, promo});
+        }
+    };
+
     for (int sr = 0; sr < 8; sr++){
         for (int sc = 0; sc < 8; sc++){
             if (m_boardData[sr][sc].size() < 2) continue;
-            for (int dr = 0; dr < 8; dr++){
-                for (int dc = 0; dc < 8; dc++){
-                    if (!validateMove(sr, sc, dr, dc)) continue;
-                    if (sr == (m_sideToMove == 'w' ? 1 : 6) && m_boardData[sr][sc][1] == 'P'){
-                        for (auto c: promo) legalMoves.push_back({sr, sc, dr, dc, c});
+            char color = m_boardData[sr][sc][0].toLatin1(), piece = m_boardData[sr][sc][1].toLatin1();
+            switch (piece) {
+            case 'P': {
+                int dir = (color == 'w' ? -1 : 1);
+                int startRow = (color=='w'?6:1);
+                int fr = sr + dir;
+                // single push
+                if (fr >= 0 && fr < 8 && m_boardData[fr][sc].isEmpty()) {
+                    // promotion?
+                    if (fr == 0 || fr == 7) {
+                        for (char p : promo) insertValid(sr, sc, fr, sc, p);
                     } else {
-                        legalMoves.push_back({sr, sc, dr, dc, '\0'});
+                        insertValid(sr, sc, fr, sc);
+                    }
+                    // double push
+                    int fr2 = sr + 2*dir;
+                    if (sr == startRow && fr2 >= 0 && fr2 < 8 && m_boardData[fr2][sc].isEmpty() && m_boardData[fr][sc].isEmpty()) {
+                        insertValid(sr, sc, fr2, sc);
                     }
                 }
+                // captures (including en-passant)
+                for (int dc : {-1, +1}) {
+                    int tc = sc + dc;
+                    int tr = sr + dir;
+                    if (tr < 0 || tr >=8 || tc < 0 || tc >=8) continue;
+                    bool capture = !m_boardData[tr][tc].isEmpty() && m_boardData[tr][tc][0] != color;
+                    // en-passant: destination square empty but matches en-passant target
+                    QString destAlg = QChar('a'+tr) + QString::number(8-tc);
+                    bool epCapture = m_boardData[tr][tc].isEmpty() && (m_enPassantTarget == destAlg);
+                    if (capture || epCapture) {
+                        if (tr == 0 || tr == 7) {
+                            for (char p : promo) insertValid(sr,sc,tr,tc, p);
+                        } else {
+                            insertValid(sr,sc,tr,tc);
+                        }
+                    }
+                }
+                break;
             }
+            case 'N': {
+                static const int km[8][2] = {{2,1},{2,-1},{-2,1},{-2,-1},{1,2},{1,-2},{-1,2},{-1,-2}};
+                for (auto &m : km) {
+                    int tr = sr + m[0], tc = sc + m[1];
+                    if (tr<0||tr>=8||tc<0||tc>=8) continue;
+                    if (!m_boardData[tr][tc].isEmpty() && m_boardData[tr][tc][0] == color) continue;
+                    insertValid(sr, sc, tr, tc);
+                }
+                break;
+            }
+            case 'B': {
+                const int dirs[4][2] = {{1,1},{1,-1},{-1,1},{-1,-1}};
+                for (auto &d : dirs) {
+                    int r = sr + d[0], c = sc + d[1];
+                    while (r>=0 && r<8 && c>=0 && c<8) {
+                        if (m_boardData[r][c].isEmpty()) { insertValid(sr, sc, r, c ); }
+                        else {
+                            if (m_boardData[r][c][0] != color) insertValid(sr, sc, r, c);
+                            break;
+                        }
+                        r += d[0]; c += d[1];
+                    }
+                }
+                break;
+            }
+            case 'R': {
+                const int dirs[4][2] = {{1,0},{-1,0},{0,1},{0,-1}};
+                for (auto &d : dirs) {
+                    int r = sr + d[0], c = sc + d[1];
+                    while (r>=0 && r<8 && c>=0 && c<8) {
+                        if (m_boardData[r][c].isEmpty()) { insertValid(sr, sc, r, c); }
+                        else {
+                            if (m_boardData[r][c][0] != color) insertValid(sr, sc, r, c);
+                            break;
+                        }
+                        r += d[0]; c += d[1];
+                    }
+                }
+                break;
+            }
+            case 'Q': {
+                const int dirs[8][2] = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
+                for (auto &d : dirs) {
+                    int r = sr + d[0], c = sc + d[1];
+                    while (r>=0 && r<8 && c>=0 && c<8) {
+                        if (m_boardData[r][c].isEmpty()) { insertValid(sr, sc, r, c); }
+                        else {
+                            if (m_boardData[r][c][0] != color) insertValid(sr, sc, r, c);
+                            break;
+                        }
+                        r += d[0]; c += d[1];
+                    }
+                }
+                break;
+            }
+            case 'K': {
+                for (int rr = -1; rr <= 1; ++rr) {
+                    for (int cc = -1; cc <= 1; ++cc) {
+                        if (rr==0 && cc==0) continue;
+                        int tr = sr + rr, tc = sc + cc;
+                        if (tr<0||tr>=8||tc<0||tc>=8) continue;
+                        if (!m_boardData[tr][tc].isEmpty() && m_boardData[tr][tc][0] == color) continue;
+                        insertValid(sr,sc,tr,tc);
+                    }
+                }
+                // castling
+                if (color == 'w' && m_sideToMove == 'w') {
+                    if (sr == 7 && sc == 4) {
+                        insertValid(sr, sc, 7, 6);
+                        insertValid(sr, sc, 7, 2);
+                    }
+                } else if (color == 'b' && m_sideToMove == 'b') {
+                    if (sr == 0 && sc == 4) {
+                        insertValid(sr, sc, 0, 6);
+                        insertValid(sr, sc, 0, 2);
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+            }
+
+            // for (int dr = 0; dr < 8; dr++){
+            //     for (int dc = 0; dc < 8; dc++){
+            //         if (!validateMove(sr, sc, dr, dc)) continue;
+            //         if (sr == (m_sideToMove == 'w' ? 1 : 6) && m_boardData[sr][sc][1] == 'P'){
+            //             for (auto c: promo) legalMoves.push_back({sr, sc, dr, dc, c});
+            //         } else {
+            //             legalMoves.push_back({sr, sc, dr, dc, '\0'});
+            //         }
+            //     }
+            // }
         }
     }
     return legalMoves;
@@ -806,8 +936,10 @@ quint64 ChessPosition::computeZobrist() const
     if (m_castling.whiteKing) cmask |= 4;
     if (m_castling.whiteQueen) cmask |= 8;
     hash ^= ZOBRIST_CASTLING[cmask];
-    int ep = m_enPassantTarget[0].toLatin1() - 'a';
-    if (!m_enPassantTarget.isEmpty() && ep >= 0 && ep < 8) hash ^= ZOBRIST_EN_PASSANT_FILE[ep];
+    if (!m_enPassantTarget.isEmpty()){
+        int ep = m_enPassantTarget[0].toLatin1() - 'a';
+        if (ep >= 0 && ep < 8) hash ^= ZOBRIST_EN_PASSANT_FILE[ep];
+    }
     if (m_sideToMove == 'b') hash ^= ZOBRIST_SIDE_TO_MOVE;
     return hash;
 }

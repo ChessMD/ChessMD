@@ -488,36 +488,27 @@ void ChessGameWindow::openingSetup()
     }
 
     m_openingViewer = new OpeningViewer(this);
-    // m_openingViewer->updatePosition(QVector<QString>());
+    auto currentMove = m_notationViewer->getSelectedMove();
+    if (currentMove->m_zobristHash == -1) currentMove->m_zobristHash = currentMove->m_position->computeZobrist();
+    m_openingViewer->updatePosition(currentMove->m_zobristHash, currentMove->m_position, currentMove->moveText);
+
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
     m_openingDock->setWidget(m_openingViewer);
     m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
     m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::BottomDockWidgetArea, m_openingDock);
     
-    connect(m_notationViewer, &NotationViewer::moveSelected, 
-        [this](QSharedPointer<NotationMove> move) {
-            //update openingviewer when notation viewer changed
-            // QVector<QString> moveSequence;
-            // QSharedPointer<NotationMove> currentMove = move;
-            // int moveCount = 0;
-            // while (currentMove && !currentMove->lanText.isEmpty()) {
-            //     moveSequence.prepend(currentMove->lanText);
-            //     currentMove = currentMove->m_previousMove;
-            //     moveCount++;
-            // }
-            // m_openingViewer->updatePosition(moveSequence);
-            m_openingViewer->updatePosition(move->m_zobristHash, move->m_position);
-        });
+    // update openingviewer when notationViewer changes
+    connect(m_notationViewer, &NotationViewer::moveSelected, this, [this](QSharedPointer<NotationMove> move) {
+        if (move->m_zobristHash == -1) move->m_zobristHash = move->m_position->computeZobrist();
+        m_openingViewer->updatePosition(move->m_zobristHash, move->m_position, move->moveText);
+    });
     
-    connect(m_openingViewer, &OpeningViewer::moveClicked,
-        [this](const QString& move) {
-            if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
-                
-                //todo, make it play the move and create a variation maybe idk
-                
-            }
-        });
+    connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const QString& move) {
+        if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
+            // todo, make it play the move and create a variation maybe idk
+        }
+    });
 
     updateOpeningActions();
 }

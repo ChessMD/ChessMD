@@ -40,16 +40,6 @@ public:
     }
 };
 
-// using quint16 etc. so its ez to count space for mmap offset
-
-struct Continuation {
-    quint16 moveCode;
-    quint32 count;
-    float whitePct;
-    float drawPct;
-    float blackPct;
-};
-
 struct PositionWinrate {
     int whiteWin;
     int blackWin;
@@ -58,111 +48,20 @@ struct PositionWinrate {
 
 enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
 
-class OpeningTree{
-public:
-    OpeningTree();
-    ~OpeningTree();
-
-    void insertGame(const QVector<quint16>& moves, int gameID, GameResult result);
-    bool serialize(const QString& path);
-
-    bool load(const QString& file);
-    void reset();
-    bool play(quint16 moveCode);
-
-    quint32 gamesReached() const;
-    QVector<Continuation> continuations() const;
-    QVector<int> getIds() const;
-
-    QMap<quint64, QVector<quint32>> openingGameMap;
-    QMap<quint64, PositionWinrate> openingWinrateMap;
-
+struct OpeningInfo {
     // given N positions (quint64 zobrist keys), zobristPositions coordinate compresses them into indices from 0...N-1
     // where draw[i] + blackWin[i] + whiteWin[i] gives the number of games played at that position from its corresponding compressed zobrist key
     // during lookup, use binary search + prefix sum to find range of corresponding gameIDs in O(logN+K), where K is the number of games that reached the position
-    struct OpeningInfo {
-        QVector<quint32> gameIDs;
-        QVector<quint64> zobristPositions;
-        QVector<int> prefixSum;
-        QVector<int> whiteWin;
-        QVector<int> blackWin;
-        QVector<int> draw;
+    QVector<quint32> gameIDs;
+    QVector<quint64> zobristPositions;
+    QVector<int> prefixSum;
+    QVector<int> insertedCount;
+    QVector<int> whiteWin;
+    QVector<int> blackWin;
+    QVector<int> draw;
 
-        bool serialize(const QString& path) const {
-            QFile file(path);
-            if (!file.open(QIODevice::WriteOnly)) return false;
-            QDataStream out(&file);
-            out.setVersion(QDataStream::Qt_6_5); // set version for compatibility
-
-            // write arrays
-            out << gameIDs;
-            out << zobristPositions;
-            out << whiteWin;
-            out << blackWin;
-            out << draw;
-
-            return out.status() == QDataStream::Ok;
-        }
-
-        bool deserialize(const QString& path) {
-            QFile file(path);
-            if (!file.open(QIODevice::ReadOnly)) return false;
-            QDataStream in(&file);
-            in.setVersion(QDataStream::Qt_6_5);
-
-            in >> gameIDs;
-            in >> zobristPositions;
-            in >> whiteWin;
-            in >> blackWin;
-            in >> draw;
-
-            return in.status() == QDataStream::Ok;
-        }
-    };
-
-    OpeningInfo mOpeningInfo;
-
-private:
-    struct BuildNode {
-        quint32 gamesReached = 0;
-        quint32 whiteWins = 0;
-        quint32 draws = 0;
-        QVector<QPair<quint16, BuildNode*>> children;
-        QVector<int> gameIds;
-    };
-
-    //pack so it is strictly 14 bytes
-    #pragma pack(push,1)
-    struct ChildEntry {
-        quint16 moveCode;  
-        quint32 count;
-        quint32 whiteWins;
-        quint32 draws;    
-        quint64 offset;   
-    };
-    #pragma pack(pop)
-    struct NodeView{
-        quint32 gamesReached;
-        quint32 whiteWins;
-        quint32 draws;
-        quint8 childCount;
-        const ChildEntry* children;
-    };
-
-    BuildNode* mRoot;
-    QVector<BuildNode*> mBfsOrder;
-    QHash<BuildNode*, quint64> mOffsets;
-
-    QFile mFile;
-    const char* mMappedBase;
-    quint64 mMappedSize;
-    quint64 mCurOffset;
-
-    //helpers
-    void deleteSubtree(BuildNode*);
-    void assignOffsets();
-    void collectGameIds(quint64 nodeOffset, QVector<int>& ids) const;
-    NodeView readNode(quint64 offset) const;
+    bool serialize(const QString& path) const;
+    bool deserialize(const QString& path);
 };
 
 class OpeningViewer : public QWidget
@@ -171,30 +70,24 @@ class OpeningViewer : public QWidget
 public:
     explicit OpeningViewer(QWidget *parent = nullptr);
     
-    void updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position);
-    PositionWinrate getWinrate(const quint64 zobrist);
-
-    // static helpers
-    static quint16 encodeMove(const QString& uciCode);
-    static QString decodeMove(quint16 code);
+    void updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position, const QString moveText);
+    QPair<PositionWinrate, int> getWinrate(const quint64 zobrist);
 
 signals:
     void moveClicked(const QString& move);
     void gameSelected(int gameId); 
 
-    
 private slots:
     void onMoveSelected(QTreeWidgetItem* item, int column);
     void onGameSelected(int row, int column);  
-
     
 private:
     bool mOpeningBookLoaded = false;
     // ui
     void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct);
-    void updateGamesList();
+    void updateGamesList(const int openingIndex);
 
-    OpeningTree mTree;
+    OpeningInfo mOpeningInfo;
 
     QLabel* mPositionLabel;
     QLabel* mStatsLabel;
@@ -205,5 +98,8 @@ private:
     QString mCurrentPosition;
     int mTotalGames = 0;
 };
+
+extern const int MAX_GAMES_TO_SHOW;
+extern const int MAX_OPENING_DEPTH;
 
 #endif // OPENINGVIEWER_H
