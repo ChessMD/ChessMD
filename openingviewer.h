@@ -83,11 +83,17 @@ private slots:
     
 private:
     bool mOpeningBookLoaded = false;
-    // ui
+
+    QVector<PGNGame> loadGameHeadersBatch(const QString &path, const QVector<quint32> &ids);
+    bool ensureHeaderOffsetsLoaded(const QString &path);
+
     void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct);
     void updateGamesList(const int openingIndex);
 
     OpeningInfo mOpeningInfo;
+
+    QVector<quint64> mHeaderOffsets;
+    bool mHeaderOffsetsLoaded = false;
 
     QLabel* mPositionLabel;
     QLabel* mStatsLabel;

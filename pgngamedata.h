@@ -43,7 +43,6 @@ public:
     void copyFrom(PGNGame &other);
     QString serializePGN();
     static bool serializeHeaderData(const QString &path, const std::vector<PGNGame> &games);
-    static PGNGame loadGameHeader(const QString &path, int gameId);
 
     QSharedPointer<NotationMove> rootMove;
     QVector<QPair<QString,QString>> headerInfo;
