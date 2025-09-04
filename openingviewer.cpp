@@ -7,7 +7,7 @@
 #include <QtGlobal>
 #include <QHeaderView>
 
-const int MAX_GAMES_TO_SHOW = 100;
+const int MAX_GAMES_TO_SHOW = 1000;
 const int MAX_OPENING_DEPTH = 70; // counted in half-moves
 
 bool OpeningInfo::serialize(const QString& path) const {
@@ -191,6 +191,75 @@ QPair<PositionWinrate, int> OpeningViewer::getWinrate(const quint64 zobrist)
     return {winrate, low};
 }
 
+bool OpeningViewer::ensureHeaderOffsetsLoaded(const QString &path)
+{
+    if (mHeaderOffsetsLoaded) return true;
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        qDebug() << "Cannot open headers file for offsets:" << path;
+        return false;
+    }
+    QDataStream in(&f);
+    quint32 gameCount;
+    in >> gameCount;
+
+    mHeaderOffsets.resize(gameCount);
+    f.seek(4);
+    for (quint32 i = 0; i < gameCount; ++i) {
+        quint64 off;
+        in >> off;
+        mHeaderOffsets[i] = off;
+    }
+    f.close();
+    mHeaderOffsetsLoaded = true;
+    return true;
+}
+
+QVector<PGNGame> OpeningViewer::loadGameHeadersBatch(const QString &path, const QVector<quint32> &ids)
+{
+    QVector<PGNGame> out;
+    out.reserve(ids.size());
+
+    if (!ensureHeaderOffsetsLoaded(path)) return out;
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning() << "cannot open headers file:" << path;
+        return out;
+    }
+    QDataStream in(&f);
+
+    for (quint32 gid : ids) {
+        if (gid >= static_cast<quint32>(mHeaderOffsets.size())) {
+            qDebug() << "Bad game id!" << gid;
+            out.append(PGNGame());
+            continue;
+        }
+        quint64 off = mHeaderOffsets[gid];
+        f.seek(off);
+        PGNGame game;
+        QString white, whiteElo, black, blackElo, event, date, result;
+        in >> white >> whiteElo >> black >> blackElo >> event >> date >> result;
+        if (!white.isEmpty()) game.headerInfo.push_back(qMakePair(QString("White"), white));
+        if (!whiteElo.isEmpty()) game.headerInfo.push_back(qMakePair(QString("WhiteElo"), whiteElo));
+        if (!black.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Black"), black));
+        if (!blackElo.isEmpty()) game.headerInfo.push_back(qMakePair(QString("BlackElo"), blackElo));
+        if (!event.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Event"), event));
+        if (!date.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Date"), date));
+        if (!result.isEmpty()) {
+            game.headerInfo.push_back(qMakePair(QString("Result"), result));
+            game.result = result;
+        }
+        in >> game.bodyText;
+        game.isParsed = false;
+        out.append(std::move(game));
+    }
+
+    f.close();
+    return out;
+}
+
 void OpeningViewer::updateGamesList(const int openingIndex)
 {
     if (openingIndex+1 >= mOpeningInfo.prefixSum.size()){
@@ -199,8 +268,9 @@ void OpeningViewer::updateGamesList(const int openingIndex)
     }
 
     QVector<quint32> gameIDs;
-    gameIDs.reserve(mOpeningInfo.prefixSum[openingIndex+1]-mOpeningInfo.prefixSum[openingIndex]);
-    for (int i = mOpeningInfo.prefixSum[openingIndex]; i < mOpeningInfo.prefixSum[openingIndex+1]; i++){
+    int startInd = mOpeningInfo.prefixSum[openingIndex], endInd = mOpeningInfo.prefixSum[openingIndex+1];
+    gameIDs.reserve(qMin(endInd - startInd, MAX_GAMES_TO_SHOW));
+    for (int i = startInd; i < endInd && i - startInd < MAX_GAMES_TO_SHOW; i++){
         if (i >= mOpeningInfo.gameIDs.size()){
             qDebug() << "Failed to add game(s) to opening game list: prefixSum out of range!";
             break;
@@ -208,11 +278,12 @@ void OpeningViewer::updateGamesList(const int openingIndex)
         gameIDs.push_back(mOpeningInfo.gameIDs[i]);
     }
 
+    QVector<PGNGame> games = loadGameHeadersBatch("./opening/openings.headers", gameIDs);
+
     mGamesList->setRowCount(0);
-    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIDs.size(), MAX_GAMES_TO_SHOW)).arg(mOpeningInfo.whiteWin[openingIndex] + mOpeningInfo.blackWin[openingIndex] + mOpeningInfo.draw[openingIndex]));
     mGamesList->setSortingEnabled(false); // no sorting while loading
-    for (int i = 0; i < qMin(gameIDs.size(), MAX_GAMES_TO_SHOW); i++) {
-        PGNGame game = PGNGame::loadGameHeader("./opening/openings.headers", gameIDs[i]);
+    for (int i = 0; i < gameIDs.size(); i++) {
+        const PGNGame &game = games[i];
         QString white, whiteElo, black, blackElo, result, date, event;
         for (const auto& header : std::as_const(game.headerInfo)) {
             if (header.first == "White") white = header.second;
@@ -236,6 +307,7 @@ void OpeningViewer::updateGamesList(const int openingIndex)
     }
 
     mGamesList->setSortingEnabled(true);
+    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIDs.size(), MAX_GAMES_TO_SHOW)).arg(mOpeningInfo.whiteWin[openingIndex] + mOpeningInfo.blackWin[openingIndex] + mOpeningInfo.draw[openingIndex]));
 }
 
 // helper

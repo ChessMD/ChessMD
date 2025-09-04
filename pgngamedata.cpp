@@ -85,51 +85,6 @@ bool PGNGame::serializeHeaderData(const QString &path, const std::vector<PGNGame
     return true;
 }
 
-// load game data
-PGNGame PGNGame::loadGameHeader(const QString &path, int gameId) {
-    PGNGame game;
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) return game;
-    
-    QDataStream in(&file);
-    
-    quint32 gameCount;
-    in >> gameCount;
-    
-    if (gameId < 0 || static_cast<quint32>(gameId) >= gameCount) {
-        qDebug() << "Game ID out of range:" << gameId;
-        file.close();
-        return game; 
-    }
-    
-    // get requested game offset
-    file.seek(4 + 8 * gameId);
-    quint64 gameOffset;
-    in >> gameOffset;
-    
-    file.seek(gameOffset);
-    
-    QString white, whiteElo, black, blackElo, event, date, result;
-    in >> white >> whiteElo >> black >> blackElo >> event >> date >> result;
-    
-    if (!white.isEmpty()) game.headerInfo.push_back(qMakePair(QString("White"), white));
-    if (!whiteElo.isEmpty()) game.headerInfo.push_back(qMakePair(QString("WhiteElo"), whiteElo));
-    if (!black.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Black"), black));
-    if (!blackElo.isEmpty()) game.headerInfo.push_back(qMakePair(QString("BlackElo"), blackElo));
-    if (!event.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Event"), event));
-    if (!date.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Date"), date));
-    if (!result.isEmpty()) {
-        game.headerInfo.push_back(qMakePair(QString("Result"), result));
-        game.result = result;
-    }
-    
-    in >> game.bodyText;
-    game.isParsed = false;
-    
-    file.close();
-    return game;
-}
-
 PGNGameData::PGNGameData()
 {
     rootVariation = QSharedPointer<VariationNode>::create();
