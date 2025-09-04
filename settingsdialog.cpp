@@ -17,7 +17,6 @@
 #include <QComboBox>
 #include <fstream>
 
-
 SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent), mOpeningsPath("")
 {
@@ -115,9 +114,9 @@ void SettingsDialog::onSelectEngineClicked() {
     QString file_name;
     
     if (osVersion.type() == QOperatingSystemVersion::Windows) {
-        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("Executable files (*.exe)"));
+        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
     } else {
-        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), QString(), tr("All files (*)"));
+        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("All files (*)"));
     }
     
     if (!file_name.isEmpty()) {
@@ -155,40 +154,76 @@ void SettingsDialog::onLoadPgnClicked() {
     progressBar->setMaximum(database.size());
     progressBar->setValue(0);
 
-    OpeningTree tree;
+    QMap<quint64, QVector<quint32>> openingGameMap;
+    QMap<quint64, PositionWinrate> openingWinrateMap;
+    OpeningInfo openingInfo;
 
     for (int i = 0; i < database.size(); i++) {
         auto &game = database[i];
 
-        // every 100 games update bar
+        // update progress bar every 100 games
         if (i % 100 == 0) {
             progressBar->setValue(i);
             QApplication::processEvents();
         }
 
         parseBodyText(game.bodyText, game.rootMove);
-        QVector<quint16> moveCodes;
+        QVector<quint64> zobristHashes;
 
         QSharedPointer<NotationMove> move = game.rootMove;
+        zobristHashes.push_back(move->m_zobristHash);
         while(!move->m_nextMoves.isEmpty()){
             move = move->m_nextMoves.front();
-            moveCodes.push_back(OpeningViewer::encodeMove(move->lanText));
+            zobristHashes.push_back(move->m_zobristHash);
         }
 
         GameResult result = UNKNOWN;
         if (game.result == "1-0") result = WHITE_WIN;
         else if (game.result == "0-1") result = BLACK_WIN;
         else if (game.result == "1/2-1/2") result = DRAW;
-        tree.insertGame(moveCodes, i, result);
+
+        QHash<quint64, bool> visitedPositions;
+        for (int j = 0; j < qMin(MAX_OPENING_DEPTH, zobristHashes.size()); j++){
+            if (!visitedPositions.count(zobristHashes[j]) && openingGameMap[zobristHashes[j]].size() < MAX_GAMES_TO_SHOW) {
+                openingGameMap[zobristHashes[j]].push_back(i);
+            }
+            openingWinrateMap[zobristHashes[j]].whiteWin += (result == WHITE_WIN);
+            openingWinrateMap[zobristHashes[j]].blackWin += (result == BLACK_WIN);
+            openingWinrateMap[zobristHashes[j]].draw += (result == DRAW);
+            visitedPositions[zobristHashes[j]] = 1;
+        }
+
         game.rootMove.clear();
         game.bodyText.clear();
     }
 
     progressBar->setValue(database.size());
+
     mOpeningsPathLabel->setText(tr("Serializing database..."));
     QApplication::processEvents();
 
-    tree.serialize("./opening/openings.bin");
+    openingInfo.zobristPositions.reserve(openingGameMap.size());
+    openingInfo.insertedCount.reserve(openingGameMap.size());
+    openingInfo.whiteWin.reserve(openingGameMap.size());
+    openingInfo.blackWin.reserve(openingGameMap.size());
+    openingInfo.draw.reserve(openingGameMap.size());
+    for (auto it = openingGameMap.begin(); it != openingGameMap.end(); it++) {
+        quint64 zobrist = it.key();
+        QVector<quint32> games = it.value();
+        openingInfo.zobristPositions.push_back(zobrist);
+        for (quint32 gameID: games) openingInfo.gameIDs.push_back(gameID);
+        openingInfo.insertedCount.push_back(games.size());
+    }
+    for (auto winrates: std::as_const(openingWinrateMap)) {
+        openingInfo.whiteWin.push_back(winrates.whiteWin);
+        openingInfo.blackWin.push_back(winrates.blackWin);
+        openingInfo.draw.push_back(winrates.draw);
+    }
+
+    openingInfo.serialize("./opening/openings.bin");
+
+    mOpeningsPathLabel->setText(tr("Serializing headers..."));
+    QApplication::processEvents();
 
     PGNGame::serializeHeaderData("./opening/openings.headers", database);
 

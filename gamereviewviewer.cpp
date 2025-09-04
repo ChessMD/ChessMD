@@ -164,9 +164,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     m_settings.loadSettings();
     QString saved = m_settings.getEngineFile();
     if (!saved.isEmpty() && QFileInfo(saved).exists()) {
-        // auto-start
         m_engine = new UciEngine(this);
-        m_engine->startEngine(saved);
         m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(saved).fileName()));
         m_reviewBtn->setEnabled(true);
     } else {
@@ -188,25 +186,26 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         }
 
         if (osVersion.type() == QOperatingSystemVersion::Windows)
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*.exe)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
         else
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
 
-        m_settings.loadSettings();
-        m_settings.setEngineFile(binary);
-        m_settings.saveSettings();
+        if (!binary.isEmpty()){
+            m_settings.loadSettings();
+            m_settings.setEngineFile(binary);
+            m_settings.saveSettings();
 
-        // start or restart the engine
-        if (m_engine) {
-            m_engine->quitEngine();
+            // start or restart the engine
+            if (m_engine) {
+                m_engine->quitEngine();
+            }
+            m_engine = new UciEngine(this);
+            m_engine->startEngine(binary);
+
+            m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(binary).fileName()));
+            m_reviewBtn->setEnabled(true);
         }
-        m_engine = new UciEngine(this);
-        m_engine->startEngine(binary);
-
-        m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(binary).fileName()));
-        m_reviewBtn->setEnabled(true);
     });
-
 
     // hide UI until game review is clicked
     m_progressBar->setVisible(false);
@@ -585,6 +584,7 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     m_results.assign(N, 0.0);
     m_isReviewing = true;
 
+    m_engine->startEngine(m_settings.getEngineFile());
     connect(m_engine, &UciEngine::infoReceived, this, &GameReviewViewer::onInfoReceived);
     connect(m_engine, &UciEngine::bestMove, this, &GameReviewViewer::onBestMove);
 

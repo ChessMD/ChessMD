@@ -14,11 +14,11 @@ Jan 15, 2025 - Program Creation
 #include <QDir>
 #include <QDockWidget>
 #include <QSettings>
+
 #include "mainwindow.h"
 #include "theme.h"
 #include "helpers.h"
-
-
+#include "chessposition.h"
 
 int main(int argc, char *argv[])
 {
@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
+    initZobristTables();
 
     // render the main window
     MainWindow w;

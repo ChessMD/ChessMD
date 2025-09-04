@@ -28,13 +28,13 @@ const QVector<CommentEntry> COMMENT_ENTRIES = {
     { QObject::tr("Enter Comment After"), &NotationMove::commentAfter }
 };
 
-
 NotationMove::NotationMove(const QString &text, ChessPosition &position)
 {
     moveText = text;
     QSharedPointer<ChessPosition> pos = QSharedPointer<ChessPosition>::create();
     pos->copyFrom(position);
     m_position = pos;
+    m_zobristHash = -1;
 }
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move)
@@ -45,6 +45,7 @@ QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& mov
     newPos.copyFrom(*move->m_position);
     auto copy = QSharedPointer<NotationMove>::create(move->moveText, newPos);
     copy->FEN = move->FEN;
+    copy->m_zobristHash = move->m_zobristHash;
     copy->lanText = move->lanText;
     copy->commentBefore = move->commentBefore;
     copy->annotation1 = move->annotation1;

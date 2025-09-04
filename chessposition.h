@@ -20,6 +20,11 @@ struct CastlingRights {
     bool blackQueen = false;
 };
 
+struct SimpleMove {
+    int sr, sc, dr, dc;
+    char promo;
+};
+
 // Represents a chess position
 class ChessPosition: public QObject
 {
@@ -58,6 +63,7 @@ public:
     // Copies all internal state from another ChessPosition
     void copyFrom(const ChessPosition &other);
     QString positionToFEN() const;
+    quint64 computeZobrist() const;
 
     // Tries to make a new move from the current position given a SAN string
     bool tryMakeMove(QString san, QSharedPointer<NotationMove> move);
@@ -65,6 +71,8 @@ public:
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
+
+    QVector<SimpleMove> generateLegalMoves() const;
 
     char m_sideToMove;
 
@@ -101,6 +109,8 @@ private:
     bool m_isPreview = false;
     double m_evalScore = 0;
 };
+
+void initZobristTables();
 
 QString buildMoveText(const QSharedPointer<NotationMove>& move);
 void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int plyCount);

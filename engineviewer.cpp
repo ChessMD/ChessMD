@@ -177,9 +177,10 @@ void EngineWidget::onConfigEngineClicked()
     }
 
     if (osVersion.type() == QOperatingSystemVersion::Windows)
-        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*.exe)"));
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
     else
-        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dir.absolutePath(), tr("(*)"));
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+
     if (binary.isEmpty()) return;
 
     ChessQSettings s;

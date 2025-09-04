@@ -16,6 +16,7 @@ PGNGame::PGNGame()
     isParsed = false;
     ChessPosition startPos;
     rootMove = QSharedPointer<NotationMove>::create("", startPos);
+    rootMove->m_zobristHash = rootMove->m_position->computeZobrist();
 }
 
 void PGNGame::copyFrom(PGNGame &other)
