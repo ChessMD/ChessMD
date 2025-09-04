@@ -17,7 +17,8 @@
 #include "chessposition.h"
 
 // for sorting purposes
-class MoveListItem : public QTreeWidgetItem {
+class MoveListItem : public QTreeWidgetItem
+{
 public:
     MoveListItem(QTreeWidget* parent) : QTreeWidgetItem(parent) {}
     
@@ -40,33 +41,55 @@ public:
     }
 };
 
+enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
+
 struct PositionWinrate {
     int whiteWin;
     int blackWin;
     int draw;
 };
 
-enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
-
-struct OpeningInfo {
+class OpeningInfo
+{
+public:
     // given N positions (quint64 zobrist keys), zobristPositions coordinate compresses them into indices from 0...N-1
     // where draw[i] + blackWin[i] + whiteWin[i] gives the number of games played at that position from its corresponding compressed zobrist key
     // during lookup, use binary search + prefix sum to find range of corresponding gameIDs in O(logN+K), where K is the number of games that reached the position
     QVector<quint32> gameIDs;
     QVector<quint64> zobristPositions;
-    QVector<int> prefixSum;
+    QVector<int> startIndex;
     QVector<int> insertedCount;
     QVector<int> whiteWin;
     QVector<int> blackWin;
     QVector<int> draw;
 
-    QString m_dataFilePath;
-    quint64 m_gameIdsDataStart = 0;
+    struct PositionInfo {
+        quint32 insertedCount;
+        quint32 whiteWin;
+        quint32 blackWin;
+        quint32 draw;
+        quint32 startIndex;
+    };
 
     bool serialize(const QString& path) const;
     bool deserialize(const QString& path);
 
-    QVector<quint32> readGameIDs(int openingIndex) const;
+    bool mapDataFile();
+    void unmapDataFile();
+
+    QPair<PositionWinrate, int> getWinrate(const quint64 zobrist);
+    QVector<quint32> readGameIDs(int openingIndex);
+
+private:
+    QString m_dataFilePath;
+    quint64 m_gameIdsDataStart = 0;
+    quint64 m_positionInfoStart = 0;
+
+    QFile m_mappedFile;
+    const uchar *m_mappedBase = nullptr;
+    qint64 m_mappedSize = 0;
+    const quint64* m_zobristBase = nullptr;
+    int m_nPositions = 0;
 };
 
 class OpeningViewer : public QWidget
@@ -76,7 +99,6 @@ public:
     explicit OpeningViewer(QWidget *parent = nullptr);
     
     void updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position, const QString moveText);
-    QPair<PositionWinrate, int> getWinrate(const quint64 zobrist);
 
 public slots:
     void onMoveSelected(QSharedPointer<NotationMove>& move);
@@ -96,7 +118,7 @@ private:
     bool ensureHeaderOffsetsLoaded(const QString &path);
 
     void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct);
-    void updateGamesList(const int openingIndex);
+    void updateGamesList(const int openingIndex, const PositionWinrate winrate);
 
     OpeningInfo mOpeningInfo;
 

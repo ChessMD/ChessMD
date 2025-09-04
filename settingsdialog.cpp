@@ -202,17 +202,14 @@ void SettingsDialog::onLoadPgnClicked() {
     mOpeningsPathLabel->setText(tr("Serializing database..."));
     QApplication::processEvents();
 
-    openingInfo.zobristPositions.reserve(openingGameMap.size());
-    openingInfo.insertedCount.reserve(openingGameMap.size());
-    openingInfo.whiteWin.reserve(openingGameMap.size());
-    openingInfo.blackWin.reserve(openingGameMap.size());
-    openingInfo.draw.reserve(openingGameMap.size());
+    openingInfo.startIndex.push_back(0);
     for (auto it = openingGameMap.begin(); it != openingGameMap.end(); it++) {
         quint64 zobrist = it.key();
         QVector<quint32> games = it.value();
         openingInfo.zobristPositions.push_back(zobrist);
         for (quint32 gameID: games) openingInfo.gameIDs.push_back(gameID);
         openingInfo.insertedCount.push_back(games.size());
+        openingInfo.startIndex.push_back(openingInfo.startIndex.back() + games.size());
     }
     for (auto winrates: std::as_const(openingWinrateMap)) {
         openingInfo.whiteWin.push_back(winrates.whiteWin);

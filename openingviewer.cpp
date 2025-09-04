@@ -9,26 +9,52 @@
 
 const int MAX_GAMES_TO_SHOW = 1000;
 const int MAX_OPENING_DEPTH = 70; // counted in half-moves
+const quint64 MAGIC = 0x4F50454E424B3131ULL;
+const quint32 VERSION = 1;
 
 bool OpeningInfo::serialize(const QString& path) const {
     QFile file(path);
-    if (!file.open(QIODevice::WriteOnly)) return false;
+    if (!file.open(QIODevice::WriteOnly)) {
+        qDebug() << "serialize: cannot open" << path;
+        return false;
+    }
+
     QDataStream out(&file);
-    out.setVersion(QDataStream::Qt_6_5); // set version for compatibility
+    out.setVersion(QDataStream::Qt_6_5);
 
-    // write arrays
-    out << zobristPositions;
-    out << insertedCount;
-    out << whiteWin;
-    out << blackWin;
-    out << draw;
+    // write magic & version as raw to be easy to parse in mmap
+    file.write(reinterpret_cast<const char*>(&MAGIC), sizeof(MAGIC));
+    file.write(reinterpret_cast<const char*>(&VERSION), sizeof(VERSION));
 
+    // write N (count)
+    quint64 N = static_cast<quint64>(zobristPositions.size());
+    file.write(reinterpret_cast<const char*>(&N), sizeof(N));
+
+    // write raw zobrist array
+    if (N) {
+        const quint64* ptr = reinterpret_cast<const quint64*>(zobristPositions.constData());
+        qint64 bytes = static_cast<qint64>(N * sizeof(quint64));
+        qint64 written = file.write(reinterpret_cast<const char*>(ptr), bytes);
+        if (written != bytes) { file.close(); return false; }
+    }
+
+    // write PositionInfo entries
+    for (int i = 0; i < N; ++i) {
+        PositionInfo pi;
+        pi.insertedCount = (i < insertedCount.size()) ? static_cast<quint32>(insertedCount[i]) : 0;
+        pi.whiteWin = (i < whiteWin.size()) ? static_cast<quint32>(whiteWin[i]) : 0;
+        pi.blackWin = (i < blackWin.size()) ? static_cast<quint32>(blackWin[i]) : 0;
+        pi.draw = (i < draw.size()) ? static_cast<quint32>(draw[i]) : 0;
+        pi.startIndex = (i < startIndex.size()) ? static_cast<quint32>(startIndex[i]) : 0;
+        file.write(reinterpret_cast<const char*>(&pi), sizeof(pi));
+    }
+
+    // write gameIDs as raw uint32 array
     if (!gameIDs.isEmpty()) {
-        // write raw bytes
-        const char* buf = reinterpret_cast<const char*>(gameIDs.constData());
-        qint64 bytesToWrite = static_cast<qint64>(gameIDs.size()) * sizeof(quint32);
-        qint64 written = file.write(buf, bytesToWrite);
-        if (written != bytesToWrite) {
+        const quint32* gptr = reinterpret_cast<const quint32*>(gameIDs.constData());
+        qint64 bytes = static_cast<qint64>(gameIDs.size() * sizeof(quint32));
+        qint64 written = file.write(reinterpret_cast<const char*>(gptr), bytes);
+        if (written != bytes) {
             file.close();
             return false;
         }
@@ -36,67 +62,198 @@ bool OpeningInfo::serialize(const QString& path) const {
 
     file.flush();
     file.close();
-    return out.status() == QDataStream::Ok;
+    return true;
 }
 
 bool OpeningInfo::deserialize(const QString& path) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) return false;
-    QDataStream in(&file);
-    in.setVersion(QDataStream::Qt_6_5);
+    unmapDataFile(); // close previous map if any
 
-    in >> zobristPositions;
-    in >> insertedCount;
-    in >> whiteWin;
-    in >> blackWin;
-    in >> draw;
-
-    m_gameIdsDataStart = static_cast<quint64>(file.pos());
     m_dataFilePath = path;
+    m_mappedFile.setFileName(path);
+    if (!m_mappedFile.open(QIODevice::ReadOnly)) {
+        qDebug() << "Deserialize: cannot open file for mapping:" << path;
+        return false;
+    }
 
-    file.close();
-    return in.status() == QDataStream::Ok;
+    qint64 totalSize = m_mappedFile.size();
+    if (totalSize < static_cast<qint64>(sizeof(quint64) + sizeof(quint32) + sizeof(quint64))) {
+        qDebug() << "Deserialize: file too small";
+        m_mappedFile.close();
+        return false;
+    }
+
+    const uchar* base = m_mappedFile.map(0, totalSize);
+    if (!base) {
+        qDebug() << "Deserialize: mmap failed";
+        m_mappedBase = nullptr;
+        m_mappedSize = 0;
+        m_mappedFile.close();
+        return false;
+    }
+
+    // parse header
+    const uchar* p = base;
+    const quint64 magic = *reinterpret_cast<const quint64*>(p); p += sizeof(quint64);
+    const quint32 version = *reinterpret_cast<const quint32*>(p); p += sizeof(quint32);
+    quint64 N = *reinterpret_cast<const quint64*>(p); p += sizeof(quint64);
+
+    if (magic != MAGIC) {
+        qDebug() << "Deserialize: Bad magic:" << QString::number(magic, 16) << "expected:" << QString::number(MAGIC, 16);
+        return false;
+    }
+    if (version != VERSION) {
+        qDebug() << "Deserialize: Unsupported version:" << version;
+        return false;
+    }
+
+    // bounds check
+    quint64 expectedMin = sizeof(quint64) + sizeof(quint32) + sizeof(quint64) + N * sizeof(quint64) + N * sizeof(PositionInfo);
+    if (static_cast<quint64>(totalSize) < expectedMin) {
+        qDebug() << "Deserialize: File too small for header + arrays";
+        m_mappedFile.unmap(const_cast<uchar*>(base));
+        m_mappedBase = nullptr; m_mappedSize = 0; m_mappedFile.close();
+        return false;
+    }
+
+    // set pointers
+    m_mappedBase = base;
+    m_mappedSize = totalSize;
+
+    m_nPositions = static_cast<int>(N);
+    // zobrist base points to the next location
+    m_zobristBase = reinterpret_cast<const quint64*>(p);
+    // position info base after zobrist array:
+    p += N * sizeof(quint64);
+    m_positionInfoStart = static_cast<quint64>(p - base); // offset into mapped base
+    m_gameIdsDataStart = m_positionInfoStart + N * sizeof(PositionInfo);
+
+    zobristPositions.clear();
+    insertedCount.clear();
+    whiteWin.clear();
+    blackWin.clear();
+    draw.clear();
+    startIndex.clear();
+
+    return true;
 }
 
-QVector<quint32> OpeningInfo::readGameIDs(int openingIndex) const {
+void OpeningInfo::unmapDataFile()  {
+    if (!m_mappedBase) return;
+    if (m_mappedFile.isOpen()) {
+        m_mappedFile.unmap(const_cast<uchar*>(m_mappedBase));
+        m_mappedBase = nullptr;
+        m_mappedSize = 0;
+        m_mappedFile.close();
+    } else {
+        m_mappedBase = nullptr;
+        m_mappedSize = 0;
+    }
+}
+
+bool OpeningInfo::mapDataFile() {
+    if (m_mappedBase) return true;
+    if (m_dataFilePath.isEmpty()) return false;
+    m_mappedFile.setFileName(m_dataFilePath);
+    if (!m_mappedFile.open(QIODevice::ReadOnly)) return false;
+    qint64 size = m_mappedFile.size();
+    if (size <= 0) return false;
+    const uchar* base = m_mappedFile.map(0, size);
+    if (!base) {
+        m_mappedFile.close();
+        return false;
+    }
+    m_mappedBase = base;
+    m_mappedSize = size;
+    return true;
+}
+
+QPair<PositionWinrate, int> OpeningInfo::getWinrate(const quint64 zobrist)
+{
+    PositionWinrate winrate = {0, 0, 0};
+    if (!m_mappedBase || m_nPositions == 0 || !m_zobristBase) return {winrate, 0};
+    const quint64* begin = m_zobristBase;
+    const quint64* end = m_zobristBase + m_nPositions;
+    const quint64* it = std::lower_bound(begin, end, zobrist);
+    if (it == end || *it != zobrist) return {winrate, 0};
+    int index = static_cast<int>(it - begin);
+    quint64 positionOffset = m_positionInfoStart + static_cast<quint64>(index) * sizeof(OpeningInfo::PositionInfo);
+    if (positionOffset + sizeof(OpeningInfo::PositionInfo) <= static_cast<quint64>(m_mappedSize)) {
+        const OpeningInfo::PositionInfo* pi = reinterpret_cast<const OpeningInfo::PositionInfo*>(m_mappedBase + positionOffset);
+        winrate.whiteWin = static_cast<int>(pi->whiteWin);
+        winrate.blackWin = static_cast<int>(pi->blackWin);
+        winrate.draw = static_cast<int>(pi->draw);
+    }
+    return {winrate, index};
+}
+
+QVector<quint32> OpeningInfo::readGameIDs(int openingIndex) {
     QVector<quint32> out;
-    if (openingIndex < 0 || openingIndex >= prefixSum.size()) return out;
+    if (openingIndex < 0) return out;
     if (m_dataFilePath.isEmpty()) return out;
 
-    quint32 startIdx = static_cast<quint32>(prefixSum[openingIndex]);
-    quint32 totalCount = static_cast<quint32>(insertedCount[openingIndex]);
+    bool mapped = mapDataFile();
+    quint64 posOffset = m_positionInfoStart + static_cast<quint64>(openingIndex) * sizeof(PositionInfo);
+
+    PositionInfo pi;
+    if (mapped && m_mappedBase && posOffset + sizeof(PositionInfo) <= static_cast<quint64>(m_mappedSize)) {
+        // read from mapped memory
+        const PositionInfo* posPtr = reinterpret_cast<const PositionInfo*>(m_mappedBase + posOffset);
+        pi = *posPtr; // copies the struct (native endian)
+    } else {
+        // fallback: open file and read position entry
+        QFile f(m_dataFilePath);
+        if (!f.open(QIODevice::ReadOnly)) {
+            qDebug() << "OpeningInfo::readGameIDs: cannot open" << m_dataFilePath;
+            return out;
+        }
+        if (!f.seek(static_cast<qint64>(posOffset))) {
+            qDebug() << "OpeningInfo::readGameIDs: failed to seek to position offset" << posOffset;
+            f.close();
+            return out;
+        }
+        QByteArray mb = f.read(sizeof(PositionInfo));
+        f.close();
+        if (mb.size() != sizeof(PositionInfo)) {
+            qDebug() << "OpeningInfo::readGameIDs: short position read";
+            return out;
+        }
+        memcpy(&pi, mb.constData(), sizeof(PositionInfo));
+    }
+
+    quint64 startIndex = pi.startIndex;
+    quint32 totalCount = pi.insertedCount;
     if (totalCount == 0) return out;
-
     quint32 toRead = qMin<quint32>(totalCount, static_cast<quint32>(MAX_GAMES_TO_SHOW));
+    quint64 byteOffset = m_gameIdsDataStart + startIndex * sizeof(quint32);
+    quint64 bytes = static_cast<quint64>(toRead) * sizeof(quint32);
 
-    QFile file(m_dataFilePath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Cannot open openings file to read gameIDs:" << m_dataFilePath;
+    if (mapped && m_mappedBase && byteOffset + bytes <= static_cast<quint64>(m_mappedSize)) {
+        // read directly from mapped gameIDs area
+        const quint32* idsPtr = reinterpret_cast<const quint32*>(m_mappedBase + byteOffset);
+        out.resize(toRead);
+        memcpy(out.data(), idsPtr, bytes);
         return out;
     }
 
-    // compute byte offset: dataStart + startIdx * sizeof(quint32)
-    quint64 byteOffset = m_gameIdsDataStart + static_cast<quint64>(startIdx) * sizeof(quint32);
-    if (!file.seek(static_cast<qint64>(byteOffset))) {
-        qWarning() << "Failed to seek to gameIDs offset" << byteOffset;
-        file.close();
+    // fallback to QFile read
+    QFile f2(m_dataFilePath);
+    if (!f2.open(QIODevice::ReadOnly)) {
+        qDebug() << "OpeningInfo::readGameIDs: cannot open data file (fallback)" << m_dataFilePath;
         return out;
     }
-
-    qint64 bytesToRead = static_cast<qint64>(toRead) * sizeof(quint32);
-    QByteArray buf = file.read(bytesToRead);
-    if (buf.size() != bytesToRead) {
-        qWarning() << "Failed to read expected gameIDs bytes:" << buf.size() << "expected" << bytesToRead;
-        file.close();
+    if (!f2.seek(static_cast<qint64>(byteOffset))) {
+        qDebug() << "OpeningInfo::readGameIDs: seek failed (fallback) to" << byteOffset;
+        f2.close();
+        return out;
+    }
+    QByteArray buf = f2.read(static_cast<qint64>(bytes));
+    f2.close();
+    if (buf.size() != static_cast<int>(bytes)) {
+        qDebug() << "OpeningInfo::readGameIDs: short read (fallback) got" << buf.size() << "expected" << bytes;
         return out;
     }
     out.resize(toRead);
-    memcpy(out.data(), buf.constData(), bytesToRead);
-
-    // convert endianness if necessary (QDataStream default used native endianness when writing raw bytes).
-    // If you wrote raw native-endian values in serialize(), reading on same architecture is fine.
-
-    file.close();
+    memcpy(out.data(), buf.constData(), bytes);
     return out;
 }
 
@@ -105,10 +262,6 @@ OpeningViewer::OpeningViewer(QWidget *parent)
 {   
     // load opening book
     mOpeningBookLoaded = mOpeningInfo.deserialize("./opening/openings.bin");
-    mOpeningInfo.prefixSum.push_back(0);
-    for (int i = 0; i < mOpeningInfo.zobristPositions.size(); i++){
-        mOpeningInfo.prefixSum.push_back(mOpeningInfo.prefixSum.back() + mOpeningInfo.insertedCount[i]);
-    }
 
     QHBoxLayout* mainLayout = new QHBoxLayout();
 
@@ -193,11 +346,7 @@ void OpeningViewer::onMoveSelected(QSharedPointer<NotationMove>& move)
 
 void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position, const QString moveText)
 {
-    if (!mOpeningInfo.zobristPositions.size()){
-        return;
-    }
-
-    auto [winrate, openingIndex] = getWinrate(zobrist);
+    auto [winrate, openingIndex] = mOpeningInfo.getWinrate(zobrist);
     int total = winrate.whiteWin + winrate.blackWin + winrate.draw;
 
     mStatsLabel->setText(tr("%1 Games").arg(total));
@@ -208,7 +357,7 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
         ChessPosition tempPos;
         tempPos.copyFrom(*position);
         tempPos.applyMove(sr, sc, dr, dc, QChar(promo));
-        auto [newWin, _] = getWinrate(tempPos.computeZobrist());
+        auto [newWin, _] = mOpeningInfo.getWinrate(tempPos.computeZobrist());
         int total = newWin.whiteWin + newWin.blackWin + newWin.draw;
         if (total){
             float whitePct = newWin.whiteWin * 100 / total, blackPct = newWin.blackWin * 100 / total, drawPct = newWin.draw * 100 / total;
@@ -225,34 +374,13 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
     }
     mPositionLabel->setText((moveText.isEmpty() ? "Starting Position" : "Position after " + numPrefix + moveText));
     if (total){
-        updateGamesList(openingIndex);
+        updateGamesList(openingIndex, winrate);
     } else {
         mMovesList->clear();
         mGamesList->setRowCount(0);
         mGamesLabel->setText("Games: 0 of 0 shown");
         mStatsLabel->setText(tr("0 Games"));
     }
-}
-
-QPair<PositionWinrate, int> OpeningViewer::getWinrate(const quint64 zobrist)
-{
-    PositionWinrate winrate = {0, 0, 0};
-    int low = 0, high = mOpeningInfo.zobristPositions.size()-1;
-    while (low < high){
-        int mid = (low + high)/2;
-        if (mOpeningInfo.zobristPositions[mid] < zobrist){
-            low = mid+1;
-        } else {
-            high = mid;
-        }
-    }
-    if (zobrist == mOpeningInfo.zobristPositions[low]) {
-        winrate.whiteWin += mOpeningInfo.whiteWin[low];
-        winrate.blackWin += mOpeningInfo.blackWin[low];
-        winrate.draw += mOpeningInfo.draw[low];
-    }
-    // qDebug() << low << zobrist << mOpeningInfo.zobristPositions[low];
-    return {winrate, low};
 }
 
 bool OpeningViewer::ensureHeaderOffsetsLoaded(const QString &path)
@@ -289,7 +417,7 @@ QVector<PGNGame> OpeningViewer::loadGameHeadersBatch(const QString &path, const 
 
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) {
-        qWarning() << "cannot open headers file:" << path;
+        qDebug() << "cannot open headers file:" << path;
         return out;
     }
     QDataStream in(&f);
@@ -324,24 +452,15 @@ QVector<PGNGame> OpeningViewer::loadGameHeadersBatch(const QString &path, const 
     return out;
 }
 
-void OpeningViewer::updateGamesList(const int openingIndex)
+void OpeningViewer::updateGamesList(const int openingIndex, const PositionWinrate winrate)
 {
-    if (openingIndex+1 >= mOpeningInfo.prefixSum.size()){
-        qDebug() << "Failed to update opening game list: openingIndex out of range!";
+    if (winrate.whiteWin + winrate.blackWin + winrate.draw == 0){
+        mGamesList->setRowCount(0);
+        mGamesLabel->setText(tr("Games: 0 of 0 shown"));
         return;
     }
 
-    int startInd = mOpeningInfo.prefixSum[openingIndex], endInd = mOpeningInfo.prefixSum[openingIndex+1];
     QVector<quint32> gameIDs = mOpeningInfo.readGameIDs(openingIndex);
-
-    // for (int i = startInd; i < endInd && i - startInd < MAX_GAMES_TO_SHOW; i++){
-    //     if (i >= mOpeningInfo.gameIDs.size()){
-    //         qDebug() << "Failed to add game(s) to opening game list: prefixSum out of range!";
-    //         break;
-    //     }
-    //     gameIDs.push_back(mOpeningInfo.gameIDs[i]);
-    // }
-
     QVector<PGNGame> games = loadGameHeadersBatch("./opening/openings.headers", gameIDs);
 
     mGamesList->setRowCount(0);
@@ -371,7 +490,7 @@ void OpeningViewer::updateGamesList(const int openingIndex)
     }
 
     mGamesList->setSortingEnabled(true);
-    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIDs.size(), MAX_GAMES_TO_SHOW)).arg(mOpeningInfo.whiteWin[openingIndex] + mOpeningInfo.blackWin[openingIndex] + mOpeningInfo.draw[openingIndex]));
+    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIDs.size(), MAX_GAMES_TO_SHOW)).arg(winrate.whiteWin + winrate.blackWin + winrate.draw));
 }
 
 // helper
