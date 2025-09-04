@@ -366,7 +366,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
 void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     QString from = m_boardData[sr][sc];
     if (from.size() < 2) {
-        qWarning() << "Invalid ‘from’ string, aborting move.";
+        qDebug() << "Invalid ‘from’ string, aborting move.";
         return;
     }
 
@@ -671,7 +671,7 @@ QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) con
 {
     const QString fromSq = m_boardData[sr][sc];
     if (fromSq.size() < 2) {
-        qWarning() << "Invalid ‘from’ string, aborting move.";
+        qDebug() << "Invalid ‘from’ string, aborting move.";
         return "";
     }
     QChar piece = fromSq[1];  // 'P','N','B','R','Q','K'
