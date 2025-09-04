@@ -1,4 +1,4 @@
-#ifndef OPENINGVIEWER_H
+ #ifndef OPENINGVIEWER_H
 #define OPENINGVIEWER_H
 
 #include <QWidget>
@@ -60,8 +60,13 @@ struct OpeningInfo {
     QVector<int> blackWin;
     QVector<int> draw;
 
+    QString m_dataFilePath;
+    quint64 m_gameIdsDataStart = 0;
+
     bool serialize(const QString& path) const;
     bool deserialize(const QString& path);
+
+    QVector<quint32> readGameIDs(int openingIndex) const;
 };
 
 class OpeningViewer : public QWidget

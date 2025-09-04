@@ -17,13 +17,25 @@ bool OpeningInfo::serialize(const QString& path) const {
     out.setVersion(QDataStream::Qt_6_5); // set version for compatibility
 
     // write arrays
-    out << gameIDs;
     out << zobristPositions;
     out << insertedCount;
     out << whiteWin;
     out << blackWin;
     out << draw;
 
+    if (!gameIDs.isEmpty()) {
+        // write raw bytes
+        const char* buf = reinterpret_cast<const char*>(gameIDs.constData());
+        qint64 bytesToWrite = static_cast<qint64>(gameIDs.size()) * sizeof(quint32);
+        qint64 written = file.write(buf, bytesToWrite);
+        if (written != bytesToWrite) {
+            file.close();
+            return false;
+        }
+    }
+
+    file.flush();
+    file.close();
     return out.status() == QDataStream::Ok;
 }
 
@@ -33,14 +45,59 @@ bool OpeningInfo::deserialize(const QString& path) {
     QDataStream in(&file);
     in.setVersion(QDataStream::Qt_6_5);
 
-    in >> gameIDs;
     in >> zobristPositions;
     in >> insertedCount;
     in >> whiteWin;
     in >> blackWin;
     in >> draw;
 
+    m_gameIdsDataStart = static_cast<quint64>(file.pos());
+    m_dataFilePath = path;
+
+    file.close();
     return in.status() == QDataStream::Ok;
+}
+
+QVector<quint32> OpeningInfo::readGameIDs(int openingIndex) const {
+    QVector<quint32> out;
+    if (openingIndex < 0 || openingIndex >= prefixSum.size()) return out;
+    if (m_dataFilePath.isEmpty()) return out;
+
+    quint32 startIdx = static_cast<quint32>(prefixSum[openingIndex]);
+    quint32 totalCount = static_cast<quint32>(insertedCount[openingIndex]);
+    if (totalCount == 0) return out;
+
+    quint32 toRead = qMin<quint32>(totalCount, static_cast<quint32>(MAX_GAMES_TO_SHOW));
+
+    QFile file(m_dataFilePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Cannot open openings file to read gameIDs:" << m_dataFilePath;
+        return out;
+    }
+
+    // compute byte offset: dataStart + startIdx * sizeof(quint32)
+    quint64 byteOffset = m_gameIdsDataStart + static_cast<quint64>(startIdx) * sizeof(quint32);
+    if (!file.seek(static_cast<qint64>(byteOffset))) {
+        qWarning() << "Failed to seek to gameIDs offset" << byteOffset;
+        file.close();
+        return out;
+    }
+
+    qint64 bytesToRead = static_cast<qint64>(toRead) * sizeof(quint32);
+    QByteArray buf = file.read(bytesToRead);
+    if (buf.size() != bytesToRead) {
+        qWarning() << "Failed to read expected gameIDs bytes:" << buf.size() << "expected" << bytesToRead;
+        file.close();
+        return out;
+    }
+    out.resize(toRead);
+    memcpy(out.data(), buf.constData(), bytesToRead);
+
+    // convert endianness if necessary (QDataStream default used native endianness when writing raw bytes).
+    // If you wrote raw native-endian values in serialize(), reading on same architecture is fine.
+
+    file.close();
+    return out;
 }
 
 OpeningViewer::OpeningViewer(QWidget *parent)
@@ -274,16 +331,16 @@ void OpeningViewer::updateGamesList(const int openingIndex)
         return;
     }
 
-    QVector<quint32> gameIDs;
     int startInd = mOpeningInfo.prefixSum[openingIndex], endInd = mOpeningInfo.prefixSum[openingIndex+1];
-    gameIDs.reserve(qMin(endInd - startInd, MAX_GAMES_TO_SHOW));
-    for (int i = startInd; i < endInd && i - startInd < MAX_GAMES_TO_SHOW; i++){
-        if (i >= mOpeningInfo.gameIDs.size()){
-            qDebug() << "Failed to add game(s) to opening game list: prefixSum out of range!";
-            break;
-        }
-        gameIDs.push_back(mOpeningInfo.gameIDs[i]);
-    }
+    QVector<quint32> gameIDs = mOpeningInfo.readGameIDs(openingIndex);
+
+    // for (int i = startInd; i < endInd && i - startInd < MAX_GAMES_TO_SHOW; i++){
+    //     if (i >= mOpeningInfo.gameIDs.size()){
+    //         qDebug() << "Failed to add game(s) to opening game list: prefixSum out of range!";
+    //         break;
+    //     }
+    //     gameIDs.push_back(mOpeningInfo.gameIDs[i]);
+    // }
 
     QVector<PGNGame> games = loadGameHeadersBatch("./opening/openings.headers", gameIDs);
 
