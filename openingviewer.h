@@ -73,12 +73,15 @@ public:
     void updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position, const QString moveText);
     QPair<PositionWinrate, int> getWinrate(const quint64 zobrist);
 
+public slots:
+    void onMoveSelected(QSharedPointer<NotationMove>& move);
+
 signals:
     void moveClicked(const QString& move);
     void gameSelected(int gameId); 
 
 private slots:
-    void onMoveSelected(QTreeWidgetItem* item, int column);
+    void onNextMoveSelected(QTreeWidgetItem* item, int column);
     void onGameSelected(int row, int column);  
     
 private:

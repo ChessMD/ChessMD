@@ -489,7 +489,7 @@ void ChessGameWindow::openingSetup()
 
     m_openingViewer = new OpeningViewer(this);
     auto currentMove = m_notationViewer->getSelectedMove();
-    if (currentMove->m_zobristHash == -1) currentMove->m_zobristHash = currentMove->m_position->computeZobrist();
+    if (!currentMove->m_zobristHash) currentMove->m_zobristHash = currentMove->m_position->computeZobrist();
     m_openingViewer->updatePosition(currentMove->m_zobristHash, currentMove->m_position, currentMove->moveText);
 
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
@@ -498,21 +498,17 @@ void ChessGameWindow::openingSetup()
     m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::BottomDockWidgetArea, m_openingDock);
     
-    // update openingviewer when notationViewer changes
-    connect(m_notationViewer, &NotationViewer::moveSelected, this, [this](QSharedPointer<NotationMove> move) {
-        if (move->m_zobristHash == -1) move->m_zobristHash = move->m_position->computeZobrist();
-        m_openingViewer->updatePosition(move->m_zobristHash, move->m_position, move->moveText);
-    });
+    // update openingViewer when notationViewer changes
+    connect(m_notationViewer, &NotationViewer::moveSelected, m_openingViewer, &OpeningViewer::onMoveSelected);
     
-    connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const QString& move) {
-        if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
-            // todo, make it play the move and create a variation maybe idk
-        }
-    });
+    // connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const QString& move) {
+    //     if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
+    //         // todo, make it play the move and create a variation maybe idk
+    //     }
+    // });
 
     updateOpeningActions();
 }
-
 
 void ChessGameWindow::openingTeardown()
 {
@@ -520,14 +516,15 @@ void ChessGameWindow::openingTeardown()
         return;
     }
 
-    disconnect(m_notationViewer, &NotationViewer::moveSelected, nullptr, nullptr);
-    disconnect(m_openingViewer,  &OpeningViewer::moveClicked, nullptr, nullptr);
+    // disconnect(m_openingViewer, &OpeningViewer::moveSelected, nullptr, nullptr);
+    // disconnect(m_openingViewer, &OpeningViewer::moveClicked, nullptr, nullptr);
 
     removeDockWidget(m_openingDock);
     m_openingDock->setWidget(nullptr);
-    delete m_openingDock;
-    m_openingDock = nullptr;
+    m_openingViewer->deleteLater();
+    m_openingDock->deleteLater();
     m_openingViewer = nullptr;
+    m_openingDock = nullptr;
 
     updateOpeningActions();
 }

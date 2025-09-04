@@ -53,10 +53,6 @@ OpeningViewer::OpeningViewer(QWidget *parent)
         mOpeningInfo.prefixSum.push_back(mOpeningInfo.prefixSum.back() + mOpeningInfo.insertedCount[i]);
     }
 
-    //
-    // ui
-    //
-
     QHBoxLayout* mainLayout = new QHBoxLayout();
 
     // moves list side
@@ -128,21 +124,24 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mMovesList->setStyleSheet(styleSheet);
     mGamesList->setStyleSheet(styleSheet);
     
-    connect(mMovesList, &QTreeWidget::itemDoubleClicked, this, &OpeningViewer::onMoveSelected);
+    connect(mMovesList, &QTreeWidget::itemDoubleClicked, this, &OpeningViewer::onNextMoveSelected);
     connect(mGamesList, &QTableWidget::cellDoubleClicked, this, &OpeningViewer::onGameSelected);
+}
+
+void OpeningViewer::onMoveSelected(QSharedPointer<NotationMove>& move)
+{
+    if (!move->m_zobristHash) move->m_zobristHash = move->m_position->computeZobrist();
+    updatePosition(move->m_zobristHash, move->m_position, move->moveText);
 }
 
 void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPosition> position, const QString moveText)
 {
-    auto [winrate, openingIndex] = getWinrate(zobrist);
-    int total = winrate.whiteWin + winrate.blackWin + winrate.draw;
-    if (total == 0){
-        mMovesList->clear();
-        mGamesList->setRowCount(0);
-        mGamesLabel->setText("Games: 0 of 0 shown");
-        mStatsLabel->setText(tr("0 Games"));
+    if (!mOpeningInfo.zobristPositions.size()){
         return;
     }
+
+    auto [winrate, openingIndex] = getWinrate(zobrist);
+    int total = winrate.whiteWin + winrate.blackWin + winrate.draw;
 
     mStatsLabel->setText(tr("%1 Games").arg(total));
     mMovesList->clear();
@@ -161,14 +160,21 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
     }
 
     QString numPrefix;
-    int moveNum = position->getPlyCount()/2 + 1;
+    int moveNum = (position->getPlyCount()-1)/2 + 1;
     if (position->m_sideToMove == 'b') {
         numPrefix = QString::number(moveNum) + ".";
     } else {
         numPrefix = QString::number(moveNum) + "...";
     }
     mPositionLabel->setText((moveText.isEmpty() ? "Starting Position" : "Position after " + numPrefix + moveText));
-    updateGamesList(openingIndex);
+    if (total){
+        updateGamesList(openingIndex);
+    } else {
+        mMovesList->clear();
+        mGamesList->setRowCount(0);
+        mGamesLabel->setText("Games: 0 of 0 shown");
+        mStatsLabel->setText(tr("0 Games"));
+    }
 }
 
 QPair<PositionWinrate, int> OpeningViewer::getWinrate(const quint64 zobrist)
@@ -188,6 +194,7 @@ QPair<PositionWinrate, int> OpeningViewer::getWinrate(const quint64 zobrist)
         winrate.blackWin += mOpeningInfo.blackWin[low];
         winrate.draw += mOpeningInfo.draw[low];
     }
+    // qDebug() << low << zobrist << mOpeningInfo.zobristPositions[low];
     return {winrate, low};
 }
 
@@ -330,7 +337,7 @@ void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct
     item->setData(2, Qt::UserRole, whitePct);
 }
 
-void OpeningViewer::onMoveSelected(QTreeWidgetItem* item, int column)
+void OpeningViewer::onNextMoveSelected(QTreeWidgetItem* item, int column)
 {
     if (!item) return;
     

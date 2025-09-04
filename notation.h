@@ -22,7 +22,7 @@ public:
     NotationMove(const QString &text, ChessPosition &position);
 
     QString FEN;
-    quint64 m_zobristHash;
+    quint64 m_zobristHash = 0;
 
     QString commentBefore;
     QString moveText;
