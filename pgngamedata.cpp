@@ -39,7 +39,8 @@ QString PGNGame::serializePGN(){
     return PGNtext;
 }
 
-bool PGNGame::serializeHeaderData(const QString &path, const std::vector<PGNGame> &games) {
+bool PGNGame::serializeHeaderData(const QString &path, const std::vector<PGNGame> &games)
+{
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly)) return false;
     

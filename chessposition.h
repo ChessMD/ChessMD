@@ -66,9 +66,9 @@ public:
     quint64 computeZobrist() const;
 
     // Tries to make a new move from the current position given a SAN string
-    bool tryMakeMove(QString san, QSharedPointer<NotationMove> move);
+    bool tryMakeMove(QString san, QSharedPointer<NotationMove> move, bool openingSpeedup = false);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
-    bool validateMove(int oldRow, int oldCol, int newRow, int newCol) const;
+    bool validateMove(int oldRow, int oldCol, int newRow, int newCol, bool openingSpeedup = false) const;
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
@@ -118,6 +118,7 @@ void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int 
 QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove);
 QVector<QVector<QString>> convertFenToBoardData(const QString &fen);
 // Recursively builds a Notation tree from PgnGameData
-void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove);
+void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove, bool openingCutoff = false);
+void parseBodyAndBuild(QString &bodyText, QSharedPointer<NotationMove> rootMove, bool openingCutoff);
 
 #endif // CHESSPOSITION_H

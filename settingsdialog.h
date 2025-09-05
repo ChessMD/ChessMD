@@ -4,6 +4,8 @@
 #include <QDialog>
 #include <QString>
 
+#include "openingviewer.h"
+
 class QListWidget;
 class QStackedWidget;
 class QLabel;
@@ -22,6 +24,9 @@ private slots:
     void onThemeChanged();
 
 private:
+    void importPgnFileStreaming(const QString &file, QProgressBar *progressBar);
+    void reportProgress(qint64 bytesRead, qint64 total, QProgressBar *progressBar);
+
     QListWidget* mCategoryList;
     QStackedWidget* mStackedWidget;
     QLabel* mOpeningsPathLabel;

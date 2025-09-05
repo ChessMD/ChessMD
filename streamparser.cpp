@@ -59,12 +59,13 @@ void dfsParse(QString &bodyText, int &pos, QSharedPointer<VariationNode> &curVar
     curVariation->plyCount = plyCount;
 }
 
-void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove){
-    int pos = 0;
-    QSharedPointer<VariationNode> rootVariation = QSharedPointer<VariationNode>::create();
-    dfsParse(bodyText, pos, rootVariation);
+void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff){
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-    buildNotationTree(rootVariation, rootMove);
+    parseBodyAndBuild(bodyText, rootMove, openingCutoff);
+
+    // QSharedPointer<VariationNode> rootVariation = QSharedPointer<VariationNode>::create();
+    // dfsParse(bodyText, pos, rootVariation);
+    // buildNotationTree(rootVariation, rootMove, openingCutoff);
 }
 
 std::vector<PGNGame> StreamParser::parseDatabase(){

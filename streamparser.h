@@ -23,4 +23,4 @@ private:
     std::istream &streamBuffer;
 };
 
-void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove);
+void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff = false);

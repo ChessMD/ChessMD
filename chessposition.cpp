@@ -3,6 +3,7 @@ March 20, 2025: File Creation
 */
 
 #include "chessposition.h"
+#include "openingviewer.h"
 
 #include <QRegularExpression>
 #include <QDebug>
@@ -51,7 +52,7 @@ void ChessPosition::copyFrom(const ChessPosition &other)
     m_evalScore = other.m_evalScore;
 }
 
-bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol) const
+bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol, bool openingSpeedup) const
 {
     if (oldRow < 0 || oldRow >= 8 || oldCol < 0 || oldCol >= 8 || newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8 || (oldRow == newRow && oldCol == newCol)){
         return false;
@@ -97,11 +98,13 @@ bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol)
         return true;
     }
 
-    ChessPosition temp;
-    temp.copyFrom(*this);
-    temp.applyMove(oldRow, oldCol, newRow, newCol, '\0');
-    if (temp.inCheck(color))
-        return false;
+    if (!openingSpeedup){
+        ChessPosition temp;
+        temp.copyFrom(*this);
+        temp.applyMove(oldRow, oldCol, newRow, newCol, '\0');
+        if (temp.inCheck(color))
+            return false;
+    }
 
     switch (piece.toLatin1()) {
     case 'P': {
@@ -259,7 +262,7 @@ void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)
     }
 }
 
-bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) {
+bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move, bool openingSpeedup) {
     san = san.trimmed();
     while (!san.isEmpty() && (san.endsWith('+') || san.endsWith('#'))){
         san.chop(1);
@@ -278,7 +281,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
         int newKC = kingSide?6:2;
         int oldRC = kingSide?7:0;
         int newRC = kingSide?5:3;
-        if (!validateMove(row, oldKC, row, newKC)) return false;
+        if (!validateMove(row, oldKC, row, newKC, openingSpeedup)) return false;
         move->lanText = QString("%1%2%3%4").arg(QChar('a' + oldKC)).arg(8 - row).arg(QChar('a' + newKC)).arg(8 - row);
         applyMove(row, oldKC, row, newKC, '\0');
         if (color=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
@@ -342,8 +345,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
             }
         } else if (disamb.size() == 2) {
             // both file & rank given
-            ok = (sc == disamb[0].unicode() - 'a')
-                 && (sr == (8 - disamb[1].digitValue()));
+            ok = (sc == disamb[0].unicode() - 'a') && (sr == (8 - disamb[1].digitValue()));
         }
         if (ok)
             candidates.append(o);
@@ -352,7 +354,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
     // 9) Try each candidate
     for (auto &o : candidates) {
         int sr = o.first, sc = o.second;
-        if (validateMove(sr, sc, dr, dc)) {
+        if (validateMove(sr, sc, dr, dc, openingSpeedup)) {
             move->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
             applyMove(sr, sc, dr, dc, promo);
             // update halfmove/fullmove…
@@ -533,15 +535,192 @@ void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int 
     writeMoves(principal, out, plyCount);
 }
 
-void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove)
+void parseBodyAndBuild(QString &bodyText, QSharedPointer<NotationMove> rootMove, bool openingCutoff)
 {
-    int plyCount = varNode->plyCount;
-    int variationIdx = 0;
+    if (!rootMove) return;
+    int n = bodyText.size();
+    int pos = 0, totalDepth = 0;
+    QString token;
+
+    // current parent (position *before* the next move)
+    QSharedPointer<NotationMove> curParent = rootMove;
+
+    // stack storing parents to restore when a ')' is seen
+    QVector<QSharedPointer<NotationMove>> variationStack;
+
+    auto attachCommentTo = [&](const QSharedPointer<NotationMove>& target, const QString& c){
+        if (!target) return;
+        if (!target->commentAfter.isEmpty()) target->commentAfter += " ";
+        target->commentAfter += c.trimmed();
+    };
+
+    auto stripMoveNumberPrefix = [](QString &tkn){
+        int m = tkn.size();
+        int p = 0;
+        while (p < m && tkn.at(p).isDigit()) ++p;
+        if (p > 0) {
+            int dotsStart = p;
+            while (p < m && tkn.at(p) == QChar('.')) ++p;
+            if (p > dotsStart) tkn.remove(0, p);
+        }
+        if (!tkn.isEmpty() && tkn.front().isSpace()) tkn.remove(0, 1);
+    };
+
+    auto processToken = [&](QString tkn)->bool {
+        // returns true to signal we should stop parsing (result token seen)
+        tkn = tkn.trimmed();
+        if (tkn.isEmpty()) return false;
+
+        // strip move number prefix (fast)
+        stripMoveNumberPrefix(tkn);
+        if (tkn.isEmpty()) return false;
+
+        // result tokens -> stop parsing this game/variation
+        if (tkn == "1-0" || tkn == "0-1" || tkn == "1/2-1/2" || tkn == "*") {
+            return true;
+        }
+
+        // NAG ($...) handling
+        if (tkn.startsWith('$')) {
+            bool ok = false;
+            int code = tkn.mid(1).toInt(&ok);
+            if (ok && NUMERIC_ANNOTATION_MAP.contains(code)) {
+                if (curParent) curParent->annotation1 = NUMERIC_ANNOTATION_MAP.value(code);
+            } else {
+                attachCommentTo(curParent, tkn);
+            }
+            return false;
+        }
+
+        // comments embedded as tokens (shouldn't normally happen)
+        if (tkn.startsWith('{')) {
+            if (tkn.endsWith('}')) {
+                QString inner = tkn.mid(1, tkn.size()-2).trimmed();
+                attachCommentTo(curParent, inner);
+            } else {
+                attachCommentTo(curParent, tkn.mid(1).trimmed());
+            }
+            return false;
+        }
+
+        if (openingCutoff && totalDepth >= MAX_OPENING_DEPTH) {
+            return false;
+        }
+
+        // Create child move
+        if (!curParent) return false; // defensive
+        QSharedPointer<NotationMove> child = QSharedPointer<NotationMove>::create(tkn, *curParent->m_position);
+        if (!child->m_position->tryMakeMove(tkn, child, openingCutoff)) {
+            // illegal move -> append as comment
+            attachCommentTo(curParent, tkn);
+            return false;
+        }
+
+        // success - link and advance current parent
+        child->m_zobristHash = child->m_position->computeZobrist();
+        linkMoves(curParent, child);
+        totalDepth++;
+
+        // advance: subsequent tokens belong to this child (continuation)
+        curParent = child;
+        return false;
+    };
+
+    // main loop: collect tokens and handle delimiters explicitly
+    while (pos < n) {
+        QChar ch = bodyText.at(pos);
+
+        // comment start: flush token first, then read full comment and attach
+        if (ch == '{') {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return; // result token seen
+                token.clear();
+            }
+            ++pos; // consume '{'
+            QString comment;
+            while (pos < n) {
+                QChar cc = bodyText.at(pos++);
+                if (cc == '}') break;
+                comment += cc;
+            }
+            attachCommentTo(curParent, comment);
+            continue;
+        }
+
+        // open paren: variation start. Flush token first.
+        if (ch == '(') {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return;
+                token.clear();
+            }
+            ++pos; // consume '('
+
+            // push current parent so we can restore after variation ends
+            variationStack.append(curParent);
+
+            // anchor variation at previous move when available
+            QSharedPointer<NotationMove> anchor = curParent;
+            if (curParent && !curParent->m_previousMove.isNull()) {
+                if (auto locked = curParent->m_previousMove.lock()) anchor = locked;
+            }
+            // start parsing variation anchored at 'anchor'
+            curParent = anchor;
+            continue;
+        }
+
+        // close paren: variation end. Flush token first.
+        if (ch == ')') {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return;
+                token.clear();
+            }
+            ++pos; // consume ')'
+            if (!variationStack.isEmpty()) {
+                // restore parent to what it was before the '('
+                curParent = variationStack.takeLast();
+            } else {
+                // unmatched ')', be defensive: keep curParent as-is
+            }
+            continue;
+        }
+
+        // whitespace -> token boundary
+        if (ch.isSpace()) {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return;
+                token.clear();
+            }
+            ++pos;
+            continue;
+        }
+
+        // default: regular token character
+        token += ch;
+        ++pos;
+    }
+
+    // if leftover token at EOF, process it
+    if (!token.isEmpty()) {
+        processToken(token);
+        token.clear();
+    }
+}
+
+void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove, bool openingCutoff)
+{
+    int plyCount = varNode->plyCount, variationIdx = 0, varLen = 0;
     QString comment;
 
-    for (int i = 0; i < plyCount; ++i) {
+    for (int i = 0; i < plyCount && (!openingCutoff || varLen < MAX_OPENING_DEPTH); i++) {
         QString token = varNode->moves[i];
-        token.remove(QRegularExpression(R"(^\d+\.+)")); // remove move number prefixes
+
+        // remove prefix
+        int n = token.size(), p = 0;
+        while (p < n && token[p].isDigit()) p++;
+        if (p > 0) {
+            while (p < n && token[p] == QChar('.')) p++;
+            token.remove(0, p);
+        }
 
         if (token.startsWith('$')) {
             bool ok = false;
@@ -579,13 +758,14 @@ void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPoint
         }
 
         QSharedPointer<NotationMove> childMove = QSharedPointer<NotationMove>::create(token, *parentMove->m_position);
-        if (!childMove->m_position->tryMakeMove(token, childMove)) {
+        if (!childMove->m_position->tryMakeMove(token, childMove, openingCutoff)) {
             parentMove->commentAfter += token; // illegal move, let's just add it as a comment
             continue;
         }
         childMove->m_zobristHash = childMove->m_position->computeZobrist();
         linkMoves(parentMove, childMove);
         parentMove = childMove;
+        varLen++;
     }
 
     while (variationIdx < varNode->variations.size()) {

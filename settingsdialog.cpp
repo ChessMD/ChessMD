@@ -1,6 +1,5 @@
 #include "settingsdialog.h"
 #include "streamparser.h"
-#include "openingviewer.h"
 #include "chessqsettings.h"
 
 #include <QListWidget>
@@ -15,6 +14,7 @@
 #include <QOperatingSystemVersion>
 #include <QSettings>
 #include <QComboBox>
+#include <QTemporaryFile>
 #include <fstream>
 
 SettingsDialog::SettingsDialog(QWidget* parent)
@@ -108,7 +108,8 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     }
 }
 
-void SettingsDialog::onSelectEngineClicked() {
+void SettingsDialog::onSelectEngineClicked()
+{
     QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
     
     QString file_name;
@@ -129,6 +130,288 @@ void SettingsDialog::onSelectEngineClicked() {
     }
 }
 
+bool finalizeHeaderFile(const QString &finalPath, const QString &tmpPath, const QVector<quint64> &relativeOffsets)
+{
+    QFile tmp(tmpPath);
+    if (!tmp.open(QIODevice::ReadOnly)) return false;
+
+    QFile out(finalPath);
+    if (!out.open(QIODevice::WriteOnly)) {
+        tmp.close();
+        return false;
+    }
+
+    QDataStream outStream(&out);
+
+    quint32 gameCount = quint32(relativeOffsets.size());
+    // header blob will start after: 4 bytes (count) + 8 * gameCount (offset table)
+    quint64 base = 4 + quint64(8) * quint64(gameCount);
+
+    // write count
+    outStream << gameCount;
+
+    // write offsets adjusted by base
+    for (quint64 relOff : relativeOffsets) {
+        outStream << (quint64)(base + relOff);
+    }
+
+    // copy tmp blob contents to final file
+    const qint64 bufSize = 64 * 1024;
+    QByteArray buf;
+    buf.resize(bufSize);
+    tmp.seek(0);
+    while (!tmp.atEnd()) {
+        qint64 n = tmp.read(buf.data(), bufSize);
+        if (n <= 0) break;
+        out.write(buf.constData(), n);
+    }
+
+    out.close();
+    tmp.close();
+    tmp.remove();
+    return true;
+}
+
+void SettingsDialog::reportProgress(qint64 bytesRead, qint64 total, QProgressBar *progressBar) {
+    if (!progressBar) return;
+    if (total > 0) {
+        int scaled = int((double(bytesRead) / double(total)) * 1000.0);
+        progressBar->setRange(0, 1000);
+        progressBar->setValue(qBound(0, scaled, 1000));
+    } else {
+        // unknown total: pulse or increment small step
+        progressBar->setRange(0, 0); // busy
+    }
+    QApplication::processEvents();
+}
+
+void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *progressBar) {
+    if (file.isEmpty()) return;
+
+    // open input file as binary
+    std::ifstream ss(file.toStdString(), std::ios::binary);
+    if (ss.fail()) {
+        if (progressBar) progressBar->deleteLater();
+        mOpeningsPathLabel->setText(tr("Failed to open file"));
+        return;
+    }
+
+    // determine total bytes for progress reporting
+    ss.clear();
+    ss.seekg(0, std::ios::end);
+    std::streamoff totalBytesStream = ss.tellg();
+    ss.seekg(0, std::ios::beg);
+    qint64 totalBytes = (totalBytesStream < 0 ? 0 : (qint64)totalBytesStream);
+
+    // create temporary headers blob
+    QTemporaryFile tmpHeader;
+    // ensure it won't auto-remove until we finish:
+    tmpHeader.setAutoRemove(false);
+    tmpHeader.setFileTemplate(QDir::tempPath() + "/openings_headers_XXXXXX");
+    if (!tmpHeader.open()) {
+        if (progressBar) progressBar->deleteLater();
+        mOpeningsPathLabel->setText(tr("Failed to create temporary headers file"));
+        return;
+    }
+    QDataStream tmpOut(&tmpHeader);
+    QString tmpHeaderPath = tmpHeader.fileName();
+
+    QVector<quint64> headerRelativeOffsets;
+    QMap<quint64, QVector<quint32>> openingGameMap;
+    QMap<quint64, PositionWinrate> openingWinrateMap;
+
+    qint64 parseTime = 0;
+
+    // skip leading BOM/garbage until '['
+    const int EOF_MARK = std::char_traits<char>::eof();
+    int ch;
+    while ((ch = ss.peek()) != EOF_MARK && ch != '[') ss.get();
+
+    quint32 gameIndex = 0;
+    for (;;) {
+        if (!ss.good()) break;
+
+        std::string line;
+        std::string bodyTextStd;
+        QVector<QPair<QString, QString>> headersLocal;
+        QString resultStr;
+
+        // --- Read header lines
+        ch = ss.peek();
+        while (ch != EOF_MARK && ch == '[') {
+            if (!std::getline(ss, line)) break;
+
+            // parse tag and value robustly
+            size_t firstQuote = line.find('"');
+            QString tag, value;
+            if (firstQuote != std::string::npos) {
+                // tag between '[' and just before firstQuote (trim trailing whitespace)
+                size_t tagStart = 1; // skip '['
+                size_t tagEnd = firstQuote;
+                while (tagEnd > tagStart && isspace((unsigned char)line[tagEnd - 1])) --tagEnd;
+                if (tagEnd > tagStart) tag = QString::fromStdString(line.substr(tagStart, tagEnd - tagStart));
+
+                // value between firstQuote and secondQuote
+                size_t secondQuote = line.find('"', firstQuote + 1);
+                if (secondQuote != std::string::npos && secondQuote > firstQuote + 1) {
+                    value = QString::fromStdString(line.substr(firstQuote + 1, secondQuote - firstQuote - 1));
+                }
+            } else {
+                // fallback: line like [Key Value] or malformed — try to trim brackets
+                if (line.size() >= 2 && line.front() == '[' && line.back() == ']') {
+                    std::string inner = line.substr(1, line.size() - 2);
+                    // split by first space
+                    size_t sp = inner.find(' ');
+                    if (sp != std::string::npos) {
+                        tag = QString::fromStdString(inner.substr(0, sp));
+                        value = QString::fromStdString(inner.substr(sp + 1));
+                    } else {
+                        tag = QString::fromStdString(inner);
+                    }
+                }
+            }
+
+            if (!tag.isEmpty() && tag.endsWith(' ')) tag.chop(1);
+            if (tag == "Result") resultStr = value;
+            headersLocal.append(qMakePair(tag, value));
+            ch = ss.peek();
+        }
+
+        // read body text until next header or EOF
+        ch = ss.peek();
+        while (ch != EOF_MARK && ch != '[') {
+            if (!std::getline(ss, line)) break;
+            bodyTextStd += line;
+            bodyTextStd.push_back(' ');
+            ch = ss.peek();
+        }
+
+        // if no headers and no body, we are done
+        if (headersLocal.isEmpty() && bodyTextStd.empty()) break;
+
+        // Build PGNGame object for processing
+        PGNGame game;
+        game.headerInfo = headersLocal;
+        game.result = resultStr;
+        game.bodyText = QString::fromStdString(bodyTextStd);
+
+        // record header offset and write header record to tmp blob
+        quint64 relOff = quint64(tmpHeader.pos());
+        headerRelativeOffsets.append(relOff);
+
+        // extract a few canonical header fields for compact record
+        QString white, whiteElo, black, blackElo, event, date;
+        for (const auto &h : game.headerInfo) {
+            if (h.first == "White") white = h.second;
+            else if (h.first == "WhiteElo") whiteElo = h.second;
+            else if (h.first == "Black") black = h.second;
+            else if (h.first == "BlackElo") blackElo = h.second;
+            else if (h.first == "Event") event = h.second;
+            else if (h.first == "Date") date = h.second;
+        }
+
+        tmpOut << white << whiteElo << black << blackElo << event << date << game.result;
+        tmpOut << game.bodyText;
+
+        QElapsedTimer timer;
+        timer.start();
+        parseBodyText(game.bodyText, game.rootMove, true);
+        parseTime += timer.elapsed();
+
+        // collect zobrist hashes along first-variation/mainline
+        QVector<quint64> zobristHashes;
+        if (!game.rootMove.isNull()) {
+            QSharedPointer<NotationMove> mv = game.rootMove;
+            zobristHashes.push_back(mv->m_zobristHash);
+            while (!mv->m_nextMoves.isEmpty()) {
+                mv = mv->m_nextMoves.front();
+                zobristHashes.push_back(mv->m_zobristHash);
+            }
+        }
+
+        // interpret result
+        enum GameResult { UNKNOWN, WHITE_WIN, BLACK_WIN, DRAW };
+        GameResult gres = UNKNOWN;
+        if (game.result == "1-0") gres = WHITE_WIN;
+        else if (game.result == "0-1") gres = BLACK_WIN;
+        else if (game.result == "1/2-1/2") gres = DRAW;
+
+        // update maps (avoid counting same position twice per game)
+        QSet<quint64> visited;
+        for (int j = 0; j < qMin(MAX_OPENING_DEPTH, zobristHashes.size()); ++j) {
+            quint64 z = zobristHashes[j];
+            if (!visited.contains(z) && openingGameMap[z].size() < MAX_GAMES_TO_SHOW) {
+                openingGameMap[z].push_back(gameIndex);
+            }
+            PositionWinrate &wr = openingWinrateMap[z];
+            if (gres == WHITE_WIN) wr.whiteWin++;
+            else if (gres == BLACK_WIN) wr.blackWin++;
+            else if (gres == DRAW) wr.draw++;
+
+            visited.insert(z);
+        }
+
+        // free heavy structures
+        if (!game.rootMove.isNull()) game.rootMove.clear();
+        game.bodyText.clear();
+        game.headerInfo.clear();
+
+        // UI progress update
+        std::streamoff pos = ss.tellg();
+        qint64 readPos = (pos < 0 ? 0 : (qint64)pos);
+        reportProgress(readPos, totalBytes, progressBar);
+
+        ++gameIndex;
+        // loop continues to next game
+        if (ss.eof()) break;
+    } // end for-each-game
+
+    // clean up tmp file (we need it closed before finalize)
+    tmpHeader.close();
+
+    // finalize and write final headers file
+    QString finalHeaderPath = QDir::current().filePath("./opening/openings.headers");
+    if (!finalizeHeaderFile(finalHeaderPath, tmpHeaderPath, headerRelativeOffsets)) {
+        mOpeningsPathLabel->setText(tr("Failed to write headers file"));
+        if (progressBar) progressBar->deleteLater();
+        return;
+    }
+
+    // Build OpeningInfo from maps (same layout as earlier code)
+    OpeningInfo openingInfo;
+    openingInfo.startIndex.clear();
+    openingInfo.startIndex.push_back(0);
+
+    for (auto it = openingGameMap.begin(); it != openingGameMap.end(); ++it) {
+        quint64 zobrist = it.key();
+        const QVector<quint32> &games = it.value();
+        openingInfo.zobristPositions.push_back(zobrist);
+        for (quint32 gid : games) openingInfo.gameIDs.push_back(gid);
+        openingInfo.insertedCount.push_back(games.size());
+        openingInfo.startIndex.push_back(openingInfo.startIndex.back() + games.size());
+    }
+
+    for (auto winrates : std::as_const(openingWinrateMap)) {
+        openingInfo.whiteWin.push_back(winrates.whiteWin);
+        openingInfo.blackWin.push_back(winrates.blackWin);
+        openingInfo.draw.push_back(winrates.draw);
+    }
+
+    // serialize openings.bin same as before
+    openingInfo.serialize("./opening/openings.bin");
+
+    // finish UI
+    if (progressBar) {
+        progressBar->setValue(progressBar->maximum());
+        progressBar->deleteLater();
+    }
+    mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));
+
+
+    QString human = QString("%1.%2 s").arg(parseTime / 1000).arg((parseTime % 1000), 3, 10, QChar('0'));
+    qDebug() << human;
+}
+
 void SettingsDialog::onLoadPgnClicked() {
     QString file = QFileDialog::getOpenFileName(this, tr("Select a chess PGN file"), QString(), tr("PGN files (*.pgn)"));
     if (file.isEmpty()) return;
@@ -140,91 +423,19 @@ void SettingsDialog::onLoadPgnClicked() {
     QProgressBar* progressBar = new QProgressBar(this);
     QVBoxLayout* openingsLayout = qobject_cast<QVBoxLayout*>(mStackedWidget->currentWidget()->layout());
     openingsLayout->insertWidget(2, progressBar);
+    QApplication::processEvents();
 
-    std::ifstream ss(file.toStdString());
-    if(ss.fail()) {
+    QElapsedTimer timer;
+    timer.start();
+    importPgnFileStreaming(file, progressBar);
+    qint64 elapsedMs = timer.elapsed();
+    QString human = QString("%1.%2 s").arg(elapsedMs / 1000).arg((elapsedMs % 1000), 3, 10, QChar('0'));
+    qDebug() << "total time: " << human;
+
+    if (progressBar && !progressBar->parent()) {
         progressBar->deleteLater();
-        mOpeningsPathLabel->setText(tr("Failed to open file"));
-        return;
     }
 
-    StreamParser parser(ss);
-    std::vector<PGNGame> database = parser.parseDatabase();
-
-    progressBar->setMaximum(database.size());
-    progressBar->setValue(0);
-
-    QMap<quint64, QVector<quint32>> openingGameMap;
-    QMap<quint64, PositionWinrate> openingWinrateMap;
-    OpeningInfo openingInfo;
-
-    for (int i = 0; i < database.size(); i++) {
-        auto &game = database[i];
-
-        // update progress bar every 100 games
-        if (i % 100 == 0) {
-            progressBar->setValue(i);
-            QApplication::processEvents();
-        }
-
-        parseBodyText(game.bodyText, game.rootMove);
-        QVector<quint64> zobristHashes;
-
-        QSharedPointer<NotationMove> move = game.rootMove;
-        zobristHashes.push_back(move->m_zobristHash);
-        while(!move->m_nextMoves.isEmpty()){
-            move = move->m_nextMoves.front();
-            zobristHashes.push_back(move->m_zobristHash);
-        }
-
-        GameResult result = UNKNOWN;
-        if (game.result == "1-0") result = WHITE_WIN;
-        else if (game.result == "0-1") result = BLACK_WIN;
-        else if (game.result == "1/2-1/2") result = DRAW;
-
-        QHash<quint64, bool> visitedPositions;
-        for (int j = 0; j < qMin(MAX_OPENING_DEPTH, zobristHashes.size()); j++){
-            if (!visitedPositions.count(zobristHashes[j]) && openingGameMap[zobristHashes[j]].size() < MAX_GAMES_TO_SHOW) {
-                openingGameMap[zobristHashes[j]].push_back(i);
-            }
-            openingWinrateMap[zobristHashes[j]].whiteWin += (result == WHITE_WIN);
-            openingWinrateMap[zobristHashes[j]].blackWin += (result == BLACK_WIN);
-            openingWinrateMap[zobristHashes[j]].draw += (result == DRAW);
-            visitedPositions[zobristHashes[j]] = 1;
-        }
-
-        game.rootMove.clear();
-        game.bodyText.clear();
-    }
-
-    progressBar->setValue(database.size());
-
-    mOpeningsPathLabel->setText(tr("Serializing database..."));
-    QApplication::processEvents();
-
-    openingInfo.startIndex.push_back(0);
-    for (auto it = openingGameMap.begin(); it != openingGameMap.end(); it++) {
-        quint64 zobrist = it.key();
-        QVector<quint32> games = it.value();
-        openingInfo.zobristPositions.push_back(zobrist);
-        for (quint32 gameID: games) openingInfo.gameIDs.push_back(gameID);
-        openingInfo.insertedCount.push_back(games.size());
-        openingInfo.startIndex.push_back(openingInfo.startIndex.back() + games.size());
-    }
-    for (auto winrates: std::as_const(openingWinrateMap)) {
-        openingInfo.whiteWin.push_back(winrates.whiteWin);
-        openingInfo.blackWin.push_back(winrates.blackWin);
-        openingInfo.draw.push_back(winrates.draw);
-    }
-
-    openingInfo.serialize("./opening/openings.bin");
-
-    mOpeningsPathLabel->setText(tr("Serializing headers..."));
-    QApplication::processEvents();
-
-    PGNGame::serializeHeaderData("./opening/openings.headers", database);
-
-    progressBar->deleteLater();
     mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));
 }
 
