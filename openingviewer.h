@@ -15,8 +15,17 @@
 #include <QTableWidget>
 #include <QStyledItemDelegate>
 #include <QPainter>
+#include <QEvent>
+#include <QHeaderView>
 
 #include "chessposition.h"
+
+// RowHoverEventFilter - minimal & reliable
+#include <QObject>
+#include <QTableWidget>
+#include <QMouseEvent>
+#include <QHeaderView>
+#include <QScrollBar>
 
 class ResultBarDelegate : public QStyledItemDelegate
 {
@@ -113,8 +122,8 @@ private:
     QLabel* mStatsLabel;
     QLabel* mGamesLabel;  
     QTableWidget* mMovesList;
-    QTableWidget* mGamesList;  
-    
+    QTableWidget* mGamesList;
+
     QString mCurrentPosition;
     int mTotalGames = 0;
 };

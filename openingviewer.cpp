@@ -1,12 +1,13 @@
 #include "openingviewer.h"
 #include "pgngamedata.h"
 
-#include <cstring>  
+#include <cstring>
 #include <QFile>
 #include <QDataStream>
 #include <QtGlobal>
 #include <QHeaderView>
 #include <QPainterPath>
+#include <QApplication>
 
 const int MAX_GAMES_TO_SHOW = 1000;
 const int MAX_OPENING_DEPTH = 70; // counted in half-moves
@@ -278,6 +279,12 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
     initStyleOption(&opt, index);
 
     QRect cellRect = opt.rect;
+    if (opt.state & QStyle::State_Selected) {
+        p->save();
+        p->fillRect(cellRect, opt.palette.highlight());
+        p->restore();
+    }
+
     QRect inner = cellRect.adjusted(4, 4, -4, -4);
     if (inner.width() <= 0 || inner.height() <= 0) {
         QStyledItemDelegate::paint(p, option, index);
@@ -345,13 +352,6 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
             drawSegmentRounded(p, segDraw, colDraw, true, true);
     }
 
-    const bool hoveredRow = (opt.state & QStyle::State_MouseOver);
-    if (hoveredRow) {
-        QColor tint(100, 140, 200, 0);
-        p->setCompositionMode(QPainter::CompositionMode_SourceOver);
-        p->fillRect(cellRect, tint);
-    }
-
     QFont f = opt.font;
     f.setPointSizeF(f.pointSizeF() - 0.2);
     p->setFont(f);
@@ -404,7 +404,7 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
 
 OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
-{   
+{
     // load opening book
     mOpeningBookLoaded = mOpeningInfo.deserialize("./opening/openings.bin");
 
@@ -435,6 +435,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mMovesList->setColumnCount(3);
     mMovesList->setHorizontalHeaderLabels(QStringList() << "Move" << "Games" << "Win %");
     mMovesList->setAlternatingRowColors(false);
+    mMovesList->setShowGrid(false);
     mMovesList->viewport()->setAttribute(Qt::WA_Hover, true);
     mMovesList->setSortingEnabled(true);
     mMovesList->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -445,13 +446,16 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mMovesList->setMinimumHeight(150);
     mMovesList->setItemDelegateForColumn(2, new ResultBarDelegate(this));
     mMovesList->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    mMovesList->setFocusPolicy(Qt::NoFocus);
     mMovesList->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     mMovesList->verticalHeader()->setDefaultSectionSize(10);
+    mMovesList->verticalHeader()->setVisible(false);
     mMovesList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     mMovesList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
     mMovesList->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
     mMovesList->setColumnWidth(0, 60);
     mMovesList->setColumnWidth(1, 70);
+    mMovesList->setCursor(Qt::PointingHandCursor);
 
     listsLayout->addWidget(leftHeader);
     listsLayout->addWidget(mMovesList);
@@ -459,11 +463,11 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     QVBoxLayout* gamesLayout = new QVBoxLayout();
     gamesLayout->setContentsMargins(0, 0, 0, 0);
     gamesLayout->setSpacing(2);
-    
+
     // games list side
     mGamesLabel = new QLabel(tr("Games"));
     mGamesLabel->setStyleSheet("font-weight: bold; font-size: 12px;");
-    
+
     QWidget* rightHeader = new QWidget(this);
     QVBoxLayout* rightHeaderLayout = new QVBoxLayout(rightHeader);
     rightHeaderLayout->setContentsMargins(0, 0, 0, 0);
@@ -472,19 +476,24 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     rightHeader->setLayout(rightHeaderLayout);
 
     mGamesList = new QTableWidget();
-    mGamesList->setColumnCount(7);  
+    mGamesList->setColumnCount(7);
     mGamesList->setHorizontalHeaderLabels(QStringList() << "White" << "WhiteElo" << "Black" << "BlackElo" << "Result" << "Date" << "Event");
     mGamesList->setAlternatingRowColors(false);
+    mGamesList->setShowGrid(false);
     mGamesList->setSelectionBehavior(QAbstractItemView::SelectRows);
+    mGamesList->setSelectionMode(QAbstractItemView::SingleSelection);
     mGamesList->setEditTriggers(QAbstractItemView::NoEditTriggers);
     mGamesList->setMouseTracking(true);
     mGamesList->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     mGamesList->horizontalHeader()->setStretchLastSection(true);
+    mGamesList->verticalHeader()->setVisible(false);
     mGamesList->setMinimumHeight(150);
     mGamesList->setMinimumWidth(400);
     mGamesList->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     mGamesList->verticalHeader()->setDefaultSectionSize(10);
     mGamesList->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    mGamesList->setFocusPolicy(Qt::NoFocus);
+    mGamesList->setCursor(Qt::PointingHandCursor);
 
     gamesLayout->addWidget(rightHeader);
     gamesLayout->addWidget(mGamesList);
@@ -503,30 +512,37 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     listsLayout->setAlignment(mPositionLabel, Qt::AlignLeft | Qt::AlignTop);
 
     setLayout(mainLayout);
-    
+
     // styles
     QString styleSheet = R"(
         QTableWidget {
-            background: palette(alternate-base);
+            background-color: palette(alternate-base);
             border: 1px solid palette(mid);
             border-radius: 3px;
         }
-        QTableWidget::item {
-            background: palette(alternate-base);
-            height: 22px;
+        QTableWidget::item:selected {
+            background-color: palette(highlight);
         }
-        QTableWidget::item:hover {
-            background: palette(highlight);
-            color: palette(highlighted-text);
-            opacity: 0.5;
+        QTableWidget::item:focus {
+            outline: none;
+            border: none;
+        }
+        QTableWidget::item:hover:!selected {
+            background-color: transparent;
+            border: none;
+        }
+        QTableWidget::item:selected:focus {
+            background-color: palette(highlight);
+            border: none;
+            outline: none;
         }
     )";
-    
+
     mMovesList->setStyleSheet(styleSheet);
     mGamesList->setStyleSheet(styleSheet);
 
     connect(mMovesList, &QTableWidget::itemClicked, this, &OpeningViewer::onNextMoveSelected);
-    connect(mGamesList, &QTableWidget::itemClicked, this, &OpeningViewer::onGameSelected);
+    connect(mGamesList, &QTableWidget::itemDoubleClicked, this, &OpeningViewer::onGameSelected);
 }
 
 void OpeningViewer::onMoveSelected(QSharedPointer<NotationMove>& move)
@@ -576,7 +592,7 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
     if (total){
         updateGamesList(openingIndex, winrate);
     } else {
-        mMovesList->clear();
+        mMovesList->setRowCount(0);
         mGamesList->setRowCount(0);
         mGamesLabel->setText("Games: 0 of 0 shown");
         mStatsLabel->setText(tr("0 Games"));
@@ -711,12 +727,16 @@ void OpeningViewer::updateGamesList(const int openingIndex, const PositionWinrat
             else if (header.first == "Event") event = header.second;
         }
         result = game.result;
+        QTableWidgetItem* whiteEloItem = new QTableWidgetItem(whiteElo.toInt());
+        whiteEloItem->setData(Qt::DisplayRole, whiteElo.toInt());
+        QTableWidgetItem* blackEloItem = new QTableWidgetItem(blackElo.toInt());
+        blackEloItem->setData(Qt::DisplayRole, blackElo.toInt());
         int row = mGamesList->rowCount();
         mGamesList->insertRow(row);
         mGamesList->setItem(row, 0, new QTableWidgetItem(white));
-        mGamesList->setItem(row, 1, new QTableWidgetItem(whiteElo));
+        mGamesList->setItem(row, 1, whiteEloItem);
         mGamesList->setItem(row, 2, new QTableWidgetItem(black));
-        mGamesList->setItem(row, 3, new QTableWidgetItem(blackElo));
+        mGamesList->setItem(row, 3, blackEloItem);
         mGamesList->setItem(row, 4, new QTableWidgetItem(result));
         mGamesList->setItem(row, 5, new QTableWidgetItem(date));
         mGamesList->setItem(row, 6, new QTableWidgetItem(event));
@@ -738,8 +758,8 @@ void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct
     moveItem->setData(Qt::UserRole, QVariant::fromValue(moveData));
     mMovesList->setItem(row, 0, moveItem);
 
-    QTableWidgetItem* gamesItem = new QTableWidgetItem(QString::number(games));
-    gamesItem->setData(Qt::DisplayRole, QVariant(games)); // numeric sort key
+    QTableWidgetItem* gamesItem = new QTableWidgetItem(games);
+    gamesItem->setData(Qt::DisplayRole, QVariant(static_cast<qint64>(games))); // numeric sort key
     gamesItem->setData(Qt::UserRole, games);
     gamesItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     mMovesList->setItem(row, 1, gamesItem);
@@ -773,6 +793,6 @@ void OpeningViewer::onNextMoveSelected(QTableWidgetItem* item)
 }
 
 void OpeningViewer::onGameSelected(QTableWidgetItem* item)
-{    
+{
     // emit gameSelected(gameId);
 }
