@@ -501,11 +501,12 @@ void ChessGameWindow::openingSetup()
     // update openingViewer when notationViewer changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_openingViewer, &OpeningViewer::onMoveSelected);
     
-    // connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const QString& move) {
-    //     if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
-    //         // todo, make it play the move and create a variation maybe idk
-    //     }
-    // });
+    connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const SimpleMove& moveData) {
+        if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
+            auto [sr, sc, dr, dc, promo] = moveData;
+            m_positionViewer->buildUserMove(sr, sc, dr, dc, promo);
+        }
+    });
 
     updateOpeningActions();
 }
@@ -603,9 +604,13 @@ void ChessGameWindow::onNoHover(){
 // Slot for when a new move is made on the board
 void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
 {
-    m_notationViewer->m_isEdited = true;
-    linkMoves(m_notationViewer->m_selectedMove, move);
-    m_notationViewer->m_selectedMove = move;
+    auto child = getUniqueNextMove(m_notationViewer->m_selectedMove, move);
+    // link move if unique
+    if (child == move){
+        m_notationViewer->m_isEdited = true;
+        linkMoves(m_notationViewer->m_selectedMove, move);
+    }
+    m_notationViewer->m_selectedMove = child;
     emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
     m_notationViewer->refresh();
 }

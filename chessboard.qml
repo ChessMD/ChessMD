@@ -247,16 +247,19 @@ Rectangle {
 
                     onPressed: {
                         board.dragOrigin = index;
+                        hoverCol = Math.floor((piece.x + mouseX) / board.cellSize);
+                        hoverRow = Math.floor((piece.y + mouseY) / board.cellSize);
                     }
 
                     onReleased: {
                         board.dragOrigin = -1;
-                        if (chessPosition)
+                        if (chessPosition){
                             chessPosition.release(piece.row, piece.col, hoverRow, hoverCol);
+                        }
                     }
 
                     onPositionChanged: {
-                        // Update the hover position on every mouse move
+                        // Update the hover position when the mouse moves
                         hoverCol = Math.floor((piece.x + mouseX) / board.cellSize)
                         hoverRow = Math.floor((piece.y + mouseY) / board.cellSize)
                     }

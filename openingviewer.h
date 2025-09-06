@@ -13,32 +13,16 @@
 #include <QVector>
 #include <QByteArray>
 #include <QTableWidget>
+#include <QStyledItemDelegate>
+#include <QPainter>
 
 #include "chessposition.h"
 
-// for sorting purposes
-class MoveListItem : public QTreeWidgetItem
+class ResultBarDelegate : public QStyledItemDelegate
 {
 public:
-    MoveListItem(QTreeWidget* parent) : QTreeWidgetItem(parent) {}
-    
-    bool operator<(const QTreeWidgetItem &other) const override {
-        int column = treeWidget()->sortColumn();
-        
-        if (column == 0) {
-            return text(column) < other.text(column);
-        } 
-        else if (column == 1) {
-            // games count
-            return data(column, Qt::UserRole).toInt() < other.data(column, Qt::UserRole).toInt();
-        }
-        else if (column == 2) {
-            // win % 
-            return data(column, Qt::UserRole).toFloat() < other.data(column, Qt::UserRole).toFloat();
-        }
-        
-        return QTreeWidgetItem::operator<(other);
-    }
+    ResultBarDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
+    void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
 
 enum GameResult {UNKNOWN, WHITE_WIN, DRAW, BLACK_WIN};
@@ -104,12 +88,12 @@ public slots:
     void onMoveSelected(QSharedPointer<NotationMove>& move);
 
 signals:
-    void moveClicked(const QString& move);
+    void moveClicked(const SimpleMove& moveData);
     void gameSelected(int gameId); 
 
 private slots:
-    void onNextMoveSelected(QTreeWidgetItem* item, int column);
-    void onGameSelected(int row, int column);  
+    void onNextMoveSelected(QTableWidgetItem* item);
+    void onGameSelected(QTableWidgetItem* item);
     
 private:
     bool mOpeningBookLoaded = false;
@@ -117,7 +101,7 @@ private:
     QVector<PGNGame> loadGameHeadersBatch(const QString &path, const QVector<quint32> &ids);
     bool ensureHeaderOffsetsLoaded(const QString &path);
 
-    void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct);
+    void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct, SimpleMove moveData);
     void updateGamesList(const int openingIndex, const PositionWinrate winrate);
 
     OpeningInfo mOpeningInfo;
@@ -128,7 +112,7 @@ private:
     QLabel* mPositionLabel;
     QLabel* mStatsLabel;
     QLabel* mGamesLabel;  
-    QTreeWidget* mMovesList;
+    QTableWidget* mMovesList;
     QTableWidget* mGamesList;  
     
     QString mCurrentPosition;

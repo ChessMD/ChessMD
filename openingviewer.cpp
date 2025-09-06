@@ -6,6 +6,7 @@
 #include <QDataStream>
 #include <QtGlobal>
 #include <QHeaderView>
+#include <QPainterPath>
 
 const int MAX_GAMES_TO_SHOW = 1000;
 const int MAX_OPENING_DEPTH = 70; // counted in half-moves
@@ -257,6 +258,150 @@ QVector<quint32> OpeningInfo::readGameIDs(int openingIndex) {
     return out;
 }
 
+void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QVariant v = index.data(Qt::UserRole);
+    if (!v.isValid() || !v.canConvert<QVariantList>()) {
+        QStyledItemDelegate::paint(p, option, index);
+        return;
+    }
+    QVariantList list = v.toList();
+    if (list.size() < 3) {
+        QStyledItemDelegate::paint(p, option, index);
+        return;
+    }
+    const double whitePct = list[0].toDouble();
+    const double drawPct  = list[1].toDouble();
+    const double blackPct = list[2].toDouble();
+
+    QStyleOptionViewItem opt(option);
+    initStyleOption(&opt, index);
+
+    QRect cellRect = opt.rect;
+    QRect inner = cellRect.adjusted(4, 4, -4, -4);
+    if (inner.width() <= 0 || inner.height() <= 0) {
+        QStyledItemDelegate::paint(p, option, index);
+        return;
+    }
+
+    p->save();
+
+    int totalW = inner.width();
+    int wWhite = qBound(0, int(totalW * whitePct / 100.0), totalW);
+    int wDraw  = qBound(0, int(totalW * drawPct  / 100.0), totalW - wWhite);
+    int wBlack = totalW - wWhite - wDraw;
+    if (wBlack < 0) wBlack = 0;
+
+    int x = inner.left();
+    QRect segWhite(x, inner.top(), wWhite, inner.height()); x += wWhite;
+    QRect segDraw (x, inner.top(), wDraw,  inner.height()); x += wDraw;
+    QRect segBlack(x, inner.top(), wBlack, inner.height());
+
+    const QColor colWhite = QColor(255,255,255);
+    const QColor colDraw  = QColor(200,200,200);
+    const QColor colBlack = QColor(90,90,90);
+    const int radius = qMin(6, inner.height() / 2);
+
+    // draw rounded segments with correct corner handling
+    auto drawSegmentRounded = [&](QPainter *p, const QRect &seg, const QColor &c, bool leftRounded, bool rightRounded){
+        if (seg.width() <= 0) return;
+        p->setPen(Qt::NoPen);
+        if (leftRounded || rightRounded) {
+            QPainterPath path;
+            qreal x1 = seg.left(), x2 = seg.right() + 1.0;
+            qreal y1 = seg.top(),  y2 = seg.bottom() + 1.0;
+            qreal rad = radius;
+            rad = qMin(rad, qMin((double)seg.width()/2.0, (double)seg.height()/2.0));
+            path.moveTo(x1 + (leftRounded ? rad : 0), y1);
+            path.lineTo(x2 - (rightRounded ? rad : 0), y1);
+            if (rightRounded) path.quadTo(x2, y1, x2, y1 + rad);
+            path.lineTo(x2, y2 - (rightRounded ? rad : 0));
+            if (rightRounded) path.quadTo(x2, y2, x2 - rad, y2);
+            path.lineTo(x1 + (leftRounded ? rad : 0), y2);
+            if (leftRounded) path.quadTo(x1, y2, x1, y2 - rad);
+            path.lineTo(x1, y1 + (leftRounded ? rad : 0));
+            if (leftRounded) path.quadTo(x1, y1, x1 + rad, y1);
+            p->fillPath(path, c);
+        } else {
+            p->fillRect(seg, c);
+        }
+    };
+
+    bool hasWhite = segWhite.width() > 0;
+    bool hasDraw  = segDraw.width()  > 0;
+    bool hasBlack = segBlack.width() > 0;
+
+    if (hasWhite && !hasDraw && !hasBlack) {
+        drawSegmentRounded(p, segWhite, colWhite, true, true);
+    } else if (!hasWhite && hasDraw && !hasBlack) {
+        drawSegmentRounded(p, segDraw, colDraw, true, true);
+    } else if (!hasWhite && !hasDraw && hasBlack) {
+        drawSegmentRounded(p, segBlack, colBlack, true, true);
+    } else {
+        if (hasWhite) drawSegmentRounded(p, segWhite, colWhite, true, false);
+        if (hasDraw)  drawSegmentRounded(p, segDraw,  colDraw,  false, false);
+        if (hasBlack) drawSegmentRounded(p, segBlack, colBlack, false, true);
+        if (!hasWhite && hasDraw && !hasBlack)
+            drawSegmentRounded(p, segDraw, colDraw, true, true);
+    }
+
+    const bool hoveredRow = (opt.state & QStyle::State_MouseOver);
+    if (hoveredRow) {
+        QColor tint(100, 140, 200, 0);
+        p->setCompositionMode(QPainter::CompositionMode_SourceOver);
+        p->fillRect(cellRect, tint);
+    }
+
+    QFont f = opt.font;
+    f.setPointSizeF(f.pointSizeF() - 0.2);
+    p->setFont(f);
+    QFontMetrics fm(f);
+    const int pad = 6;
+
+    auto textColorFor = [&](const QColor &segColor) -> QColor {
+        auto luminance = [](const QColor &c) {
+            return 0.299*c.red() + 0.587*c.green() + 0.114*c.blue();
+        };
+        return (luminance(segColor) < 128.0) ? QColor(255,255,255) : QColor(0,0,0);
+    };
+
+    if (segWhite.width() > 0) {
+        QString t = QString("%1%").arg(int(qRound(whitePct)));
+        int tw = fm.horizontalAdvance(t);
+        if (tw + pad*2 <= segWhite.width()) {
+            QColor tc = textColorFor(colWhite);
+            p->setPen(tc);
+            int tx = segWhite.left() + pad;
+            int ty = segWhite.top() + (segWhite.height() + fm.ascent() - fm.descent())/2;
+            p->drawText(tx, ty, t);
+        }
+    }
+    if (segDraw.width() > 0) {
+        QString t = QString("%1%").arg(int(qRound(drawPct)));
+        int tw = fm.horizontalAdvance(t);
+        if (tw + pad*2 <= segDraw.width()) {
+            QColor tc = textColorFor(colDraw);
+            p->setPen(tc);
+            int tx = segDraw.left() + (segDraw.width() - tw) / 2;
+            int ty = segDraw.top() + (segDraw.height() + fm.ascent() - fm.descent())/2;
+            p->drawText(tx, ty, t);
+        }
+    }
+    if (segBlack.width() > 0) {
+        QString t = QString("%1%").arg(int(qRound(blackPct)));
+        int tw = fm.horizontalAdvance(t);
+        if (tw + pad*2 <= segBlack.width()) {
+            QColor tc = textColorFor(colBlack);
+            p->setPen(tc);
+            int tx = segBlack.left() + segBlack.width() - pad - tw;
+            int ty = segBlack.top() + (segBlack.height() + fm.ascent() - fm.descent())/2;
+            p->drawText(tx, ty, t);
+        }
+    }
+
+    p->restore();
+}
+
 OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
 {   
@@ -264,78 +409,124 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mOpeningBookLoaded = mOpeningInfo.deserialize("./opening/openings.bin");
 
     QHBoxLayout* mainLayout = new QHBoxLayout();
+    mainLayout->setContentsMargins(8, 6, 8, 6);
+    mainLayout->setSpacing(12);
 
     // moves list side
     QVBoxLayout* listsLayout = new QVBoxLayout();
+    listsLayout->setContentsMargins(0, 0, 0, 0);
+    listsLayout->setSpacing(4);
 
     mPositionLabel = new QLabel("Loading Position...");
     mPositionLabel->setStyleSheet("font-weight: bold; font-size: 13px;");
 
     mStatsLabel = new QLabel("No position data");
-    mStatsLabel->setStyleSheet("font-size: 12px;"); 
+    mStatsLabel->setStyleSheet("font-size: 12px;");
 
-    mMovesList = new QTreeWidget();
-    mMovesList->setHeaderLabels(QStringList() << "Move" << "Games" << "Win %");
-    mMovesList->setRootIsDecorated(false);
-    mMovesList->setAlternatingRowColors(true);
+    QWidget* leftHeader = new QWidget(this);
+    QVBoxLayout* leftHeaderLayout = new QVBoxLayout(leftHeader);
+    leftHeaderLayout->setContentsMargins(0, 0, 0, 0);
+    leftHeaderLayout->setSpacing(2);
+    leftHeaderLayout->addWidget(mPositionLabel);
+    leftHeaderLayout->addWidget(mStatsLabel);
+    leftHeader->setLayout(leftHeaderLayout);
+
+    mMovesList = new QTableWidget();
+    mMovesList->setColumnCount(3);
+    mMovesList->setHorizontalHeaderLabels(QStringList() << "Move" << "Games" << "Win %");
+    mMovesList->setAlternatingRowColors(false);
+    mMovesList->viewport()->setAttribute(Qt::WA_Hover, true);
     mMovesList->setSortingEnabled(true);
+    mMovesList->setSelectionBehavior(QAbstractItemView::SelectRows);
+    mMovesList->setSelectionMode(QAbstractItemView::SingleSelection);
+    mMovesList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    mMovesList->setMouseTracking(true);
     mMovesList->sortByColumn(1, Qt::DescendingOrder);
     mMovesList->setMinimumHeight(150);
+    mMovesList->setItemDelegateForColumn(2, new ResultBarDelegate(this));
+    mMovesList->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    mMovesList->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    mMovesList->verticalHeader()->setDefaultSectionSize(10);
+    mMovesList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    mMovesList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    mMovesList->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    mMovesList->setColumnWidth(0, 60);
+    mMovesList->setColumnWidth(1, 70);
 
-    listsLayout->addWidget(mPositionLabel);
-    listsLayout->addWidget(mStatsLabel);
+    listsLayout->addWidget(leftHeader);
     listsLayout->addWidget(mMovesList);
-    mainLayout->addLayout(listsLayout);
-    
+
+    QVBoxLayout* gamesLayout = new QVBoxLayout();
+    gamesLayout->setContentsMargins(0, 0, 0, 0);
+    gamesLayout->setSpacing(2);
     
     // games list side
     mGamesLabel = new QLabel(tr("Games"));
     mGamesLabel->setStyleSheet("font-weight: bold; font-size: 12px;");
     
+    QWidget* rightHeader = new QWidget(this);
+    QVBoxLayout* rightHeaderLayout = new QVBoxLayout(rightHeader);
+    rightHeaderLayout->setContentsMargins(0, 0, 0, 0);
+    rightHeaderLayout->setSpacing(2);
+    rightHeaderLayout->addWidget(mGamesLabel);
+    rightHeader->setLayout(rightHeaderLayout);
+
     mGamesList = new QTableWidget();
     mGamesList->setColumnCount(7);  
     mGamesList->setHorizontalHeaderLabels(QStringList() << "White" << "WhiteElo" << "Black" << "BlackElo" << "Result" << "Date" << "Event");
-    mGamesList->setAlternatingRowColors(true);
+    mGamesList->setAlternatingRowColors(false);
     mGamesList->setSelectionBehavior(QAbstractItemView::SelectRows);
     mGamesList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    mGamesList->setMouseTracking(true);
     mGamesList->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     mGamesList->horizontalHeader()->setStretchLastSection(true);
     mGamesList->setMinimumHeight(150);
     mGamesList->setMinimumWidth(400);
-    
-    QVBoxLayout* gamesLayout = new QVBoxLayout();
-    gamesLayout->addWidget(mGamesLabel);
+    mGamesList->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    mGamesList->verticalHeader()->setDefaultSectionSize(10);
+    mGamesList->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    gamesLayout->addWidget(rightHeader);
     gamesLayout->addWidget(mGamesList);
-    mainLayout->addLayout(gamesLayout); 
-    
+
+    const int headerHeight = qMax(leftHeader->sizeHint().height(), rightHeader->sizeHint().height());
+    leftHeader->setFixedHeight(headerHeight);
+    rightHeader->setFixedHeight(headerHeight);
+    mainLayout->addLayout(listsLayout);
+    mainLayout->addLayout(gamesLayout);
+    mainLayout->setStretch(0, 1);
+    mainLayout->setStretch(1, 1);
+    mPositionLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    mStatsLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    mGamesLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    gamesLayout->setAlignment(mGamesLabel, Qt::AlignLeft | Qt::AlignTop);
+    listsLayout->setAlignment(mPositionLabel, Qt::AlignLeft | Qt::AlignTop);
+
     setLayout(mainLayout);
-    
     
     // styles
     QString styleSheet = R"(
-        QTreeWidget, QTableWidget {
+        QTableWidget {
+            background: palette(alternate-base);
             border: 1px solid palette(mid);
             border-radius: 3px;
         }
-        QTreeWidget::item, QTableWidget::item {
+        QTableWidget::item {
+            background: palette(alternate-base);
             height: 22px;
         }
-        QTreeWidget::item:hover, QTableWidget::item:hover {
+        QTableWidget::item:hover {
             background: palette(highlight);
             color: palette(highlighted-text);
             opacity: 0.5;
-        }
-        QTreeWidget::item:selected, QTableWidget::item:selected {
-            background: palette(highlight);
-            color: palette(highlighted-text);
         }
     )";
     
     mMovesList->setStyleSheet(styleSheet);
     mGamesList->setStyleSheet(styleSheet);
-    
-    connect(mMovesList, &QTreeWidget::itemDoubleClicked, this, &OpeningViewer::onNextMoveSelected);
-    connect(mGamesList, &QTableWidget::cellDoubleClicked, this, &OpeningViewer::onGameSelected);
+
+    connect(mMovesList, &QTableWidget::itemClicked, this, &OpeningViewer::onNextMoveSelected);
+    connect(mGamesList, &QTableWidget::itemClicked, this, &OpeningViewer::onGameSelected);
 }
 
 void OpeningViewer::onMoveSelected(QSharedPointer<NotationMove>& move)
@@ -350,7 +541,16 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
     int total = winrate.whiteWin + winrate.blackWin + winrate.draw;
 
     mStatsLabel->setText(tr("%1 Games").arg(total));
-    mMovesList->clear();
+    mMovesList->setRowCount(0);
+    mMovesList->setSortingEnabled(false);
+
+    QString nextNumPrefix;
+    int nextMoveNum = (position->getPlyCount())/2 + 1;
+    if (position->m_sideToMove == 'w') {
+        nextNumPrefix = QString::number(nextMoveNum) + ".";
+    } else {
+        nextNumPrefix = QString::number(nextMoveNum) + "...";
+    }
 
     auto legalMoves = position->generateLegalMoves();
     for (const auto [sr, sc, dr, dc, promo]: std::as_const(legalMoves)){
@@ -361,7 +561,7 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
         int total = newWin.whiteWin + newWin.blackWin + newWin.draw;
         if (total){
             float whitePct = newWin.whiteWin * 100 / total, blackPct = newWin.blackWin * 100 / total, drawPct = newWin.draw * 100 / total;
-            addMoveToList(position->lanToSan(sr, sc, dr, dc, QChar(promo)), total, whitePct, drawPct, blackPct);
+            addMoveToList(QString(nextNumPrefix+position->lanToSan(sr, sc, dr, dc, QChar(promo))), total, whitePct, drawPct, blackPct, {sr, sc, dr, dc, promo});
         }
     }
 
@@ -381,6 +581,8 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
         mGamesLabel->setText("Games: 0 of 0 shown");
         mStatsLabel->setText(tr("0 Games"));
     }
+    mMovesList->setSortingEnabled(true);
+    mMovesList->viewport()->update();
 }
 
 bool OpeningViewer::ensureHeaderOffsetsLoaded(const QString &path)
@@ -417,22 +619,54 @@ QVector<PGNGame> OpeningViewer::loadGameHeadersBatch(const QString &path, const 
 
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) {
-        qDebug() << "cannot open headers file:" << path;
+        qWarning() << "cannot open headers file:" << path;
         return out;
     }
-    QDataStream in(&f);
+
+    qint64 fileSize = f.size();
 
     for (quint32 gid : ids) {
+        PGNGame game;
+
         if (gid >= static_cast<quint32>(mHeaderOffsets.size())) {
             qDebug() << "Bad game id!" << gid;
-            out.append(PGNGame());
+            out.append(game);
             continue;
         }
+
         quint64 off = mHeaderOffsets[gid];
-        f.seek(off);
-        PGNGame game;
+        if (off >= static_cast<quint64>(fileSize)) {
+            qWarning() << "Header offset out of range:" << off << "file size:" << fileSize;
+            out.append(game);
+            continue;
+        }
+
+        if (!f.seek(static_cast<qint64>(off))) {
+            qWarning() << "Failed to seek header file to offset" << off;
+            out.append(game);
+            continue;
+        }
+
+        // Create QDataStream AFTER the seek so the stream reads from the correct location.
+        QDataStream in(&f);
+        in.setVersion(QDataStream::Qt_6_5);
+
         QString white, whiteElo, black, blackElo, event, date, result;
         in >> white >> whiteElo >> black >> blackElo >> event >> date >> result;
+        in >> game.bodyText;
+
+        // Very small defensive sanity: if we got nothing, log the offset & stream status
+        if (white.isEmpty() && black.isEmpty() && game.bodyText.isEmpty()) {
+            qWarning() << "Empty header read at offset" << off << "for gid" << gid << "stream status:" << in.status();
+            // read a few raw bytes around the offset for debugging:
+            const qint64 dbgN = qMin<qint64>(256, fileSize - static_cast<qint64>(off));
+            if (dbgN > 0) {
+                f.seek(static_cast<qint64>(off));
+                QByteArray dbg = f.read(dbgN);
+                qDebug() << "raw bytes:" << dbg.toHex().left(200);
+            }
+        }
+
         if (!white.isEmpty()) game.headerInfo.push_back(qMakePair(QString("White"), white));
         if (!whiteElo.isEmpty()) game.headerInfo.push_back(qMakePair(QString("WhiteElo"), whiteElo));
         if (!black.isEmpty()) game.headerInfo.push_back(qMakePair(QString("Black"), black));
@@ -443,7 +677,7 @@ QVector<PGNGame> OpeningViewer::loadGameHeadersBatch(const QString &path, const 
             game.headerInfo.push_back(qMakePair(QString("Result"), result));
             game.result = result;
         }
-        in >> game.bodyText;
+
         game.isParsed = false;
         out.append(std::move(game));
     }
@@ -494,37 +728,51 @@ void OpeningViewer::updateGamesList(const int openingIndex, const PositionWinrat
 }
 
 // helper
-void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct)
+void OpeningViewer::addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct, SimpleMove moveData)
 {
-    MoveListItem* item = new MoveListItem(mMovesList);
-    
-    item->setText(0, move);
-    item->setText(1, QString::number(games));
+    int row = mMovesList->rowCount();
+    mMovesList->insertRow(row);
 
-    // colour bars
+    QTableWidgetItem* moveItem = new QTableWidgetItem(move);
+    moveItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    moveItem->setData(Qt::UserRole, QVariant::fromValue(moveData));
+    mMovesList->setItem(row, 0, moveItem);
+
+    QTableWidgetItem* gamesItem = new QTableWidgetItem(QString::number(games));
+    gamesItem->setData(Qt::DisplayRole, QVariant(games)); // numeric sort key
+    gamesItem->setData(Qt::UserRole, games);
+    gamesItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    mMovesList->setItem(row, 1, gamesItem);
+
+    // Percent column: also store list for the delegate and a numeric display role for sorting
     QString percentText = QString("%1% / %2% / %3%").arg(whitePct, 0, 'f', 1).arg(drawPct, 0, 'f', 1).arg(blackPct, 0, 'f', 1);
+    QTableWidgetItem* pctItem = new QTableWidgetItem(percentText);
+    pctItem->setData(Qt::DisplayRole, QVariant(static_cast<double>(whitePct))); // primary sort key = whitePct
+    QVariantList triple;
+    triple << QVariant::fromValue(static_cast<double>(whitePct)) << QVariant::fromValue(static_cast<double>(drawPct)) << QVariant::fromValue(static_cast<double>(blackPct));
+    pctItem->setData(Qt::UserRole, triple); // used by ResultBarDelegate
+    pctItem->setToolTip(percentText);
+    pctItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    mMovesList->setItem(row, 2, pctItem);
 
-    item->setText(2, percentText);
-
-    
-    // data for sorting
-    item->setData(0, Qt::UserRole, move);
-    item->setData(1, Qt::UserRole, games);
-    item->setData(2, Qt::UserRole, whitePct);
+    // keep row height consistent when adding many rows (if desired)
+    mMovesList->setRowHeight(row, mMovesList->verticalHeader()->defaultSectionSize());
 }
 
-void OpeningViewer::onNextMoveSelected(QTreeWidgetItem* item, int column)
+void OpeningViewer::onNextMoveSelected(QTableWidgetItem* item)
 {
     if (!item) return;
-    
-    QString move = item->data(0, Qt::UserRole).toString();
-    emit moveClicked(move);
+    int row = item->row();
+    if (row < 0) return;
+    QTableWidgetItem* first = mMovesList->item(row, 0);
+    if (!first) return;
+    QVariant v = first->data(Qt::UserRole);
+    if (!v.isValid()) return;
+    SimpleMove moveData = v.value<SimpleMove>();
+    emit moveClicked(moveData);
 }
 
-void OpeningViewer::onGameSelected(int row, int column)
-{
-    if (row < 0 || row >= mGamesList->rowCount()) return;
-    
-    int gameId = mGamesList->item(row, 0)->data(Qt::UserRole).toInt();
-    emit gameSelected(gameId);
+void OpeningViewer::onGameSelected(QTableWidgetItem* item)
+{    
+    // emit gameSelected(gameId);
 }

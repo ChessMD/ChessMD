@@ -24,6 +24,7 @@ struct SimpleMove {
     int sr, sc, dr, dc;
     char promo;
 };
+Q_DECLARE_METATYPE(SimpleMove)
 
 // Represents a chess position
 class ChessPosition: public QObject
@@ -69,6 +70,7 @@ public:
     bool tryMakeMove(QString san, QSharedPointer<NotationMove> move, bool openingSpeedup = false);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol, bool openingSpeedup = false) const;
+    void buildUserMove(int sr, int sc, int dr, int dc, QChar promo);
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
@@ -87,8 +89,6 @@ signals:
     void evalScoreChanged();
 
 private:
-    void buildUserMove(int sr, int sc, int dr, int dc, QChar promo);
-
     bool squareAttacked(int row, int col, QChar attacker) const;
 
     bool inCheck(QChar side) const;

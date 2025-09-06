@@ -12,7 +12,6 @@ quint64 ZOBRIST_PIECE[12][64];
 quint64 ZOBRIST_CASTLING[16];
 quint64 ZOBRIST_EN_PASSANT_FILE[8];
 quint64 ZOBRIST_SIDE_TO_MOVE = 0;
-const QHash<char,int> PIECE_INDEX_LOOKUP = {{'P', 0}, {'N', 1}, {'B', 2}, {'R', 3}, {'Q', 4}, {'K', 5}};
 
 ChessPosition::ChessPosition(QObject *parent)
     : QObject(parent)
@@ -231,6 +230,7 @@ void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
 
     QSharedPointer<NotationMove> newMove(new NotationMove(moveText, newPos));
     newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
+    newMove->m_zobristHash = newPos.computeZobrist();
 
     emit moveMade(newMove);
     emit boardDataChanged();
@@ -473,14 +473,6 @@ QVector<SimpleMove> ChessPosition::generateLegalMoves() const {
     QVector<SimpleMove> legalMoves;
     legalMoves.reserve(128);
     const char promo[4] = {'N', 'B', 'R', 'Q'};
-
-    auto insertValid = [&](int sr, int sc, int dr, int dc, char promo = '\0') {
-        // apply move in place, check legality, undo
-        if (validateMove(sr, sc, dr, dc)){
-            legalMoves.push_back({sr, sc, dr, dc, promo});
-        }
-    };
-
     for (int sr = 0; sr < 8; sr++){
         for (int sc = 0; sc < 8; sc++){
             if (m_boardData[sr][sc].size() < 2) continue;
@@ -977,6 +969,7 @@ void initZobristTables()
 
 quint64 ChessPosition::computeZobrist() const
 {
+    const QHash<char,int> PIECE_INDEX_LOOKUP = {{'P', 0}, {'N', 1}, {'B', 2}, {'R', 3}, {'Q', 4}, {'K', 5}};
     quint64 hash = 0;
     for (int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {

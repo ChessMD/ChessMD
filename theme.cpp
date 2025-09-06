@@ -48,7 +48,7 @@ void Theme::applyLightTheme(QApplication& app) {
     lightPalette.setColor(QPalette::Window, QColor(240, 240, 240)); //hcc
     lightPalette.setColor(QPalette::WindowText, Qt::black);
     lightPalette.setColor(QPalette::Base, Qt::white);
-    lightPalette.setColor(QPalette::AlternateBase, QColor(222, 222, 222)); //hcc
+    lightPalette.setColor(QPalette::AlternateBase, QColor(240, 240, 240)); //hcc
     lightPalette.setColor(QPalette::ToolTipBase, Qt::white);
     lightPalette.setColor(QPalette::ToolTipText, Qt::black);
     lightPalette.setColor(QPalette::Text, Qt::black);

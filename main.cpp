@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
     initZobristTables();
+    qRegisterMetaType<SimpleMove>("SimpleMove");
 
     // render the main window
     MainWindow w;

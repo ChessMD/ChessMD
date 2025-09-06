@@ -142,6 +142,7 @@ bool finalizeHeaderFile(const QString &finalPath, const QString &tmpPath, const 
     }
 
     QDataStream outStream(&out);
+    outStream.setVersion(QDataStream::Qt_6_5);
 
     quint32 gameCount = quint32(relativeOffsets.size());
     // header blob will start after: 4 bytes (count) + 8 * gameCount (offset table)
@@ -185,6 +186,31 @@ void SettingsDialog::reportProgress(qint64 bytesRead, qint64 total, QProgressBar
     QApplication::processEvents();
 }
 
+static bool isHeaderLine(const std::string &line) {
+    size_t i = 0;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
+    if (i >= line.size()) return false;
+    if (line[i] != '[') return false;
+    ++i;
+    size_t tagStart = i;
+    while (i < line.size() && (std::isalnum(static_cast<unsigned char>(line[i])) || line[i] == '_')) ++i;
+    if (i == tagStart) return false; // no tag characters
+    if (i >= line.size() || !(line[i] == ' ' || line[i] == '\t')) return false;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) ++i;
+    if (i >= line.size()) return false;
+    if (line[i] != '"') return false;
+    ++i;
+    while (i < line.size() && line[i] != '"') ++i;
+    if (i >= line.size()) return false; // no closing quote
+    ++i;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
+    if (i >= line.size()) return false;
+    if (line[i] != ']') return false;
+    ++i;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
+    return i == line.size();
+}
+
 void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *progressBar) {
     if (file.isEmpty()) return;
 
@@ -214,6 +240,7 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
         return;
     }
     QDataStream tmpOut(&tmpHeader);
+    tmpOut.setVersion(QDataStream::Qt_6_5);
     QString tmpHeaderPath = tmpHeader.fileName();
 
     QVector<quint64> headerRelativeOffsets;
@@ -278,12 +305,18 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
         }
 
         // read body text until next header or EOF
-        ch = ss.peek();
-        while (ch != EOF_MARK && ch != '[') {
-            if (!std::getline(ss, line)) break;
+        while (true) {
+            std::streampos pos = ss.tellg();
+            if (!std::getline(ss, line)) {
+                break;
+            }
+            if (isHeaderLine(line)) {
+                ss.clear();
+                ss.seekg(pos);
+                break;
+            }
             bodyTextStd += line;
             bodyTextStd.push_back(' ');
-            ch = ss.peek();
         }
 
         // if no headers and no body, we are done

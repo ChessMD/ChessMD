@@ -55,6 +55,7 @@ extern const QVector<CommentEntry> COMMENT_ENTRIES;
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 
+QSharedPointer<NotationMove> getUniqueNextMove(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove> child);
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move);
 void deleteAllCommentary(QSharedPointer<NotationMove>& move);

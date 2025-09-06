@@ -60,9 +60,21 @@ QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& mov
     return copy;
 }
 
+// Returns the child if not found in parent next moves, otherwise return existing move
+QSharedPointer<NotationMove> getUniqueNextMove(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove> child)
+{
+    if (!child->m_zobristHash) child->m_zobristHash = child->m_position->computeZobrist();
+    for (const auto& move: std::as_const(parent->m_nextMoves)){
+        if (!move->m_zobristHash) move->m_zobristHash = move->m_position->computeZobrist();
+        if (move->m_zobristHash == child->m_zobristHash) return move;
+    }
+    return child;
+}
+
 // Links a new move to a previous move in the game tree
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child)
 {
+    if (parent == child) return;
     if (parent->m_nextMoves.size()){
         child->isVarRoot = true;
     }
