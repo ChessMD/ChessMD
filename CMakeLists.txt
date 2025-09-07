@@ -49,7 +49,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
         databaselibrary.h databaselibrary.cpp databaselibrary.ui
         databaseuploader.h databaseuploader.cpp databaseuploader.ui
-        pgngamedata.h pgngamedata.cpp
+        pgngame.h pgngame.cpp
         streamparser.h streamparser.cpp
         databaseviewermodel.h databaseviewermodel.cpp
         helpers.h

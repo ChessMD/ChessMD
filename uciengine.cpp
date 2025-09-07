@@ -67,6 +67,24 @@ void UciEngine::goMovetime(int milliseconds) {
     sendCommand(QString("go movetime %1\n").arg(milliseconds));
 }
 
+void UciEngine::setSkillLevel(int level) {
+    setOption("Skill Level", QString::number(level));
+}
+
+void UciEngine::setLimitStrength(bool enabled) {
+    setOption("UCI_LimitStrength", enabled ? "true" : "false");
+}
+
+void UciEngine::goWithClocks(int wtime_ms, int btime_ms, int winc_ms, int binc_ms) {
+    if (!m_ready) return;
+    sendCommand(QString("go wtime %1 btime %2 winc %3 binc %4\n").arg(wtime_ms).arg(btime_ms).arg(winc_ms).arg(binc_ms));
+    m_ready = false;
+}
+
+void UciEngine::sendRawCommand(const QString &cmd) {
+    sendCommand(cmd + "\n");
+}
+
 void UciEngine::handleReadyRead() {
     while (m_proc->canReadLine()) {
         QString line = QString::fromUtf8(m_proc->readLine()).trimmed();

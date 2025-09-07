@@ -11,7 +11,6 @@ March 20, 2025: File Creation
 #include <QDebug>
 
 #include "notation.h"
-#include "pgngamedata.h"
 
 struct CastlingRights {
     bool whiteKing  = false;
@@ -33,7 +32,8 @@ class ChessPosition: public QObject
     Q_PROPERTY(QVector<QVector<QString>> boardData READ boardData WRITE setBoardData NOTIFY boardDataChanged)
     Q_PROPERTY(double evalScore READ evalScore WRITE setEvalScore NOTIFY evalScoreChanged)
     Q_PROPERTY(bool isPreview READ isPreview WRITE setIsPreview NOTIFY isPreviewChanged)
-    Q_PROPERTY(int lastMove   READ lastMove   NOTIFY lastMoveChanged)
+    Q_PROPERTY(bool isBoardFlipped READ isBoardFlipped NOTIFY isBoardFlippedChanged)
+    Q_PROPERTY(int lastMove READ lastMove NOTIFY lastMoveChanged)
 
 public:
     explicit ChessPosition(QObject *parent = nullptr);
@@ -51,6 +51,12 @@ public:
         m_isPreview = p;
         emit isPreviewChanged(p);
     }
+    bool isBoardFlipped() const { return m_isBoardFlipped; }
+    void flipBoard() {
+        m_isBoardFlipped = !m_isBoardFlipped;
+        emit isBoardFlippedChanged(m_isBoardFlipped);
+    }
+
     int lastMove() const { return m_lastMove; }
 
     double evalScore() const { return m_evalScore; }
@@ -85,6 +91,7 @@ signals:
     // Signals ChessGameWindow to append new move to current selected move
     void moveMade(QSharedPointer<NotationMove>& move);
     void isPreviewChanged(bool);
+    void isBoardFlippedChanged(bool);
     void lastMoveChanged();
     void evalScoreChanged();
 
@@ -107,6 +114,7 @@ private:
 
     int m_lastMove = -1;
     bool m_isPreview = false;
+    bool m_isBoardFlipped = false;
     double m_evalScore = 0;
 };
 
@@ -117,8 +125,6 @@ void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int 
 
 QSharedPointer<NotationMove> parseEngineLine(const QString& line, QSharedPointer<NotationMove> startMove);
 QVector<QVector<QString>> convertFenToBoardData(const QString &fen);
-// Recursively builds a Notation tree from PgnGameData
-void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove, bool openingCutoff = false);
 void parseBodyAndBuild(QString &bodyText, QSharedPointer<NotationMove> rootMove, bool openingCutoff);
 
 #endif // CHESSPOSITION_H

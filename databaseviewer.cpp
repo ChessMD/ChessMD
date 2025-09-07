@@ -13,7 +13,7 @@ March 18, 2025 - Program Creation
 #include "chessgamewindow.h"
 #include "chessposition.h"
 #include "chesstabhost.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "draggablecheckbox.h"
 
 

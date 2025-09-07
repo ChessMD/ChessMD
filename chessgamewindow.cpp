@@ -372,6 +372,10 @@ void ChessGameWindow::toolbarSetup()
     forward->setIcon(QIcon(getIconPath("arrow-right.png")));
     connect(forward, &QAction::triggered, this, &ChessGameWindow::onNextMoveShortcut);
 
+    QAction* flipBoard = m_Toolbar->addAction("Flip Board (Ctrl+F)");
+    flipBoard->setIcon(QIcon(getIconPath("flip-board.png")));
+    connect(flipBoard, &QAction::triggered, this, &ChessGameWindow::onFlipBoardShortcut);
+
     QAction* save = m_Toolbar->addAction("Save (Ctrl+S)");
     save->setIcon(QIcon(getIconPath("savegame.png")));
     connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
@@ -636,6 +640,11 @@ void ChessGameWindow::onPrevMoveShortcut()
 void ChessGameWindow::onNextMoveShortcut()
 {
     m_notationViewer->selectNextMove();
+}
+
+void ChessGameWindow::onFlipBoardShortcut()
+{
+    m_positionViewer->flipBoard();
 }
 
 void ChessGameWindow::onDeleteAfterShortcut()

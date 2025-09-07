@@ -7,20 +7,18 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 #include <iostream>
 #include <istream>
 
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 class StreamParser
 {
 
 public:
     explicit StreamParser(std::istream &stream) : streamBuffer(stream) {}
-    std::vector<PGNGame> parseDatabaseOld();
     std::vector<PGNGame> parseDatabase();
     
-    bool parseNextGame(PGNGame& game);
-
 private:
     std::istream &streamBuffer;
 };
 
 void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff = false);
+bool isHeaderLine(const std::string &line);

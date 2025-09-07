@@ -1,5 +1,5 @@
 #include "pgnsavedialog.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 #include <QFormLayout>
 #include <QHBoxLayout>

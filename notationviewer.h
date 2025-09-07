@@ -11,7 +11,7 @@ March 18, 2025: File Creation
 #include <QRect>
 
 #include "notation.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 // Holds layout info for each clickable move segment
 struct MoveSegment {

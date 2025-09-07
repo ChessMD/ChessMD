@@ -1,5 +1,7 @@
 #include "openingviewer.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
+#include "chessgamewindow.h"
+#include "streamparser.h"
 
 #include <cstring>
 #include <QFile>
@@ -8,9 +10,12 @@
 #include <QHeaderView>
 #include <QPainterPath>
 #include <QApplication>
+#include <QSplitter>
+#include <QTimer>
 
 const int MAX_GAMES_TO_SHOW = 1000;
 const int MAX_OPENING_DEPTH = 70; // counted in half-moves
+const int INTIAL_GAMES_TO_LOAD = 20;
 const quint64 MAGIC = 0x4F50454E424B3131ULL;
 const quint32 VERSION = 1;
 
@@ -295,9 +300,20 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
 
     int totalW = inner.width();
     int wWhite = qBound(0, int(totalW * whitePct / 100.0), totalW);
-    int wDraw  = qBound(0, int(totalW * drawPct  / 100.0), totalW - wWhite);
-    int wBlack = totalW - wWhite - wDraw;
-    if (wBlack < 0) wBlack = 0;
+    int wDraw  = qBound(0, int(totalW * drawPct  / 100.0), totalW);
+    int wBlack  = qBound(0, int(totalW * blackPct  / 100.0), totalW);
+
+    int totalUsed = wWhite + wDraw + wBlack;
+    int difference = totalW - totalUsed;
+    if (difference != 0) {
+        if (wWhite >= wDraw && wWhite >= wBlack && wWhite > 0) {
+            wWhite += difference;
+        } else if (wDraw >= wBlack && wDraw > 0) {
+            wDraw += difference;
+        } else if (wBlack > 0) {
+            wBlack += difference;
+        }
+    }
 
     int x = inner.left();
     QRect segWhite(x, inner.top(), wWhite, inner.height()); x += wWhite;
@@ -339,17 +355,31 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
     bool hasBlack = segBlack.width() > 0;
 
     if (hasWhite && !hasDraw && !hasBlack) {
+        // Only white segment
         drawSegmentRounded(p, segWhite, colWhite, true, true);
     } else if (!hasWhite && hasDraw && !hasBlack) {
+        // Only draw segment
         drawSegmentRounded(p, segDraw, colDraw, true, true);
     } else if (!hasWhite && !hasDraw && hasBlack) {
+        // Only black segment
         drawSegmentRounded(p, segBlack, colBlack, true, true);
-    } else {
-        if (hasWhite) drawSegmentRounded(p, segWhite, colWhite, true, false);
-        if (hasDraw)  drawSegmentRounded(p, segDraw,  colDraw,  false, false);
-        if (hasBlack) drawSegmentRounded(p, segBlack, colBlack, false, true);
-        if (!hasWhite && hasDraw && !hasBlack)
-            drawSegmentRounded(p, segDraw, colDraw, true, true);
+    } else if (hasWhite && hasDraw && !hasBlack) {
+        // White + Draw (no black)
+        drawSegmentRounded(p, segWhite, colWhite, true, false);
+        drawSegmentRounded(p, segDraw, colDraw, false, true);
+    } else if (!hasWhite && hasDraw && hasBlack) {
+        // Draw + Black (no white)
+        drawSegmentRounded(p, segDraw, colDraw, true, false);
+        drawSegmentRounded(p, segBlack, colBlack, false, true);
+    } else if (hasWhite && !hasDraw && hasBlack) {
+        // White + Black (no draw) - unusual case
+        drawSegmentRounded(p, segWhite, colWhite, true, false);
+        drawSegmentRounded(p, segBlack, colBlack, false, true);
+    } else if (hasWhite && hasDraw && hasBlack) {
+        // All three segments
+        drawSegmentRounded(p, segWhite, colWhite, true, false);
+        drawSegmentRounded(p, segDraw, colDraw, false, false);
+        drawSegmentRounded(p, segBlack, colBlack, false, true);
     }
 
     QFont f = opt.font;
@@ -365,8 +395,23 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
         return (luminance(segColor) < 128.0) ? QColor(255,255,255) : QColor(0,0,0);
     };
 
+    int rWhite = int(qRound(whitePct));
+    int rDraw = int(qRound(drawPct));
+    int rBlack = int(qRound(blackPct));
+    int sum = rWhite + rDraw + rBlack;
+    int d = 100 - sum;
+    if (d != 0) {
+        if (whitePct >= drawPct && whitePct >= blackPct) {
+            rWhite += d;
+        } else if (drawPct >= whitePct && drawPct >= blackPct) {
+            rDraw += d;
+        } else {
+            rBlack += d;
+        }
+    }
+
     if (segWhite.width() > 0) {
-        QString t = QString("%1%").arg(int(qRound(whitePct)));
+        QString t = QString("%1%").arg(rWhite);
         int tw = fm.horizontalAdvance(t);
         if (tw + pad*2 <= segWhite.width()) {
             QColor tc = textColorFor(colWhite);
@@ -377,7 +422,7 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
         }
     }
     if (segDraw.width() > 0) {
-        QString t = QString("%1%").arg(int(qRound(drawPct)));
+        QString t = QString("%1%").arg(rDraw);
         int tw = fm.horizontalAdvance(t);
         if (tw + pad*2 <= segDraw.width()) {
             QColor tc = textColorFor(colDraw);
@@ -388,7 +433,7 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
         }
     }
     if (segBlack.width() > 0) {
-        QString t = QString("%1%").arg(int(qRound(blackPct)));
+        QString t = QString("%1%").arg(rBlack);
         int tw = fm.horizontalAdvance(t);
         if (tw + pad*2 <= segBlack.width()) {
             QColor tc = textColorFor(colBlack);
@@ -407,10 +452,6 @@ OpeningViewer::OpeningViewer(QWidget *parent)
 {
     // load opening book
     mOpeningBookLoaded = mOpeningInfo.deserialize("./opening/openings.bin");
-
-    QHBoxLayout* mainLayout = new QHBoxLayout();
-    mainLayout->setContentsMargins(8, 6, 8, 6);
-    mainLayout->setSpacing(12);
 
     // moves list side
     QVBoxLayout* listsLayout = new QVBoxLayout();
@@ -493,25 +534,42 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mGamesList->verticalHeader()->setDefaultSectionSize(10);
     mGamesList->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     mGamesList->setFocusPolicy(Qt::NoFocus);
+    mGamesList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed); // white
+    mGamesList->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed); // black
+    mGamesList->setColumnWidth(0, 120);
+    mGamesList->setColumnWidth(2, 120);
     mGamesList->setCursor(Qt::PointingHandCursor);
 
     gamesLayout->addWidget(rightHeader);
     gamesLayout->addWidget(mGamesList);
 
-    const int headerHeight = qMax(leftHeader->sizeHint().height(), rightHeader->sizeHint().height());
-    leftHeader->setFixedHeight(headerHeight);
-    rightHeader->setFixedHeight(headerHeight);
-    mainLayout->addLayout(listsLayout);
-    mainLayout->addLayout(gamesLayout);
-    mainLayout->setStretch(0, 1);
-    mainLayout->setStretch(1, 1);
     mPositionLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     mStatsLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     mGamesLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     gamesLayout->setAlignment(mGamesLabel, Qt::AlignLeft | Qt::AlignTop);
     listsLayout->setAlignment(mPositionLabel, Qt::AlignLeft | Qt::AlignTop);
 
-    setLayout(mainLayout);
+    const int headerHeight = qMax(leftHeader->sizeHint().height(), rightHeader->sizeHint().height());
+    leftHeader->setFixedHeight(headerHeight);
+    rightHeader->setFixedHeight(headerHeight);
+
+    QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
+    splitter->setContentsMargins(8, 6, 8, 6);
+    splitter->setHandleWidth(6);
+    QWidget* leftWidget = new QWidget();
+    leftWidget->setLayout(listsLayout);
+    QWidget* rightWidget = new QWidget();
+    rightWidget->setLayout(gamesLayout);
+    splitter->addWidget(leftWidget);
+    splitter->addWidget(rightWidget);
+    splitter->setSizes({200, 400});
+
+    // Create a layout to hold the splitter
+    QVBoxLayout* containerLayout = new QVBoxLayout(this);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->addWidget(splitter);
+
+    setLayout(containerLayout);
 
     // styles
     QString styleSheet = R"(
@@ -542,7 +600,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     mGamesList->setStyleSheet(styleSheet);
 
     connect(mMovesList, &QTableWidget::itemClicked, this, &OpeningViewer::onNextMoveSelected);
-    connect(mGamesList, &QTableWidget::itemDoubleClicked, this, &OpeningViewer::onGameSelected);
+    connect(mGamesList, &QTableWidget::itemClicked, this, &OpeningViewer::onGameSelected);
 }
 
 void OpeningViewer::onMoveSelected(QSharedPointer<NotationMove>& move)
@@ -576,7 +634,7 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
         auto [newWin, _] = mOpeningInfo.getWinrate(tempPos.computeZobrist());
         int total = newWin.whiteWin + newWin.blackWin + newWin.draw;
         if (total){
-            float whitePct = newWin.whiteWin * 100 / total, blackPct = newWin.blackWin * 100 / total, drawPct = newWin.draw * 100 / total;
+            float whitePct = newWin.whiteWin * 100.0 / total, blackPct = newWin.blackWin * 100.0 / total, drawPct = newWin.draw * 100.0 / total;
             addMoveToList(QString(nextNumPrefix+position->lanToSan(sr, sc, dr, dc, QChar(promo))), total, whitePct, drawPct, blackPct, {sr, sc, dr, dc, promo});
         }
     }
@@ -710,41 +768,61 @@ void OpeningViewer::updateGamesList(const int openingIndex, const PositionWinrat
         return;
     }
 
-    QVector<quint32> gameIDs = mOpeningInfo.readGameIDs(openingIndex);
-    QVector<PGNGame> games = loadGameHeadersBatch("./opening/openings.headers", gameIDs);
+    mPendingGameIDs = mOpeningInfo.readGameIDs(openingIndex);
+    mPendingGames = loadGameHeadersBatch("./opening/openings.headers", mPendingGameIDs);
 
     mGamesList->setRowCount(0);
     mGamesList->setSortingEnabled(false); // no sorting while loading
-    for (int i = 0; i < gameIDs.size(); i++) {
-        const PGNGame &game = games[i];
-        QString white, whiteElo, black, blackElo, result, date, event;
-        for (const auto& header : std::as_const(game.headerInfo)) {
-            if (header.first == "White") white = header.second;
-            else if (header.first == "WhiteElo") whiteElo = header.second;
-            else if (header.first == "Black") black = header.second;
-            else if (header.first == "BlackElo") blackElo = header.second;
-            else if (header.first == "Date") date = header.second;
-            else if (header.first == "Event") event = header.second;
-        }
-        result = game.result;
-        QTableWidgetItem* whiteEloItem = new QTableWidgetItem(whiteElo.toInt());
-        whiteEloItem->setData(Qt::DisplayRole, whiteElo.toInt());
-        QTableWidgetItem* blackEloItem = new QTableWidgetItem(blackElo.toInt());
-        blackEloItem->setData(Qt::DisplayRole, blackElo.toInt());
-        int row = mGamesList->rowCount();
-        mGamesList->insertRow(row);
-        mGamesList->setItem(row, 0, new QTableWidgetItem(white));
-        mGamesList->setItem(row, 1, whiteEloItem);
-        mGamesList->setItem(row, 2, new QTableWidgetItem(black));
-        mGamesList->setItem(row, 3, blackEloItem);
-        mGamesList->setItem(row, 4, new QTableWidgetItem(result));
-        mGamesList->setItem(row, 5, new QTableWidgetItem(date));
-        mGamesList->setItem(row, 6, new QTableWidgetItem(event));
-        mGamesList->item(row, 0)->setData(Qt::UserRole, gameIDs[i]);
+    for (int i = 0; i < qMin(INTIAL_GAMES_TO_LOAD, mPendingGameIDs.size()); i++) {
+        addGameToList(i);
     }
 
+    if (mPendingGameIDs.size() > INTIAL_GAMES_TO_LOAD) {
+        QTimer::singleShot(0, this, SLOT(loadRemainingGames()));
+    } else {
+        mGamesList->setSortingEnabled(true);
+    }
+    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(mPendingGameIDs.size(), MAX_GAMES_TO_SHOW)).arg(winrate.whiteWin + winrate.blackWin + winrate.draw));
+    mPendingGameMap.clear();
+    for (int i=0; i < mPendingGameIDs.size() && i < mPendingGames.size(); ++i) {
+        mPendingGameMap.insert(mPendingGameIDs[i], mPendingGames[i]);
+    }
+}
+
+void OpeningViewer::loadRemainingGames(){
+    for (int i = INTIAL_GAMES_TO_LOAD; i < mPendingGameIDs.size(); i++) {
+        addGameToList(i);
+    }
     mGamesList->setSortingEnabled(true);
-    mGamesLabel->setText(tr("Games: %1 of %2 shown").arg(qMin(gameIDs.size(), MAX_GAMES_TO_SHOW)).arg(winrate.whiteWin + winrate.blackWin + winrate.draw));
+}
+
+void OpeningViewer::addGameToList(int index){
+    if (index < 0 || index >= mPendingGames.size() || index >= mPendingGameIDs.size()) return;
+    const PGNGame &game = mPendingGames[index];
+    QString white, whiteElo, black, blackElo, result, date, event;
+    for (const auto& header : std::as_const(game.headerInfo)) {
+        if (header.first == "White") white = header.second;
+        else if (header.first == "WhiteElo") whiteElo = header.second;
+        else if (header.first == "Black") black = header.second;
+        else if (header.first == "BlackElo") blackElo = header.second;
+        else if (header.first == "Date") date = header.second;
+        else if (header.first == "Event") event = header.second;
+    }
+    result = game.result;
+    QTableWidgetItem* whiteEloItem = new QTableWidgetItem(whiteElo.toInt());
+    whiteEloItem->setData(Qt::DisplayRole, whiteElo.toInt());
+    QTableWidgetItem* blackEloItem = new QTableWidgetItem(blackElo.toInt());
+    blackEloItem->setData(Qt::DisplayRole, blackElo.toInt());
+    int row = mGamesList->rowCount();
+    mGamesList->insertRow(row);
+    mGamesList->setItem(row, 0, new QTableWidgetItem(white));
+    mGamesList->setItem(row, 1, whiteEloItem);
+    mGamesList->setItem(row, 2, new QTableWidgetItem(black));
+    mGamesList->setItem(row, 3, blackEloItem);
+    mGamesList->setItem(row, 4, new QTableWidgetItem(result));
+    mGamesList->setItem(row, 5, new QTableWidgetItem(date));
+    mGamesList->setItem(row, 6, new QTableWidgetItem(event));
+    mGamesList->item(row, 0)->setData(Qt::UserRole, mPendingGameIDs[index]);
 }
 
 // helper
@@ -794,5 +872,40 @@ void OpeningViewer::onNextMoveSelected(QTableWidgetItem* item)
 
 void OpeningViewer::onGameSelected(QTableWidgetItem* item)
 {
-    // emit gameSelected(gameId);
+    if (!item) return;
+    int row = item->row();
+    QTableWidgetItem* firstColumnItem = mGamesList->item(row, 0);
+    if (!firstColumnItem) return;
+    quint32 gameId = firstColumnItem->data(Qt::UserRole).toUInt();
+    PGNGame dbGame = mPendingGameMap.value(gameId);
+    PGNGame game;
+    game.copyFrom(dbGame);
+    if (!game.isParsed){
+        parseBodyText(game.bodyText, game.rootMove);
+        game.isParsed = true;
+    }
+
+    // create and show the game editor window
+    ChessGameWindow *gameWin = new ChessGameWindow(nullptr, game);
+    gameWin->mainSetup();
+    gameWin->setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+    gameWin->show();
+
+    connect(gameWin, &ChessGameWindow::PGNGameUpdated, this, [this, gameWin](PGNGame &game) {
+        QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files (*.pgn)"));
+        if (savePath.isEmpty()) {
+            return;
+        }
+
+        QFile file(savePath);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QMessageBox::warning(this, tr("Save Error"), tr("Unable to open file for writing."));
+            return;
+        }
+
+        QTextStream out(&file);
+        out << game.serializePGN();
+        file.close();
+        gameWin->close();
+    });
 }

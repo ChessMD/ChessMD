@@ -186,31 +186,6 @@ void SettingsDialog::reportProgress(qint64 bytesRead, qint64 total, QProgressBar
     QApplication::processEvents();
 }
 
-static bool isHeaderLine(const std::string &line) {
-    size_t i = 0;
-    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
-    if (i >= line.size()) return false;
-    if (line[i] != '[') return false;
-    ++i;
-    size_t tagStart = i;
-    while (i < line.size() && (std::isalnum(static_cast<unsigned char>(line[i])) || line[i] == '_')) ++i;
-    if (i == tagStart) return false; // no tag characters
-    if (i >= line.size() || !(line[i] == ' ' || line[i] == '\t')) return false;
-    while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) ++i;
-    if (i >= line.size()) return false;
-    if (line[i] != '"') return false;
-    ++i;
-    while (i < line.size() && line[i] != '"') ++i;
-    if (i >= line.size()) return false; // no closing quote
-    ++i;
-    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
-    if (i >= line.size()) return false;
-    if (line[i] != ']') return false;
-    ++i;
-    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
-    return i == line.size();
-}
-
 void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *progressBar) {
     if (file.isEmpty()) return;
 

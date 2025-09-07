@@ -9,7 +9,7 @@ March 18, 2025: File Creation
 #include "notationviewer.h"
 #include "engineviewer.h"
 #include "chessposition.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "openingviewer.h"
 #include "gamereviewviewer.h"
 
@@ -105,6 +105,7 @@ private slots:
 
     void onPrevMoveShortcut();
     void onNextMoveShortcut();
+    void onFlipBoardShortcut();
     void onDeleteAfterShortcut();
     void onDeleteVariationShortcut();
     void onPromoteVariationShortcut();

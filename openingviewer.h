@@ -18,14 +18,8 @@
 #include <QEvent>
 #include <QHeaderView>
 
+#include "pgngame.h"
 #include "chessposition.h"
-
-// RowHoverEventFilter - minimal & reliable
-#include <QObject>
-#include <QTableWidget>
-#include <QMouseEvent>
-#include <QHeaderView>
-#include <QScrollBar>
 
 class ResultBarDelegate : public QStyledItemDelegate
 {
@@ -103,7 +97,8 @@ signals:
 private slots:
     void onNextMoveSelected(QTableWidgetItem* item);
     void onGameSelected(QTableWidgetItem* item);
-    
+    void loadRemainingGames();
+
 private:
     bool mOpeningBookLoaded = false;
 
@@ -111,6 +106,7 @@ private:
     bool ensureHeaderOffsetsLoaded(const QString &path);
 
     void addMoveToList(const QString& move, int games, float whitePct, float drawPct, float blackPct, SimpleMove moveData);
+    void addGameToList(int index);
     void updateGamesList(const int openingIndex, const PositionWinrate winrate);
 
     OpeningInfo mOpeningInfo;
@@ -124,8 +120,9 @@ private:
     QTableWidget* mMovesList;
     QTableWidget* mGamesList;
 
-    QString mCurrentPosition;
-    int mTotalGames = 0;
+    QHash<quint32, PGNGame> mPendingGameMap;
+    QVector<quint32> mPendingGameIDs;
+    QVector<PGNGame> mPendingGames;
 };
 
 extern const int MAX_GAMES_TO_SHOW;

@@ -63,5 +63,6 @@
         <file>img/checkmark.png</file>
         <file>img/trash-icon.png</file>
         <file>img/white_icons/trash-icon.png</file>
+        <file>img/flip-board.png</file>
     </qresource>
 </RCC>

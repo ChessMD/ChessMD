@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 
 pragma ComponentBehavior: Bound
 
+
 Rectangle {
     id: recRoot
     anchors.fill: parent
@@ -192,9 +193,13 @@ Rectangle {
                         var lm = chessPosition.lastMove;
                         if (lm < 0) return false;
                         var fromIdx = lm >> 8;
-                        var toIdx   = lm & 0xFF;
-                        var thisIdx = row*8 + col;
-                        return thisIdx === fromIdx || thisIdx === toIdx;
+                        var toIdx = lm & 0xFF;
+                        if (chessPosition.isBoardFlipped){
+                            return fromIdx === (7-row)*8 + 7-col || toIdx === (7-row)*8 + 7-col;
+                        } else {
+                            return fromIdx === row*8 + col || toIdx === row*8 + col;
+                        }
+
                     }
                     z: 5
                 }
@@ -227,7 +232,15 @@ Rectangle {
                     width: parent.width * 0.95
                     height: parent.height * 0.95
 
-                    source: board.boardData[piece.row][piece.col] !== "" ? "img/piece/alpha/" + board.boardData[piece.row][piece.col] + ".svg" : ""
+                    source: {
+                        if (!chessPosition) return ""
+                        if (chessPosition.isBoardFlipped){
+                            board.boardData[7-piece.row][7-piece.col] !== "" ? "img/piece/alpha/" + board.boardData[7-piece.row][7-piece.col] + ".svg" : ""
+                        } else {
+                            board.boardData[piece.row][piece.col] !== "" ? "img/piece/alpha/" + board.boardData[piece.row][piece.col] + ".svg" : ""
+                        }
+                    }
+
 
                     fillMode: Image.PreserveAspectFit
 
@@ -243,18 +256,30 @@ Rectangle {
                     property int hoverCol: Math.floor((piece.x + mouseX) / board.cellSize)
                     property int hoverRow: Math.floor((piece.y + mouseY) / board.cellSize)
 
-                    cursorShape: board.dragOrigin >= 0 ? Qt.ClosedHandCursor : (board.boardData[row][col] !== ""  ? Qt.PointingHandCursor : Qt.ArrowCursor)
+                    cursorShape: {
+                        if (chessPosition) {
+                            if (chessPosition.isBoardFlipped){
+                                board.dragOrigin >= 0 ? Qt.ClosedHandCursor : (board.boardData[7-row][7-col] !== ""  ? Qt.PointingHandCursor : Qt.ArrowCursor)
+                            } else {
+                                board.dragOrigin >= 0 ? Qt.ClosedHandCursor : (board.boardData[row][col] !== ""  ? Qt.PointingHandCursor : Qt.ArrowCursor)
+                            }
+                        }
+                    }
 
                     onPressed: {
-                        board.dragOrigin = index;
-                        hoverCol = Math.floor((piece.x + mouseX) / board.cellSize);
-                        hoverRow = Math.floor((piece.y + mouseY) / board.cellSize);
+                        board.dragOrigin = index
+                        hoverCol = Math.floor((piece.x + mouseX) / board.cellSize)
+                        hoverRow = Math.floor((piece.y + mouseY) / board.cellSize)
                     }
 
                     onReleased: {
-                        board.dragOrigin = -1;
+                        board.dragOrigin = -1
                         if (chessPosition){
-                            chessPosition.release(piece.row, piece.col, hoverRow, hoverCol);
+                            if (chessPosition.isBoardFlipped){
+                                chessPosition.release(7-piece.row, 7-piece.col, 7-hoverRow, 7-hoverCol)
+                            } else {
+                                chessPosition.release(piece.row, piece.col, hoverRow, hoverCol)
+                            }
                         }
                     }
 

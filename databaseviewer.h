@@ -2,11 +2,11 @@
 #define DATABASEVIEWER_H
 
 #include "chessgamewindow.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "streamparser.h"
 #include "databaseviewermodel.h"
 #include "databasefilterproxymodel.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 #include <QTextEdit>
 #include <QSortFilterProxyModel>

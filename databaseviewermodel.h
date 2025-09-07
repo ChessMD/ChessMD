@@ -1,7 +1,7 @@
 #ifndef DATABASEVIEWERMODEL_H
 #define DATABASEVIEWERMODEL_H
 
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 #include <QAbstractItemModel>
 #include <QStringList>

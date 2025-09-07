@@ -35,6 +35,11 @@ public:
 
     void goMovetime(int milliseconds);
 
+    void setSkillLevel(int level);
+    void setLimitStrength(bool enabled);
+    void goWithClocks(int wtime_ms, int btime_ms, int winc_ms = 0, int binc_ms = 0);
+    void sendRawCommand(const QString &cmd);
+
 signals:
     void commandSent(const QString &cmd);
     void infoReceived(const QString &rawInfo);
