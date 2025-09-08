@@ -178,6 +178,32 @@ Rectangle {
                 x: col * board.cellSize
                 y: row * board.cellSize
 
+                // file coordinates bottom
+                Text {
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    anchors.margins: 2
+                    text: String.fromCharCode(97 + col) // a-h
+                    font.pixelSize: board.cellSize * 0.2
+                    font.weight: Font.Bold
+                    color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#999999" : "#EEE" /*hcc*/
+                    opacity: 0.8
+                    visible: row === 7 // Only show on bottom rank
+                }
+
+                // rank coordinates left
+                Text {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.margins: 2
+                    text: String(8 - row) // 8-1
+                    font.pixelSize: board.cellSize * 0.2
+                    font.weight: Font.Bold
+                    color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#999999" : "#EEE" /*hcc*/
+                    opacity: 0.8
+                    visible: col === 0 // Only show on left file
+                }
+
                 Rectangle {  // highlight
                     anchors.fill: parent
                     color: {
