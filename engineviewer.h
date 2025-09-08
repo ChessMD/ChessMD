@@ -60,7 +60,7 @@ private:
     QPushButton *m_buttonAnalyse;
     QPushButton *m_buttonStop;
     QPushButton *m_evalButton;
-    QLabel      *m_engineLabel;
+    QLabel *m_engineLabel;
     QTextEdit *m_console;
     QString m_currentFen;
     QString m_sideToMove;

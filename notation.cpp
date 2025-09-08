@@ -82,7 +82,7 @@ void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<
     child->m_previousMove = parent;
 }
 
-// Deletes all moves after the current selected move
+// Deletes the current selected move
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move)
 {
     if (!move->m_previousMove) return move;
@@ -93,6 +93,15 @@ QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move
         }
     }
     return move->m_previousMove;
+}
+
+void deleteSubtree(QSharedPointer<NotationMove>& move){
+    if (!move) return;
+    for (auto& childMove: move->m_nextMoves){
+        deleteSubtree(childMove);
+    }
+    move->m_nextMoves.clear();
+    move.reset();
 }
 
 void deleteAllCommentary(QSharedPointer<NotationMove>& move){

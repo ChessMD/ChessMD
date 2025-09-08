@@ -34,7 +34,6 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     listView->setWordWrap(true);
     listView->setContextMenuPolicy(Qt::CustomContextMenu);
 
-
     // setup model
     model = new QStandardItemModel(this);
     LoadGamesList();
@@ -43,13 +42,10 @@ DatabaseLibrary::DatabaseLibrary(QWidget *parent)
     listView->setModel(model);
     ui->MainLayout->addWidget(listView);
 
-
     //signals and slots
     connect(listView, &QListView::doubleClicked, this, &DatabaseLibrary::onDoubleClick);
     connect(listView, &QListView::clicked, this, &DatabaseLibrary::onClick);
     connect(listView, &QListView::customContextMenuRequested, this, &DatabaseLibrary::showContextMenu);
-
-
 
     host = new ChessTabHost;
 }
@@ -92,9 +88,7 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
     host->raise();
     host->activateWindow(); // for Windows
     host->show();
-
 }
-
 
 // Handle adding new database
 void DatabaseLibrary::onClick(const QModelIndex &index)
@@ -131,11 +125,10 @@ void DatabaseLibrary::newDatabase()
     AddNewGame(savePath);
 }
 
-
-void DatabaseLibrary::newChessboard()
+void DatabaseLibrary::newChessboard(PGNGame game)
 {
-    PGNGame emptyGame;
-    ChessGameWindow *gameWin = new ChessGameWindow(nullptr, emptyGame);
+    ChessGameWindow *gameWin = new ChessGameWindow(nullptr, game);
+    gameWin->setAttribute(Qt::WA_DeleteOnClose); // must have! allows destructor to run when window closes
     gameWin->mainSetup();
     gameWin->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
     gameWin->show();
@@ -177,6 +170,16 @@ void DatabaseLibrary::newChessboard()
         host->activateWindow(); // for Windows
         host->show();
     });
+}
+
+void DatabaseLibrary::newGameplayBoard(){
+    PGNGame emptyGame;
+    ChessGameWindow *gameWin = new ChessGameWindow(nullptr, emptyGame);
+    gameWin->setAttribute(Qt::WA_DeleteOnClose); // must have! allows destructor to run when window closes
+    gameWin->gameplaySetup();
+    gameWin->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
+    gameWin->show();
+    connect(gameWin, &ChessGameWindow::openAnalysisBoard, this, &DatabaseLibrary::newChessboard);
 }
 
 // Add game to library model

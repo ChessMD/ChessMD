@@ -30,7 +30,6 @@ void UciEngine::startEngine(const QString &binaryPath) {
     sendCommand("isready\n");
 }
 
-
 void UciEngine::requestReady() {
     sendCommand("isready\n");
 }
@@ -47,7 +46,8 @@ void UciEngine::setOption(const QString &name, const QString &value) {
 }
 
 void UciEngine::setPosition(const QString &fen) {
-    sendCommand(QString("position fen %1\n").arg(fen));
+    if (fen == "startpos") sendCommand("position startpos\n");
+    else sendCommand(QString("position fen %1\n").arg(fen));
 }
 
 void UciEngine::startInfiniteSearch(int maxMultiPV) {
@@ -76,7 +76,18 @@ void UciEngine::setLimitStrength(bool enabled) {
 }
 
 void UciEngine::goWithClocks(int wtime_ms, int btime_ms, int winc_ms, int binc_ms) {
-    if (!m_ready) return;
+    if (!m_ready) {
+        qDebug() << "unready";
+        m_hasPendingGo = true;
+        m_pending_wtime = wtime_ms;
+        m_pending_btime = btime_ms;
+        m_pending_winc = winc_ms;
+        m_pending_binc = binc_ms;
+        sendCommand("isready\n");
+        return;
+    }
+    m_hasPendingGo = false;
+    qDebug() << QString("go wtime %1 btime %2 winc %3 binc %4\n").arg(wtime_ms).arg(btime_ms).arg(winc_ms).arg(binc_ms);
     sendCommand(QString("go wtime %1 btime %2 winc %3 binc %4\n").arg(wtime_ms).arg(btime_ms).arg(winc_ms).arg(binc_ms));
     m_ready = false;
 }
@@ -89,9 +100,23 @@ void UciEngine::handleReadyRead() {
     while (m_proc->canReadLine()) {
         QString line = QString::fromUtf8(m_proc->readLine()).trimmed();
         emit infoReceived(line);
+        qDebug() << line;
 
         if (line == "readyok"){
             m_ready = true;
+            if (m_hasPendingGo) {
+                // grab pending params
+                int w = m_pending_wtime;
+                int b = m_pending_btime;
+                int wi = m_pending_winc;
+                int bi = m_pending_binc;
+                m_hasPendingGo = false; // clear before sending to avoid loops
+                // send the actual go
+                QString cmd = QString("go wtime %1 btime %2 winc %3 binc %4\n").arg(w).arg(b).arg(wi).arg(bi);
+                qDebug() << cmd << "queueed";
+                sendCommand(cmd);
+                m_ready = false;
+            }
             continue;
         }
 

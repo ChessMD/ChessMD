@@ -1,4 +1,4 @@
-#include "databasefilter.h"
+ #include "databasefilter.h"
 #include "ui_databasefilter.h"
 
 DatabaseFilter::DatabaseFilter(QWidget *parent)

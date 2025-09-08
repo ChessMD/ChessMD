@@ -58,6 +58,7 @@ QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& mov
 QSharedPointer<NotationMove> getUniqueNextMove(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove> child);
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move);
+void deleteSubtree(QSharedPointer<NotationMove>& move);
 void deleteAllCommentary(QSharedPointer<NotationMove>& move);
 void promoteVariation(const QSharedPointer<NotationMove>& move);
 QSharedPointer<NotationMove> deleteVariation(const QSharedPointer<NotationMove>& move);

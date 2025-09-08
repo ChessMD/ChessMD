@@ -64,5 +64,7 @@
         <file>img/trash-icon.png</file>
         <file>img/white_icons/trash-icon.png</file>
         <file>img/flip-board.png</file>
+        <file>img/chess-king-black.png</file>
+        <file>img/chess-king-white.png</file>
     </qresource>
 </RCC>

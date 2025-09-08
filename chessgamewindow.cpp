@@ -57,17 +57,18 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     // create and connect keyboard shortcuts
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
     QShortcut* nextMove = new QShortcut(QKeySequence(Qt::Key_Right), this);
+    QShortcut* flipBoard = new QShortcut(QKeySequence("Ctrl+F"), this);
     QShortcut* delAfter = new QShortcut(QKeySequence(Qt::Key_Delete), this);
     QShortcut* delVariation = new QShortcut(QKeySequence("Ctrl+D"), this);
     QShortcut* promoteVariation = new QShortcut(QKeySequence("Ctrl+Up"), this);
 
     connect(prevMove, &QShortcut::activated, this, &ChessGameWindow::onPrevMoveShortcut);
     connect(nextMove, &QShortcut::activated, this, &ChessGameWindow::onNextMoveShortcut);
+    connect(flipBoard, &QShortcut::activated, this, &ChessGameWindow::onFlipBoardShortcut);
     connect(delAfter, &QShortcut::activated, this, &ChessGameWindow::onDeleteAfterShortcut);
     connect(delVariation, &QShortcut::activated, this, &ChessGameWindow::onDeleteVariationShortcut);
     connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
-
 
 void ChessGameWindow::closeEvent(QCloseEvent *event)
 {
@@ -133,6 +134,36 @@ void ChessGameWindow::previewSetup()
     notationSetup();
     addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
     m_notationDock->show();
+}
+
+void ChessGameWindow::gameplaySetup()
+{
+    m_isPreview = true;
+    notationSetup();
+    toolbarSetup();
+    m_notationDock->hide();
+
+    // create viewer with pointer to the same ChessPosition
+    m_gameplayViewer = new GameplayViewer(m_positionViewer, this);
+    m_gameplayDock = new QDockWidget(tr("Play vs Engine"), this);
+    m_gameplayDock->setWidget(m_gameplayViewer);
+    m_gameplayDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+    m_gameplayDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, m_gameplayDock);
+    m_gameplayDock->show();
+
+    connect(m_notationViewer, &NotationViewer::moveSelected, m_gameplayViewer, &GameplayViewer::onBoardMoveMade);
+    connect(m_gameplayViewer, &GameplayViewer::resetBoard, this, &ChessGameWindow::onResetBoard);
+    connect(m_gameplayViewer, &GameplayViewer::openAnalysisBoard, this, [this]{
+        PGNGame game;
+        game.copyFrom(m_notationViewer->m_game);
+        emit openAnalysisBoard(game);
+    });
+
+    QTimer::singleShot(0, this, [this](){
+        if (m_gameplayDock)
+            resizeDocks({m_gameplayDock}, {int(width() * 0.4)}, Qt::Horizontal);
+    });
 }
 
 void ChessGameWindow::saveGame(){
@@ -420,6 +451,7 @@ void ChessGameWindow::engineSetup()
     m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_engineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
+
     if (m_notationDock){
         splitDockWidget(m_notationDock, m_engineDock, Qt::Vertical);
     }
@@ -577,6 +609,16 @@ void ChessGameWindow::notationToolbarSetup()
 NotationViewer* ChessGameWindow::getNotationViewer()
 {
     return m_notationViewer;
+}
+
+void ChessGameWindow::onResetBoard()
+{
+    auto rootMove = m_notationViewer->getRootMove();
+    m_notationViewer->m_selectedMove = rootMove;
+    emit m_notationViewer->moveSelected(rootMove);
+    emit m_positionViewer->boardDataChanged();
+    emit m_positionViewer->lastMoveChanged();
+    deleteSubtree(rootMove);
 }
 
 void ChessGameWindow::onEvalScoreChanged(double evalScore){

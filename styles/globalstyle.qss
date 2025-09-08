@@ -16,8 +16,11 @@ QPushButton:hover {
 QPushButton:pressed {
     background-color: palette(mid);
 }
-
-
+QPushButton:disabled {
+    background-color: palette(mid);
+    color: palette(placeholder-text);
+    border: 1px solid palette(dark);
+}
 
 QToolButton {
     background-color: palette(button);

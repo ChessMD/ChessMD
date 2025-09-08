@@ -7,6 +7,7 @@ April 11, 2025: File Creation
 
 #include <QObject>
 #include <QProcess>
+#include <QDebug>
 
 struct PvInfo {
     int depth;
@@ -51,13 +52,20 @@ private slots:
 
 private:
     QProcess *m_proc;
-    bool m_ready = true;
+    bool m_ready = false;
 
     // helper to write+emit
     void sendCommand(const QString &cmd) {
         m_proc->write(cmd.toUtf8());
+        qDebug() << cmd << "sent";
         emit commandSent(cmd.trimmed());
     }
+
+    bool m_hasPendingGo = false;
+    int m_pending_wtime = 0;
+    int m_pending_btime = 0;
+    int m_pending_winc = 0;
+    int m_pending_binc = 0;
 };
 
 #endif // UCIENGINE_H

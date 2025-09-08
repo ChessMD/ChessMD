@@ -66,8 +66,16 @@ void MainWindow::setupToolbar() {
 
     QAction* newBoardAct = new QAction(QIcon(getIconPath("board-icon.png")), tr("New Board"), this);
     newBoardAct->setToolTip(tr("New Chessboard"));
-    connect(newBoardAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newChessboard);
+    connect(newBoardAct, &QAction::triggered, m_dbLibrary, [this]{
+        PGNGame emptyGame;
+        m_dbLibrary->newChessboard(emptyGame);
+    });
     toolbar->addAction(newBoardAct);
+
+    QAction* playGameAct = new QAction(QIcon(getIconPath("logo.png")), tr("Play Game"), this);
+    playGameAct->setToolTip(tr("Play Game Against Engine"));
+    connect(playGameAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newGameplayBoard);
+    toolbar->addAction(playGameAct);
 
     QAction* chessComAct = new QAction(QIcon(getIconPath("cloud-file-download-icon.png")), tr("Import Online Database"), this);
     chessComAct->setToolTip(tr("Import games from Chess.com"));

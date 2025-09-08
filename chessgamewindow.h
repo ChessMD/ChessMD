@@ -12,6 +12,7 @@ March 18, 2025: File Creation
 #include "pgngame.h"
 #include "openingviewer.h"
 #include "gamereviewviewer.h"
+#include "gameplayviewer.h"
 
 #include <QQuickWidget>
 #include <QMainWindow>
@@ -37,12 +38,14 @@ public:
 
     void mainSetup();
     void previewSetup();
+    void gameplaySetup();
     void saveGame();
 
     NotationViewer* getNotationViewer();
 
 signals:
     void PGNGameUpdated(PGNGame &game);
+    void openAnalysisBoard(PGNGame &game);
 
 protected:
     void showEvent(QShowEvent *ev) override;
@@ -71,12 +74,14 @@ private:
     EngineWidget* m_engineViewer;
     ChessPosition* m_positionViewer;
     GameReviewViewer *m_gameReviewViewer;
+    GameplayViewer *m_gameplayViewer;
     QToolBar* m_Toolbar;
 
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
     QDockWidget* m_openingDock;
     QDockWidget* m_gameReviewDock;
+    QDockWidget *m_gameplayDock;
 
     QAction* m_startEngineAction;
     QAction* m_stopEngineAction;
@@ -99,6 +104,8 @@ private:
 
 
 private slots:
+    void onResetBoard();
+
     void onMoveMade(QSharedPointer<NotationMove>& move);
     void onMoveSelected(QSharedPointer<NotationMove>& move);
     void onEvalScoreChanged(double evalScore);

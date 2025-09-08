@@ -36,6 +36,7 @@ endif()
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
     qt_add_executable(ChessMD
         MANUAL_FINALIZATION
@@ -89,6 +90,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         theme.cpp
         theme.h
         img/white_icons/arrow-left.png img/white_icons/arrow-right.png img/white_icons/board-icon.png img/white_icons/book.png img/white_icons/book-off.png img/white_icons/check.png img/white_icons/cloud-file-download-icon.png img/white_icons/database-add-icon.png img/white_icons/database-upload-icon.png img/white_icons/edit.png img/white_icons/engine.png img/white_icons/enginedebug.png img/white_icons/engine-start.png img/white_icons/engine-stop.png img/white_icons/filter.png img/white_icons/help-circle.png img/white_icons/savegame.png img/white_icons/settings.png img/white_icons/sparkles.png
+        gameplayviewer.h gameplayviewer.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ChessMD APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -109,6 +111,7 @@ else()
 endif()
 
 target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt6::Charts)
+target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 

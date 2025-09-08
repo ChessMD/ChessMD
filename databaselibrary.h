@@ -1,6 +1,8 @@
 #ifndef DATABASELIBRARY_H
 #define DATABASELIBRARY_H
 
+#include "pgngame.h"
+
 #include <QWidget>
 #include <QHeaderView>
 #include <QMessageBox>
@@ -29,7 +31,8 @@ public:
 public slots:
     void importDatabase();
     void newDatabase();
-    void newChessboard();
+    void newChessboard(PGNGame game);
+    void newGameplayBoard();
 
 signals:
     void fileDoubleClicked(const QString &fileIdentifier);
