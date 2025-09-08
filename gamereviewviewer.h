@@ -13,7 +13,6 @@
 #include <QPushButton>
 #include <QFileDialog>
 
-#include <QRegularExpression>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>

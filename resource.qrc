@@ -66,5 +66,8 @@
         <file>img/flip-board.png</file>
         <file>img/chess-king-black.png</file>
         <file>img/chess-king-white.png</file>
+        <file>img/flag.png</file>
+        <file>img/reload.png</file>
+        <file>img/search.png</file>
     </qresource>
 </RCC>

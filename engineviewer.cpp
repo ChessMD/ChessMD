@@ -20,6 +20,7 @@ April 11, 2025: File Creation
 
 EngineWidget::EngineWidget(QWidget *parent)
     : QWidget(parent),
+
     m_engine(new UciEngine(this)),
     m_multiPv(3),
     m_console(new QTextEdit(this)),
@@ -176,24 +177,21 @@ void EngineWidget::onConfigEngineClicked()
         dir = QDir(exeDir);
     }
 
-    if (osVersion.type() == QOperatingSystemVersion::Windows)
+    if (osVersion.type() == QOperatingSystemVersion::Windows) {
         binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
-    else
+    } else {
         binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+    }
 
     if (binary.isEmpty()) return;
 
-    ChessQSettings s;
-    s.loadSettings();
-    s.setEngineFile(binary);
-    s.saveSettings();
-
+    ChessQSettings s; s.loadSettings();
+    s.setEngineFile(binary); s.saveSettings();
     m_engine->quitEngine();
     m_engine->startEngine(binary);
-
     m_engineLabel->setText(tr("No engine selected!"));
 
-    doPendingAnalysis();
+    QTimer::singleShot(200, this, [this](){ doPendingAnalysis(); });
 }
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move)
@@ -241,8 +239,6 @@ void EngineWidget::doPendingAnalysis()
 void EngineWidget::analysePosition() {
     if (m_currentFen.isEmpty()) return;
 
-    m_engine->stopSearch();
-    m_engine->requestReady();
     m_console->clear();
     QLayoutItem *child;
     while ((child = m_containerLay->takeAt(0)) != nullptr) {

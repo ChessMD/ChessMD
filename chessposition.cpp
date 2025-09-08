@@ -5,7 +5,6 @@ March 20, 2025: File Creation
 #include "chessposition.h"
 #include "openingviewer.h"
 
-#include <QRegularExpression>
 #include <QDebug>
 
 quint64 ZOBRIST_PIECE[12][64];

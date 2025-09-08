@@ -19,7 +19,6 @@ void ChessQSettings::saveSettings()
     QSettings settings(m_settingsFile, QSettings::IniFormat);
     settings.setValue("engineFile", m_engineFile);
     settings.sync();
-    qDebug() << m_engineFile << settings.value("engineFile", "").toString();
 }
 
 

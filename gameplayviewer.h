@@ -47,7 +47,7 @@ private:
     void scheduleNextDisplayUpdate();
     void turnFinished();
     bool isPlayersTurn() const;
-    void finishGame(const QString &result);
+    void finishGame(const QString &result, const QString &description);
 
     ChessPosition *m_positionViewer;
     UciEngine *m_engine;

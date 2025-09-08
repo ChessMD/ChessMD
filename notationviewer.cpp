@@ -14,7 +14,6 @@ March 18, 2025: File Creation
 #include <QMenu>
 #include <QTextLayout>
 #include <QInputDialog>
-#include <QRegularExpression>
 #include <QPalette>
 
 NotationViewer::NotationViewer(PGNGame game, QWidget* parent)

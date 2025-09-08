@@ -80,6 +80,7 @@ public:
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
+    bool inCheck(QChar side) const;
     QVector<SimpleMove> generateLegalMoves() const;
 
     char m_sideToMove;
@@ -97,8 +98,6 @@ signals:
 
 private:
     bool squareAttacked(int row, int col, QChar attacker) const;
-
-    bool inCheck(QChar side) const;
     bool canCastleKingside(QChar side) const;
     bool canCastleQueenside(QChar side) const;
 

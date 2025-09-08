@@ -535,7 +535,7 @@ void GameReviewViewer::onInfoReceived(const QString& line)
 {
     if (!m_isReviewing || !line.startsWith("info")) return;
 
-    QStringList tokens = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    QStringList tokens = line.simplified().split(' ', Qt::SkipEmptyParts);
     int scoreIndex = tokens.indexOf("score");
     if (scoreIndex < 0 || scoreIndex + 2 >= tokens.size()) return;
 
@@ -588,7 +588,7 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     connect(m_engine, &UciEngine::infoReceived, this, &GameReviewViewer::onInfoReceived);
     connect(m_engine, &UciEngine::bestMove, this, &GameReviewViewer::onBestMove);
 
-    startNextEval();
+    QTimer::singleShot(200, this, [this]{ startNextEval(); });
 }
 
 void GameReviewViewer::finalizeReview()

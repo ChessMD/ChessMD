@@ -21,7 +21,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QRegularExpression>
 #include <QEventLoop>
 
 MainWindow::MainWindow()
