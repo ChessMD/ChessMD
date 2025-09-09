@@ -29,7 +29,7 @@ void UciEngine::startEngine(const QString &binaryPath) {
     if (!fileInfo.exists() || !fileInfo.isFile()) return;
     m_proc->start(binaryPath);
     sendCommand("uci", false);
-    sendCommand("isready", false);
+    uciNewGame();
 }
 
 void UciEngine::sendCommand(const QString &cmd, bool requireReady) {
@@ -46,7 +46,6 @@ void UciEngine::requestReady() {
 
 void UciEngine::quitEngine() {
     if (m_proc->state() != QProcess::NotRunning) {
-        qDebug() << "quitengine entered";
         sendCommand("quit");
         m_proc->waitForFinished(500);
     }
@@ -84,9 +83,14 @@ void UciEngine::setLimitStrength(bool enabled) {
     setOption("UCI_LimitStrength", enabled ? "true" : "false");
 }
 
-void UciEngine::goWithClocks(int wtime_ms, int btime_ms, int winc_ms, int binc_ms) {
+void UciEngine::goDepthWithClocks(int depth, int whiteMs, int blackMs, int whiteIncMs, int blackIncMs) {
     stopSearch();
-    sendCommand(QString("go wtime %1 btime %2 winc %3 binc %4").arg(wtime_ms).arg(btime_ms).arg(winc_ms).arg(binc_ms));
+    sendCommand(QString("go depth %1 wtime %2 btime %3 winc %4 binc %5").arg(depth).arg(whiteMs).arg(blackMs).arg(whiteIncMs).arg(blackIncMs));
+}
+
+void UciEngine::goDepth(int depth) {
+    stopSearch();
+    sendCommand(QString("go depth %1").arg(depth));
 }
 
 void UciEngine::uciNewGame() {
@@ -101,6 +105,8 @@ void UciEngine::handleReadyRead() {
         emit infoReceived(line);
         if (line == "readyok"){
             m_ready = true;
+            emit engineReady();
+            emit engineReady();
             continue;
         }
 

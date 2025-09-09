@@ -71,7 +71,7 @@ void MainWindow::setupToolbar() {
     });
     toolbar->addAction(newBoardAct);
 
-    QAction* playGameAct = new QAction(QIcon(getIconPath("logo.png")), tr("Play Game"), this);
+    QAction* playGameAct = new QAction(QIcon(getIconPath("robot-face.png")), tr("Play Computer"), this);
     playGameAct->setToolTip(tr("Play Game Against Engine"));
     connect(playGameAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newGameplayBoard);
     toolbar->addAction(playGameAct);

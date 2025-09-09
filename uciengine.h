@@ -39,13 +39,15 @@ public:
     void uciNewGame();
     void setSkillLevel(int level);
     void setLimitStrength(bool enabled);
-    void goWithClocks(int wtime_ms, int btime_ms, int winc_ms = 0, int binc_ms = 0);
+    void goDepth(int depth);
+    void goDepthWithClocks(int depth, int whiteMs, int blackMs, int whiteIncMs = 0, int blackIncMs = 0);
 
 signals:
     void commandSent(const QString &cmd);
     void infoReceived(const QString &rawInfo);
     void bestMove(const QString &move);
     void pvUpdate(PvInfo &info);
+    void engineReady();
 
 private slots:
     void handleReadyRead();

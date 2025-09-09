@@ -103,6 +103,7 @@ private:
     QLabel* m_blackMovesCount;
 
     UciEngine* m_engine;
+    QMetaObject::Connection m_engineReadyConn;
     QQueue<PendingEval> m_pending;
     QVector<double> m_results;
     int m_currentEvalIndex = -1;

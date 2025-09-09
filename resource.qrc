@@ -69,5 +69,6 @@
         <file>img/flag.png</file>
         <file>img/reload.png</file>
         <file>img/search.png</file>
+        <file>img/robot-face.png</file>
     </qresource>
 </RCC>

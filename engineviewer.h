@@ -22,7 +22,7 @@ April 11, 2025: File Creation
 class EngineWidget : public QWidget {
     Q_OBJECT
 public:
-    explicit EngineWidget(QWidget *parent = nullptr);
+    explicit EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *parent = nullptr);
 
 signals:
     void engineMoveClicked(QSharedPointer<NotationMove>& move);
@@ -54,6 +54,7 @@ private:
 
     QTimer *m_debounceTimer;
     UciEngine *m_engine;
+    QMetaObject::Connection m_engineReadyConn;
     QScrollArea *m_scroll;
     QWidget *m_container;
     QVBoxLayout *m_containerLay;

@@ -584,11 +584,14 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     m_results.assign(N, 0.0);
     m_isReviewing = true;
 
-    m_engine->startEngine(m_settings.getEngineFile());
     connect(m_engine, &UciEngine::infoReceived, this, &GameReviewViewer::onInfoReceived);
     connect(m_engine, &UciEngine::bestMove, this, &GameReviewViewer::onBestMove);
+    m_engineReadyConn = connect(m_engine, &UciEngine::engineReady, this, [this]{
+        disconnect(m_engineReadyConn);
+        startNextEval();
+    });
 
-    QTimer::singleShot(200, this, [this]{ startNextEval(); });
+    m_engine->startEngine(m_settings.getEngineFile());
 }
 
 void GameReviewViewer::finalizeReview()

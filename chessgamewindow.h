@@ -39,6 +39,7 @@ public:
     void mainSetup();
     void previewSetup();
     void gameplaySetup();
+    void connectEditingShortcuts();
     void saveGame();
 
     NotationViewer* getNotationViewer();
@@ -105,6 +106,7 @@ private:
 
 private slots:
     void onResetBoard();
+    void onMatchBoardFlip(QChar side);
 
     void onMoveMade(QSharedPointer<NotationMove>& move);
     void onMoveSelected(QSharedPointer<NotationMove>& move);

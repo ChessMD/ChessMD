@@ -18,14 +18,16 @@ April 11, 2025: File Creation
 #include <QOperatingSystemVersion>
 #include <QCoreApplication>
 
-EngineWidget::EngineWidget(QWidget *parent)
+EngineWidget::EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *parent)
     : QWidget(parent),
-
     m_engine(new UciEngine(this)),
     m_multiPv(3),
     m_console(new QTextEdit(this)),
     m_isHovering(false),
-    m_ignoreHover(false)
+    m_ignoreHover(false),
+    m_sideToMove(move->m_position->m_sideToMove),
+    m_currentFen(move->m_position->positionToFEN()),
+    m_currentMove(move)
 {
     setAttribute(Qt::WA_Hover, true);
     setMouseTracking(true);  
@@ -156,13 +158,15 @@ EngineWidget::EngineWidget(QWidget *parent)
     connect(m_debounceTimer, &QTimer::timeout, this, &EngineWidget::doPendingAnalysis);
 
     ChessQSettings s; s.loadSettings();
-    m_engine->startEngine(s.getEngineFile());
-
     connect(m_engine, &UciEngine::pvUpdate, this, &EngineWidget::onPvUpdate);
     connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
     connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
+    m_engineReadyConn = connect(m_engine, &UciEngine::engineReady, this, [this]{
+        disconnect(m_engineReadyConn);
+        doPendingAnalysis();
+    });
 
-    // doPendingAnalysis();
+    m_engine->startEngine(s.getEngineFile());
 }
 
 void EngineWidget::onConfigEngineClicked()
