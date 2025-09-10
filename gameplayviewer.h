@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QButtonGroup>
 #include <QLabel>
+#include <QStack>
 
 #include "chessposition.h"
 #include "uciengine.h"
@@ -99,6 +100,7 @@ private:
     int m_engineDepth;
 
     int m_moveCount;
+    QStack<QString> m_positionStack;
     QHash<QString, int> m_positionHash;
 
     int m_humanSide; // 0 = white, 1 = black

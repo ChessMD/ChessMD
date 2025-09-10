@@ -32,7 +32,7 @@ HEADERS += chessgamefilesdata.h \
            notation.h \
            notationviewer.h \
            openingviewer.h \
-           pgngamedata.h \
+           pgngame.h \
            pgnsavedialog.h \
            pgnuploader.h \
            settingsdialog.h \
@@ -69,7 +69,7 @@ SOURCES += chessgamefilesdata.cpp \
            notation.cpp \
            notationviewer.cpp \
            openingviewer.cpp \
-           pgngamedata.cpp \
+           pgngame.cpp \
            pgnsavedialog.cpp \
            pgnuploader.cpp \
            settingsdialog.cpp \

@@ -494,6 +494,7 @@ void GameplayViewer::resetPlay()
     m_incMs = 0;
     m_active = false;
     m_engineIdle = true;
+    m_positionStack.clear();
     m_positionHash.clear();
 
     m_preGameWidget->setVisible(true);
@@ -517,6 +518,8 @@ void GameplayViewer::onPlayClicked(int selectedSide)
     m_engineIdle = true;
     m_humanSide = selectedSide;
     m_moveCount = 0;
+    m_positionStack.clear();
+    m_positionHash.clear();
     m_whiteMs = m_blackMs = (m_minutesSpin->value() * 60 + m_secondsSpin->value()) * 1000;
     m_incMs = m_incrementSpin->value() * 1000;
     m_engineDepth = 18 + int(std::round(double(m_eloSlider->value() - 1320) / double(3190 - 1320) * (25 - 18))); // linear depth function [20, 25]
@@ -632,14 +635,13 @@ void GameplayViewer::turnFinished(){
         finishGame("1/2-1/2", tr("By 50-move rule"));
     }
     QString fen = m_positionViewer->positionToFEN(/*forHash=*/true);
-    if (fen.size() > 3){
-        fen.chop(3);
-        m_positionHash[fen]++;
-        qDebug() << m_positionHash[fen];
-        if (m_positionHash[fen] >= 3){
-            finishGame("1/2-1/2", tr("By repetition"));
-        }
+    m_positionStack.push(fen);
+    m_positionHash[fen]++;
+    qDebug() << m_positionHash[fen];
+    if (m_positionHash[fen] >= 3){
+        finishGame("1/2-1/2", tr("By repetition"));
     }
+
     scheduleNextDisplayUpdate();
 }
 
@@ -833,6 +835,10 @@ void GameplayViewer::onTakebackClicked()
     emit requestTakeback(m_humanSide == 0 ? 'w' : 'b');
     m_moveCount -= 2;
     updateTakebackEnabled();
+    for (int i = 0; i < 2; i++){
+        m_positionHash[m_positionStack.top()]--;
+        m_positionStack.pop();
+    }
 }
 
 void GameplayViewer::onEngineInfo(const QString &line)
