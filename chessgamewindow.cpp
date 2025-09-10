@@ -671,7 +671,8 @@ void ChessGameWindow::onRequestTakeback(QChar side)
     m_notationViewer->refresh();
 }
 
-void ChessGameWindow::onEvalScoreChanged(double evalScore){
+void ChessGameWindow::onEvalScoreChanged(double evalScore)
+{
     m_positionViewer->setEvalScore(evalScore);
 }
 
@@ -702,8 +703,10 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
 {
     if (m_isGameplay){
         bool isLastMove = !m_notationViewer->m_selectedMove->m_nextMoves.size();
-        if (!isLastMove || !m_gameplayViewer->isEngineIdle()) {
+        if (!isLastMove) {
             onSelectLastMove();
+            return;
+        } else if (!m_gameplayViewer->isEngineIdle()){
             return;
         }
     }

@@ -308,7 +308,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     inLay->addSpacing(8);
 
     QHBoxLayout *topArea = new QHBoxLayout;
-    m_blackPlayerLabel = new QLabel(tr("Stockfish"));
+    m_blackPlayerLabel = new QLabel(tr("Engine"));
     m_blackPlayerLabel->setAlignment(Qt::AlignCenter);
     QFont blackF = m_blackPlayerLabel->font();
     blackF.setPointSize(12);
@@ -520,7 +520,7 @@ void GameplayViewer::onPlayClicked(int selectedSide)
     updateClockDisplays();
     m_lastPosition->copyFrom(*m_startPosition);
     m_whitePlayerLabel->setText(tr("You"));
-    m_blackPlayerLabel->setText(tr("Stockfish"));
+    m_blackPlayerLabel->setText(tr("Engine"));
     m_preGameWidget->setVisible(false);
     m_inGameWidget->setVisible(true);
     m_playBtn->setEnabled(false);
@@ -661,8 +661,8 @@ void GameplayViewer::updateClockDisplays()
     bool isFlipped = m_positionViewer->isBoardFlipped();
     m_whiteClock->setText(msToString(isFlipped ? m_blackMs : m_whiteMs));
     m_blackClock->setText(msToString(isFlipped ? m_whiteMs : m_blackMs));
-    m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("Stockfish") : tr("You"));
-    m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : tr("Stockfish"));
+    m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("Engine") : tr("You"));
+    m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : tr("Engine"));
     if ((m_positionViewer->m_sideToMove == 'w' && !isFlipped) || (m_positionViewer->m_sideToMove == 'b' && isFlipped)){
         m_whiteClock->setStyleSheet("border: 1px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
         m_blackClock->setStyleSheet("border: 1px solid grey; border-radius: 10px; padding: 6px; background: palette(base);");
@@ -694,8 +694,8 @@ void GameplayViewer::finishGame(const QString &result, const QString &descriptio
     dlgLay->setSpacing(12);
 
     QString resultText;
-    if (result == "1-0") resultText = (m_humanSide == 0 ? tr("You Won!") : tr("Stockfish Won"));
-    else if (result == "0-1") resultText = (m_humanSide == 1 ? tr("You Won!") : tr("Stockfish Won"));
+    if (result == "1-0") resultText = (m_humanSide == 0 ? tr("You Won!") : tr("Engine Won"));
+    else if (result == "0-1") resultText = (m_humanSide == 1 ? tr("You Won!") : tr("Engine Won"));
     else if (result == "1/2-1/2") resultText = tr("Draw");
     QLabel *title = new QLabel(resultText);
     QFont titleF = title->font();

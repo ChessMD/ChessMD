@@ -1,6 +1,7 @@
 #include "settingsdialog.h"
 #include "streamparser.h"
 #include "chessqsettings.h"
+#include "openingviewer.h"
 
 #include <QListWidget>
 #include <QStackedWidget>
@@ -56,14 +57,33 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QString openingText = QString("Current opening database: ") + ( (QFileInfo::exists("./opening/openings.bin") && QFileInfo::exists("./opening/openings.headers") ) ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
     mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);
-    QLabel* info = new QLabel(tr("In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB). You can download").arg(QCoreApplication::applicationVersion()), openingsPage);
+    QLabel* info = new QLabel(tr("In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).").arg(QCoreApplication::applicationVersion()), openingsPage);
     openingsLayout->addWidget(mOpeningsPathLabel);
     openingsLayout->addWidget(loadPgnBtn);
     openingsLayout->addWidget(info);
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
 
-    
+    mDownloadLinkLabel = new QLabel(openingsPage);
+    mDownloadLinkLabel->setText(tr("Checking for a remote download link..."));
+    mDownloadLinkLabel->setTextFormat(Qt::RichText);
+    mDownloadLinkLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    mDownloadLinkLabel->setOpenExternalLinks(true); // clicking opens default browser
+    QLabel *downloadInfoLabel = new QLabel(openingsPage);
+    downloadInfoLabel->setText(tr("After downloading, extract the files and move them the under opening folder."));
+    openingsLayout->addWidget(mDownloadLinkLabel);
+    openingsLayout->addWidget(downloadInfoLabel);
+
+    // start network fetch for the JSON
+    QNetworkAccessManager *networkMgr = new QNetworkAccessManager(this);
+    connect(networkMgr, &QNetworkAccessManager::finished, this, &SettingsDialog::onDownloadLinkReply);
+    QUrl jsonUrl = QUrl::fromUserInput(QString::fromUtf8("https://chessmd.org/opening-download.json"));
+    if (jsonUrl.isValid()) {
+        QNetworkRequest req(jsonUrl);
+        networkMgr->get(req);
+    } else {
+        mDownloadLinkLabel->setText(tr("No remote download JSON configured."));
+    }
     
     // theme page
     QWidget* themePage = new QWidget(this);
@@ -106,6 +126,77 @@ SettingsDialog::SettingsDialog(QWidget* parent)
         QFileInfo engineInfo(enginePath);
         mEnginePathLabel->setText(tr("Current engine: %1").arg(engineInfo.fileName()));
     }
+}
+
+void SettingsDialog::onDownloadLinkReply(QNetworkReply *reply)
+{
+    if (!mDownloadLinkLabel) { if (reply) reply->deleteLater(); return; }
+
+    if (!reply) {
+        mDownloadLinkLabel->setText(tr("Failed to fetch remote link (no reply)."));
+        return;
+    }
+
+    if (reply->error() != QNetworkReply::NoError) {
+        mDownloadLinkLabel->setText(tr("Failed to fetch remote link: %1").arg(reply->errorString()));
+        reply->deleteLater();
+        return;
+    }
+
+    const QByteArray body = reply->readAll();
+    reply->deleteLater();
+
+    QJsonParseError perr;
+    QJsonDocument doc = QJsonDocument::fromJson(body, &perr);
+    if (perr.error != QJsonParseError::NoError) {
+        mDownloadLinkLabel->setText(tr("Invalid JSON from server."));
+        return;
+    }
+
+    QString foundUrl;
+    auto pushIfString = [&](const QJsonValue &v){
+        if (foundUrl.isEmpty() && v.isString()) {
+            QString s = v.toString().trimmed();
+            if (!s.isEmpty()) foundUrl = s;
+        }
+    };
+
+    if (doc.isObject()) {
+        QJsonObject root = doc.object();
+        if (root.contains("url") && root.value("url").isString())
+            foundUrl = root.value("url").toString().trimmed();
+
+        if (foundUrl.isEmpty() && root.contains("links") && root.value("links").isArray()) {
+            QJsonArray arr = root.value("links").toArray();
+            for (const QJsonValue &v : arr) { pushIfString(v); if (!foundUrl.isEmpty()) break; }
+        }
+
+        // also try "items"
+        if (foundUrl.isEmpty() && root.contains("items") && root.value("items").isArray()) {
+            QJsonArray arr = root.value("items").toArray();
+            for (const QJsonValue &v : arr) { pushIfString(v); if (!foundUrl.isEmpty()) break; }
+        }
+    } else if (doc.isArray()) {
+        QJsonArray arr = doc.array();
+        for (const QJsonValue &v : arr) { pushIfString(v); if (!foundUrl.isEmpty()) break; }
+    }
+
+    if (foundUrl.isEmpty()) {
+        mDownloadLinkLabel->setText(tr("No download link found in JSON."));
+        return;
+    }
+
+    QUrl url(foundUrl);
+    if (url.scheme().isEmpty()) url.setScheme("https");
+
+    if (!url.isValid() || !(url.scheme().toLower() == "http" || url.scheme().toLower() == "https")) {
+        mDownloadLinkLabel->setText(tr("Found link is invalid or unsupported."));
+        return;
+    }
+
+    const QString labelText = QStringLiteral("<a href=\"%1\">%2</a>").arg(url.toString().toHtmlEscaped(), tr("Download processsed database with 1+ million games (open link in browser, requires 3 GB disk space)"));
+    mDownloadLinkLabel->setText(labelText);
+    mDownloadLinkLabel->setToolTip(url.toString());
 }
 
 void SettingsDialog::onSelectEngineClicked()

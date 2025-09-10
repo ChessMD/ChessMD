@@ -3,8 +3,22 @@
 
 #include <QDialog>
 #include <QString>
-
-#include "openingviewer.h"
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QTextBrowser>
+#include <QPushButton>
+#include <QLabel>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QDebug>
+#include <QProgressBar>
 
 class QListWidget;
 class QStackedWidget;
@@ -22,6 +36,7 @@ private slots:
     void onLoadPgnClicked();
     void onSelectEngineClicked();
     void onThemeChanged();
+    void onDownloadLinkReply(QNetworkReply *reply);
 
 private:
     void importPgnFileStreaming(const QString &file, QProgressBar *progressBar);
@@ -33,6 +48,8 @@ private:
     QLabel* mEnginePathLabel;
     QComboBox* mThemeComboBox;
     QString mOpeningsPath;
+
+    QLabel *mDownloadLinkLabel;
 };
 
 #endif // SETTINGSDIALOG_H
