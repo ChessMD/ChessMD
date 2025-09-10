@@ -77,7 +77,7 @@ public:
 
     // Copies all internal state from another ChessPosition
     void copyFrom(const ChessPosition &other);
-    QString positionToFEN() const;
+    QString positionToFEN(bool forHash = false) const;
     quint64 computeZobrist() const;
 
     // Tries to make a new move from the current position given a SAN string
@@ -89,6 +89,7 @@ public:
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
     bool inCheck(QChar side) const;
+    bool isFiftyMove() const;
     QVector<SimpleMove> generateLegalMoves() const;
 
     char m_sideToMove;

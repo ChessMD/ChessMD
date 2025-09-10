@@ -70,7 +70,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     mDownloadLinkLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     mDownloadLinkLabel->setOpenExternalLinks(true); // clicking opens default browser
     QLabel *downloadInfoLabel = new QLabel(openingsPage);
-    downloadInfoLabel->setText(tr("After downloading, extract the files and move them the under opening folder."));
+    downloadInfoLabel->setText(tr("After downloading, extract the files and move them under the opening folder."));
     openingsLayout->addWidget(mDownloadLinkLabel);
     openingsLayout->addWidget(downloadInfoLabel);
 

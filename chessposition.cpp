@@ -277,8 +277,6 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move, 
         applyMove(row, oldKC, row, newKC, '\0');
         if (color=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
         else { m_castling.blackKing=m_castling.blackQueen=false; }
-        m_halfmoveClock++;
-        if (m_sideToMove=='b') m_fullmoveNumber++;
         return true;
     }
 
@@ -414,9 +412,13 @@ void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     if (promotion!=QChar('\0') && from[1]=='P' && (dr==0||dr==7)) {
         m_boardData[dr][dc] = QString(from[0]) + promotion.toUpper();
     }
+
+    if (from[1] == 'P' || target.size()) m_halfmoveClock = 0;
+    else m_halfmoveClock++;
+    m_fullmoveNumber += (m_sideToMove == 'b');
     m_sideToMove = (m_sideToMove=='w'?'b':'w');
     m_plyCount++;
-    m_lastMove  = ((sr * 8 + sc) << 8) | (dr * 8 + dc);
+    m_lastMove = ((sr * 8 + sc) << 8) | (dr * 8 + dc);
 }
 
 bool ChessPosition::inCheck(QChar side) const
@@ -460,7 +462,13 @@ QVector<QPair<int,int>> ChessPosition::findPieceOrigins(QChar piece, const QStri
     return vec;
 }
 
-QVector<SimpleMove> ChessPosition::generateLegalMoves() const {
+bool ChessPosition::isFiftyMove() const
+{
+    return m_halfmoveClock >= 100;
+}
+
+QVector<SimpleMove> ChessPosition::generateLegalMoves() const
+{
     QVector<SimpleMove> legalMoves;
     legalMoves.reserve(128);
     const char promo[4] = {'N', 'B', 'R', 'Q'};
@@ -731,7 +739,7 @@ QVector<QVector<QString>> convertFenToBoardData(const QString &fen)
     return boardData;
 }
 
-QString ChessPosition::positionToFEN() const {
+QString ChessPosition::positionToFEN(bool forHash) const {
     QStringList rowStr;
     for (auto &row : m_boardData) {
         QString s;
@@ -758,7 +766,7 @@ QString ChessPosition::positionToFEN() const {
     QString ep = m_enPassantTarget;
     QString hm = QString::number(m_halfmoveClock);
     QString fm = QString::number(m_fullmoveNumber);
-    return QString("%1 %2 %3 %4 %5 %6").arg(boardPart, sidePart, cr, ep, hm, fm);
+    return QString("%1 %2 %3 %4").arg(boardPart, sidePart, cr, ep) + (forHash ? "" : QString(" %1 %2").arg(hm, fm));
 }
 
 QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) const

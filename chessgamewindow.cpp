@@ -707,6 +707,7 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
             onSelectLastMove();
             return;
         } else if (!m_gameplayViewer->isEngineIdle()){
+            // todo: premove
             return;
         }
     }

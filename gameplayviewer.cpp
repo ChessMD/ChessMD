@@ -493,6 +493,8 @@ void GameplayViewer::resetPlay()
     m_whiteMs = m_blackMs = 0;
     m_incMs = 0;
     m_active = false;
+    m_engineIdle = true;
+    m_positionHash.clear();
 
     m_preGameWidget->setVisible(true);
     m_inGameWidget->setVisible(false);
@@ -512,6 +514,7 @@ void GameplayViewer::onPlayClicked(int selectedSide)
     emit resetBoard();
 
     m_active = true;
+    m_engineIdle = true;
     m_humanSide = selectedSide;
     m_moveCount = 0;
     m_whiteMs = m_blackMs = (m_minutesSpin->value() * 60 + m_secondsSpin->value()) * 1000;
@@ -623,6 +626,18 @@ void GameplayViewer::turnFinished(){
             finishGame(m_positionViewer->m_sideToMove == 'w' ? "0-1" : "1-0", tr("By checkmate"));
         } else {
             finishGame("1/2-1/2", tr("By stalement"));
+        }
+    }
+    if (m_positionViewer->isFiftyMove()){
+        finishGame("1/2-1/2", tr("By 50-move rule"));
+    }
+    QString fen = m_positionViewer->positionToFEN(/*forHash=*/true);
+    if (fen.size() > 3){
+        fen.chop(3);
+        m_positionHash[fen]++;
+        qDebug() << m_positionHash[fen];
+        if (m_positionHash[fen] >= 3){
+            finishGame("1/2-1/2", tr("By repetition"));
         }
     }
     scheduleNextDisplayUpdate();

@@ -117,7 +117,6 @@ private:
 
     bool m_isPreview = false;
     bool m_isGameplay = false;
-    SimpleMove m_premove;
 
     QLineEdit* m_whiteField;
     QLineEdit* m_whiteEloField;
