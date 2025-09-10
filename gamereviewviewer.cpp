@@ -226,6 +226,13 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     });
 }
 
+void GameReviewViewer::autoStartReview()
+{
+    if (m_engine){
+        emit m_reviewBtn->clicked();
+    }
+}
+
 void GameReviewViewer::createSummaryGrid()
 {
     m_summaryWidget = new QWidget(this);
@@ -605,6 +612,9 @@ void GameReviewViewer::finalizeReview()
     int blackInacc = 0, blackMist = 0, blackBlund = 0, blackBest = 0;
     std::vector<double> winPercentages, evals;
     int moves = m_results.size() - 1;
+    if (moves < 0) return;
+    winPercentages.push_back(winProb(m_results[0]));
+    evals.push_back(m_results[0]/100.0);
     for (int i = 0; i < moves; i++) {
         double cpBefore = m_results[i];
         double cpAfter = -m_results[i+1];
@@ -619,12 +629,8 @@ void GameReviewViewer::finalizeReview()
         else if (drop >= 0.06) move->annotation1 = "?!";
         else move->annotation1.clear();
 
-        winPercentages.push_back(wb);
-        evals.push_back(cpBefore/100.0);
-        if (i + 1 == moves){
-            winPercentages.push_back(1.0-wa);
-            evals.push_back(-cpAfter/100.0);
-        }
+        winPercentages.push_back(1.0-wa);
+        evals.push_back(-cpAfter/100.0);
 
         if (i % 2 == 0) {
             if (move->annotation1 == "?!") whiteInacc++;
@@ -640,7 +646,7 @@ void GameReviewViewer::finalizeReview()
     }
 
     // adjust evaluation to be white's perspective
-    for (int i = 0; i <= evals.size(); i++){
+    for (int i = 0; i < evals.size(); i++){
         if (i % 2 == 1){
             evals[i] = -evals[i];
         }

@@ -31,7 +31,7 @@ public:
 public slots:
     void importDatabase();
     void newDatabase();
-    void newChessboard(PGNGame game);
+    void newChessboard(PGNGame game, bool startGameReview = false);
     void newGameplayBoard();
 
 signals:

@@ -99,9 +99,9 @@ void deleteSubtree(QSharedPointer<NotationMove>& move){
     if (!move) return;
     for (auto& childMove: move->m_nextMoves){
         deleteSubtree(childMove);
+        childMove.reset();
     }
     move->m_nextMoves.clear();
-    move.reset();
 }
 
 void deleteAllCommentary(QSharedPointer<NotationMove>& move){

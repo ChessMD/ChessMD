@@ -18,6 +18,8 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     : QWidget(parent)
     , m_positionViewer(positionViewer)
     , m_engine(nullptr)
+    , m_startPosition(new ChessPosition)
+    , m_lastPosition(new ChessPosition)
     , m_root(new QWidget(this))
     , m_controlsWidget(nullptr)
     , m_whiteMs(0)
@@ -25,7 +27,10 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     , m_incMs(0)
     , m_humanSide(0)
     , m_active(false)
+    , m_engineIdle(true)
 {
+    m_startPosition->copyFrom(*m_positionViewer);
+
     QVBoxLayout *rootLay = new QVBoxLayout(this);
     rootLay->setContentsMargins(6,6,6,6);
     rootLay->setSpacing(8);
@@ -52,22 +57,15 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     preLay->addWidget(titleSep);
     preLay->addSpacing(8);
 
-    QLabel *timeSideLabel = new QLabel(tr("Clock enabled:"));
-    timeSideLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    timeSideLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-    QWidget *timeRightPlaceholder = new QWidget;
-    timeRightPlaceholder->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    timeRightPlaceholder->setFixedWidth(timeSideLabel->sizeHint().width());
     m_timeCheck = new QCheckBox;
     m_timeCheck->setChecked(true);
+    QLabel *timeSideLabel = new QLabel(tr("Clock enabled:"));
     QHBoxLayout *timeCheckRow = new QHBoxLayout;
-    timeCheckRow->setContentsMargins(0, 0, 0, 0);
     timeCheckRow->setSpacing(12);
+    timeCheckRow->addStretch();
     timeCheckRow->addWidget(timeSideLabel);
-    timeCheckRow->addStretch(1);
     timeCheckRow->addWidget(m_timeCheck);
-    timeCheckRow->addStretch(1);
-    timeCheckRow->addWidget(timeRightPlaceholder);
+    timeCheckRow->addStretch();
     preLay->addLayout(timeCheckRow);
     preLay->addSpacing(8);
 
@@ -220,6 +218,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     m_playBtn->setStyleSheet(R"(
         QPushButton#playButton {
             font-size: 16px;
+            font-weight: bold;
             padding: 8px 16px;
             border-radius: 10px;
             border: 1px solid gray;
@@ -239,7 +238,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
 
     QLabel *inGameTitle = new QLabel(tr("Game Menu"));
     QFont inGameFont = inGameTitle->font();
-    inGameFont.setPointSize(16);
+    inGameFont.setPointSize(14);
     inGameFont.setBold(true);
     inGameTitle->setFont(inGameFont);
     inGameTitle->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
@@ -256,6 +255,9 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     QHBoxLayout *topArea = new QHBoxLayout;
     m_blackPlayerLabel = new QLabel(tr("Stockfish"));
     m_blackPlayerLabel->setAlignment(Qt::AlignCenter);
+    QFont blackF = m_blackPlayerLabel->font();
+    blackF.setPointSize(12);
+    m_blackPlayerLabel->setFont(blackF);
     m_blackClock = new QLabel(tr("00:15"));
     m_blackClock->setAlignment(Qt::AlignCenter);
     QFont bigClockFont = m_blackClock->font();
@@ -296,6 +298,9 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     QHBoxLayout *bottomArea = new QHBoxLayout;
     m_whitePlayerLabel = new QLabel(tr("You"));
     m_whitePlayerLabel->setAlignment(Qt::AlignCenter);
+    QFont whiteF = m_whitePlayerLabel->font();
+    whiteF.setPointSize(12);
+    m_whitePlayerLabel->setFont(whiteF);
     m_whiteClock = new QLabel(tr("00:15"));
     m_whiteClock->setAlignment(Qt::AlignCenter);
     m_whiteClock->setFont(bigClockFont);
@@ -336,16 +341,19 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     m_resignBtn->setIcon(resignIcon);
     m_resignBtn->setCursor(Qt::PointingHandCursor);
     m_resignBtn->setToolTip(tr("Resign"));
-    QIcon analysisIcon = QIcon(getIconPath("search.png"));
+    QIcon analysisIcon = QIcon(getIconPath("sparkles.png"));
     m_openAnalysisBtn->setFixedSize(buttonSize, buttonSize);
     m_openAnalysisBtn->setIconSize(QSize(iconSize, iconSize));
     m_openAnalysisBtn->setIcon(analysisIcon);
     m_openAnalysisBtn->setCursor(Qt::PointingHandCursor);
     m_openAnalysisBtn->setToolTip(tr("Open in analysis"));
-
     m_returnBtn = new QPushButton(tr("New Game"));
     m_returnBtn->setFixedHeight(buttonSize);
     m_returnBtn->setCursor(Qt::PointingHandCursor);
+    m_takebackBtn = new QPushButton(tr("Takeback"));
+    m_takebackBtn->setFixedHeight(buttonSize);
+    m_takebackBtn->setCursor(Qt::PointingHandCursor);
+
     const QString gameButtonStyle = QStringLiteral(R"(
         QPushButton {
             font-size: 14px;
@@ -354,12 +362,15 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
             border: 1px solid gray;
         }
     )");
+
+    m_takebackBtn->setStyleSheet(gameButtonStyle);
     m_returnBtn->setStyleSheet(gameButtonStyle);
     m_resignBtn->setStyleSheet(gameButtonStyle);
     m_openAnalysisBtn->setStyleSheet(gameButtonStyle);
 
     actions->addStretch();
     actions->addWidget(m_resignBtn);
+    actions->addWidget(m_takebackBtn);
     actions->addWidget(m_returnBtn);
     actions->addWidget(m_openAnalysisBtn);
     actions->addStretch();
@@ -395,10 +406,12 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     m_resignBtn->setEnabled(false);
     m_returnBtn->setEnabled(false);
     m_openAnalysisBtn->setEnabled(false);
+    m_takebackBtn->setEnabled(false);
 
     connect(m_resignBtn, &QPushButton::clicked, this, &GameplayViewer::onResignClicked);
     connect(m_returnBtn, &QPushButton::clicked, this, &GameplayViewer::onReturnClicked);
     connect(m_openAnalysisBtn, &QPushButton::clicked, this, &GameplayViewer::onOpenInAnalysisClicked);
+    connect(m_takebackBtn, &QPushButton::clicked, this, &GameplayViewer::onTakebackClicked);
     connect(m_playBtn, &QPushButton::clicked, this, [this]{
         int selectedSide = m_sideButtonGroup->checkedId();
         if (selectedSide == 1) selectedSide = QRandomGenerator::global()->bounded(2);
@@ -407,7 +420,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     });
 
     connect(&m_updateTimer, &QTimer::timeout, this, &GameplayViewer::onClockTick);
-    m_updateTimer.setSingleShot(true);
+    m_updateTimer.setSingleShot(true);  
 }
 
 void GameplayViewer::resetPlay()
@@ -425,6 +438,7 @@ void GameplayViewer::resetPlay()
     m_resignBtn->setEnabled(false);
     m_returnBtn->setEnabled(false);
     m_openAnalysisBtn->setEnabled(false);
+    m_takebackBtn->setEnabled(false);
 
     if (m_updateTimer.isActive()) m_updateTimer.stop();
     m_clockTimer.invalidate();
@@ -432,13 +446,16 @@ void GameplayViewer::resetPlay()
 
 void GameplayViewer::onPlayClicked(int selectedSide)
 {
+    emit resetBoard();
+
     m_active = true;
     m_humanSide = selectedSide;
+    m_moveCount = 0;
     m_whiteMs = m_blackMs = (m_minutesSpin->value() * 60 + m_secondsSpin->value()) * 1000;
     m_incMs = m_incrementSpin->value() * 1000;
-    m_engineDepth = 12 + int(std::round(double(m_eloSlider->value() - 1320) / double(3190 - 1320) * (25 - 12))); // linear depth function [12, 25]
-    qDebug() << m_engineDepth;
+    m_engineDepth = 18 + int(std::round(double(m_eloSlider->value() - 1320) / double(3190 - 1320) * (25 - 18))); // linear depth function [20, 25]
     updateClockDisplays();
+    m_lastPosition->copyFrom(*m_startPosition);
     m_whitePlayerLabel->setText(tr("You"));
     m_blackPlayerLabel->setText(tr("Stockfish"));
     m_preGameWidget->setVisible(false);
@@ -447,9 +464,16 @@ void GameplayViewer::onPlayClicked(int selectedSide)
     m_resignBtn->setEnabled(true);
     m_returnBtn->setEnabled(false);
     m_openAnalysisBtn->setEnabled(false);
+    updateTakebackEnabled();
     emit matchBoardFlip(m_humanSide ? 'b' : 'w');
 
     startEngineProcess();
+}
+
+void GameplayViewer::updateTakebackEnabled()
+{
+    if (m_moveCount < 2) m_takebackBtn->setEnabled(false);
+    else m_takebackBtn->setEnabled(m_moveCount % 2 == m_humanSide);
 }
 
 void GameplayViewer::startEngineProcess()
@@ -470,6 +494,7 @@ void GameplayViewer::startEngineProcess()
         m_engine->setPosition("startpos");
         scheduleNextDisplayUpdate();
         if (m_humanSide == 1) {
+            m_engineIdle = false;
             if (m_timeCheck->isChecked()) m_engine->goDepthWithClocks(m_engineDepth, m_whiteMs, m_blackMs, m_incMs, m_incMs);
             else m_engine->goDepth(m_engineDepth);
         }
@@ -488,6 +513,7 @@ void GameplayViewer::stopEngineProcess()
 
 void GameplayViewer::onEngineBestMove(const QString &uci)
 {
+    m_engineIdle = true;
     if (!m_active || !applyUciMove(uci)) return;
     turnFinished();
 }
@@ -495,6 +521,8 @@ void GameplayViewer::onEngineBestMove(const QString &uci)
 bool GameplayViewer::applyUciMove(const QString &uci)
 {
     if (uci.size() < 4) return false;
+    emit selectLastMove();
+    m_positionViewer->copyFrom(*m_lastPosition);
     int sc = uci[0].toLatin1() - 'a', sr = '8' - uci[1].toLatin1(), dc = uci[2].toLatin1() - 'a', dr = '8' - uci[3].toLatin1();
     QChar promo = (uci.size() >= 5 ? uci[4].toUpper() : '\0');
     if (!m_positionViewer->validateMove(sr, sc, dr, dc)) {
@@ -502,14 +530,13 @@ bool GameplayViewer::applyUciMove(const QString &uci)
         return false;
     }
     m_positionViewer->buildUserMove(sr, sc, dr, dc, promo);
-    emit m_positionViewer->boardDataChanged();
-    emit m_positionViewer->lastMoveChanged();
     return true;
 }
 
 void GameplayViewer::onBoardMoveMade(QSharedPointer<NotationMove>& move)
 {
-    if (!m_active || isPlayersTurn()) return;
+    if (!m_active || isPlayersTurn() || !m_engineIdle) return;
+    m_engineIdle = false;
     turnFinished();
     if (!m_engine) return;
     m_engine->setPosition(move->m_position->positionToFEN());
@@ -519,10 +546,15 @@ void GameplayViewer::onBoardMoveMade(QSharedPointer<NotationMove>& move)
 
 void GameplayViewer::turnFinished(){
     if (!m_active) return;
+
     int elapsedMs = m_clockTimer.elapsed();
     int& timeMs = (m_positionViewer->m_sideToMove == 'w' ? m_blackMs : m_whiteMs); // sideToMove == 'w' -> black finished turn
     timeMs -= (elapsedMs - m_incMs);
     updateClockDisplays();
+
+    m_lastPosition->copyFrom(*m_positionViewer);
+    m_moveCount++;
+    updateTakebackEnabled();
     if (!m_positionViewer->generateLegalMoves().size()){
         if (m_positionViewer->inCheck(m_positionViewer->m_sideToMove)){
             finishGame(m_positionViewer->m_sideToMove == 'w' ? "0-1" : "1-0", tr("By checkmate"));
@@ -560,7 +592,7 @@ void GameplayViewer::updateClockDisplays()
     auto msToString = [this](int ms)->QString {
         if (!m_timeCheck->isChecked()) return "--:--";
         int tenths = (ms+99)/100, sec = tenths/10;
-        if (sec < 50) return QString("%1:%2.%3").arg(sec/60).arg(sec%60, 2, 10, QLatin1Char('0')).arg(tenths%10);
+        if (sec < 30) return QString("%1:%2.%3").arg(sec/60).arg(sec%60, 2, 10, QLatin1Char('0')).arg(tenths%10);
         else return QString("%1:%2").arg(sec/60).arg(sec%60, 2, 10, QLatin1Char('0'));
     };
     bool isFlipped = m_positionViewer->isBoardFlipped();
@@ -583,6 +615,7 @@ void GameplayViewer::finishGame(const QString &result, const QString &descriptio
     m_updateTimer.stop();
     stopEngineProcess();
     m_resignBtn->setEnabled(false);
+    m_takebackBtn->setEnabled(false);
     m_returnBtn->setEnabled(true);
     m_openAnalysisBtn->setEnabled(true);
 
@@ -597,28 +630,32 @@ void GameplayViewer::finishGame(const QString &result, const QString &descriptio
     dlgLay->setContentsMargins(16,16,16,16);
     dlgLay->setSpacing(12);
 
-    QLabel *title = new QLabel(tr("Game Over!"));
+    QString resultText;
+    if (result == "1-0") resultText = (m_humanSide == 0 ? tr("You Won!") : tr("Stockfish Won"));
+    else if (result == "0-1") resultText = (m_humanSide == 1 ? tr("You Won!") : tr("Stockfish Won"));
+    else if (result == "1/2-1/2") resultText = tr("Draw");
+    QLabel *title = new QLabel(resultText);
     QFont titleF = title->font();
     titleF.setPointSize(16);
     titleF.setBold(true);
     title->setFont(titleF);
     title->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     dlgLay->addWidget(title);
+    dlgLay->addSpacing(0);
 
-    QFrame *sep = new QFrame;
-    sep->setFrameShape(QFrame::HLine);
-    sep->setFrameShadow(QFrame::Sunken);
-    sep->setFixedHeight(2);
-    dlgLay->addWidget(sep);
-
-    QLabel *msg = new QLabel(result);
+    QLabel *msg = new QLabel(description);
     QFont msgF = msg->font();
     msgF.setPointSize(12);
     msg->setFont(msgF);
     msg->setAlignment(Qt::AlignHCenter);
     msg->setWordWrap(true);
     dlgLay->addWidget(msg);
-    dlgLay->addSpacing(6);
+
+    QFrame *sep = new QFrame;
+    sep->setFrameShape(QFrame::HLine);
+    sep->setFrameShadow(QFrame::Sunken);
+    sep->setFixedHeight(2);
+    dlgLay->addWidget(sep);
 
     QPushButton *openBtn = new QPushButton(tr("Game Review"));
     openBtn->setObjectName("endButton");
@@ -685,7 +722,6 @@ void GameplayViewer::finishGame(const QString &result, const QString &descriptio
 
 bool GameplayViewer::isPlayersTurn() const
 {
-    qDebug() << m_humanSide <<  m_positionViewer->m_sideToMove ;
     bool whiteToMove = m_positionViewer->m_sideToMove == 'w';
     if (whiteToMove) return (m_humanSide == 0);
     return (m_humanSide == 1);
@@ -693,7 +729,7 @@ bool GameplayViewer::isPlayersTurn() const
 
 void GameplayViewer::onResignClicked()
 {
-    finishGame(m_humanSide == 0 ? "0-1" : "1-0", tr("Engine Won"));
+    finishGame(m_humanSide == 0 ? "0-1" : "1-0", tr("By Resignation"));
 }
 
 void GameplayViewer::onReturnClicked()
@@ -712,6 +748,13 @@ void GameplayViewer::onRematchClicked()
 void GameplayViewer::onOpenInAnalysisClicked()
 {
     emit openAnalysisBoard();
+}
+
+void GameplayViewer::onTakebackClicked()
+{
+    emit requestTakeback(m_humanSide == 0 ? 'w' : 'b');
+    m_moveCount -= 2;
+    updateTakebackEnabled();
 }
 
 void GameplayViewer::onEngineInfo(const QString &line)

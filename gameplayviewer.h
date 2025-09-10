@@ -18,6 +18,7 @@ class GameplayViewer : public QWidget {
     Q_OBJECT
 public:
     explicit GameplayViewer(ChessPosition *positionViewer, QWidget *parent = nullptr);
+    bool isEngineIdle(){ return m_engineIdle; };
 
 public slots:
     void onBoardMoveMade(QSharedPointer<NotationMove>& move);
@@ -27,6 +28,8 @@ signals:
     void openAnalysisBoard();
     void resetBoard();
     void matchBoardFlip(QChar side);
+    void selectLastMove();
+    void requestTakeback(QChar side);
 
 private slots:
     void onPlayClicked(int selectedSide);
@@ -34,6 +37,7 @@ private slots:
     void onReturnClicked();
     void onRematchClicked();
     void onOpenInAnalysisClicked();
+    void onTakebackClicked();
 
     void onEngineBestMove(const QString &uci);
     void onEngineInfo(const QString &line);
@@ -47,12 +51,15 @@ private:
     bool applyUciMove(const QString &uci);
     void scheduleNextDisplayUpdate();
     void turnFinished();
+    void updateTakebackEnabled();
     bool isPlayersTurn() const;
     void finishGame(const QString &result, const QString &description);
 
     ChessPosition *m_positionViewer;
     UciEngine *m_engine;
     QMetaObject::Connection m_engineReadyConn;
+    ChessPosition *m_lastPosition;
+    ChessPosition *m_startPosition;
 
     // UI elements (created in-code to avoid extra UI file)
     QWidget *m_root;
@@ -77,6 +84,7 @@ private:
     QPushButton *m_resignBtn;
     QPushButton *m_returnBtn;
     QPushButton *m_openAnalysisBtn;
+    QPushButton *m_takebackBtn;
     QLabel *m_whitePlayerLabel;
     QLabel *m_blackPlayerLabel;
     QLabel *m_whiteClock;
@@ -88,7 +96,9 @@ private:
     int m_incMs;
     int m_engineDepth;
 
+    int m_moveCount;
     int m_humanSide; // 0 = white, 1 = black
+    bool m_engineIdle;
     bool m_active;
 
     QTimer m_updateTimer;

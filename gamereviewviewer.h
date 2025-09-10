@@ -30,6 +30,7 @@ public:
     explicit GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent = nullptr);
 
     void reviewGame(const QSharedPointer<NotationMove>& root);
+    void autoStartReview();
 
 signals:
     void moveSelected(QSharedPointer<NotationMove> &move);

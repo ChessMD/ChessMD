@@ -62,7 +62,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
 
 void ChessGameWindow::closeEvent(QCloseEvent *event)
 {
-    if (m_isPreview || !m_notationViewer->m_isEdited) {
+    if (m_isPreview || m_isGameplay || !m_notationViewer->m_isEdited) {
         QMainWindow::closeEvent(event);
         return;
     }
@@ -130,7 +130,7 @@ void ChessGameWindow::previewSetup()
 
 void ChessGameWindow::gameplaySetup()
 {
-    m_isPreview = true;
+    m_isGameplay = true;
     notationSetup();
     toolbarSetup();
     m_notationDock->hide();
@@ -144,10 +144,12 @@ void ChessGameWindow::gameplaySetup()
     addDockWidget(Qt::RightDockWidgetArea, m_gameplayDock);
     m_gameplayDock->show();
 
-    connect(m_notationViewer, &NotationViewer::moveSelected, m_gameplayViewer, &GameplayViewer::onBoardMoveMade);
+    connect(m_positionViewer, &ChessPosition::moveMade, m_gameplayViewer, &GameplayViewer::onBoardMoveMade);
     connect(m_positionViewer, &ChessPosition::isBoardFlippedChanged, m_gameplayViewer, &GameplayViewer::updateClockDisplays);
+    connect(m_gameplayViewer, &GameplayViewer::selectLastMove, this, &ChessGameWindow::onSelectLastMove);
     connect(m_gameplayViewer, &GameplayViewer::resetBoard, this, &ChessGameWindow::onResetBoard);
     connect(m_gameplayViewer, &GameplayViewer::matchBoardFlip, this, &ChessGameWindow::onMatchBoardFlip);
+    connect(m_gameplayViewer, &GameplayViewer::requestTakeback, this, &ChessGameWindow::onRequestTakeback);
     connect(m_gameplayViewer, &GameplayViewer::openAnalysisBoard, this, [this]{
         PGNGame game;
         game.copyFrom(m_notationViewer->m_game);
@@ -158,6 +160,13 @@ void ChessGameWindow::gameplaySetup()
         if (m_gameplayDock)
             resizeDocks({m_gameplayDock}, {int(width() * 0.4)}, Qt::Horizontal);
     });
+}
+
+void ChessGameWindow::startGameReview(){
+    if (!m_gameReviewDock->isVisible()){
+        m_gameReviewDock->setVisible(true);
+        m_gameReviewViewer->autoStartReview();
+    }
 }
 
 void ChessGameWindow::connectEditingShortcuts()
@@ -630,6 +639,30 @@ void ChessGameWindow::onMatchBoardFlip(QChar side)
     }
 }
 
+void ChessGameWindow::onSelectLastMove()
+{
+    auto curMove =  m_notationViewer->m_selectedMove;
+    while (curMove->m_nextMoves.size()){
+        curMove = curMove->m_nextMoves.front();
+    }
+    m_notationViewer->m_selectedMove = curMove;
+    emit m_notationViewer->moveSelected(curMove);
+    m_notationViewer->refresh();
+}
+
+void ChessGameWindow::onRequestTakeback(QChar side)
+{
+    auto curMove = m_notationViewer->m_selectedMove;
+    if (!curMove->m_previousMove.toStrongRef()) return;
+    while (curMove->m_nextMoves.size()){
+        curMove = curMove->m_nextMoves.front();
+    }
+    curMove = curMove->m_previousMove.toStrongRef()->m_previousMove.toStrongRef();
+    deleteSubtree(curMove);
+    emit m_notationViewer->moveSelected(curMove);
+    m_notationViewer->refresh();
+}
+
 void ChessGameWindow::onEvalScoreChanged(double evalScore){
     m_positionViewer->setEvalScore(evalScore);
 }
@@ -659,6 +692,11 @@ void ChessGameWindow::onNoHover(){
 // Slot for when a new move is made on the board
 void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
 {
+    if (m_isGameplay){
+        bool isLastMove = !m_notationViewer->m_selectedMove->m_nextMoves.size();
+        onSelectLastMove();
+        if (!isLastMove || !m_gameplayViewer->isEngineIdle()) return;
+    }
     auto child = getUniqueNextMove(m_notationViewer->m_selectedMove, move);
     // link move if unique
     if (child == move){

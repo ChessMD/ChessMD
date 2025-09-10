@@ -39,8 +39,10 @@ public:
     void mainSetup();
     void previewSetup();
     void gameplaySetup();
+
     void connectEditingShortcuts();
     void saveGame();
+    void startGameReview();
 
     NotationViewer* getNotationViewer();
 
@@ -61,6 +63,28 @@ public slots:
 
     void onMoveHovered(QSharedPointer<NotationMove>& move);
     void onNoHover();
+
+private slots:
+    void onResetBoard();
+    void onMatchBoardFlip(QChar side);
+    void onSelectLastMove();
+    void onRequestTakeback(QChar side);
+
+    void onMoveMade(QSharedPointer<NotationMove>& move);
+    void onMoveSelected(QSharedPointer<NotationMove>& move);
+    void onEvalScoreChanged(double evalScore);
+
+    void onPrevMoveShortcut();
+    void onNextMoveShortcut();
+    void onFlipBoardShortcut();
+    void onDeleteAfterShortcut();
+    void onDeleteVariationShortcut();
+    void onPromoteVariationShortcut();
+
+    void onPasteClicked();
+    void onLoadPgnClicked();
+    void onResetBoardClicked();
+    void onSavePgnClicked();
 
 private:
     void updateEngineActions();
@@ -90,7 +114,8 @@ private:
     QAction* m_openOpeningExplorerAction;
     QAction* m_closeOpeningExplorerAction;
 
-    bool m_isPreview;
+    bool m_isPreview = false;
+    bool m_isGameplay = false;
 
     QLineEdit* m_whiteField;
     QLineEdit* m_whiteEloField;
@@ -102,29 +127,6 @@ private:
     QLineEdit* m_dateField;
     QToolButton* m_toggleEditBtn;
     bool m_inEditMode = false;
-
-
-private slots:
-    void onResetBoard();
-    void onMatchBoardFlip(QChar side);
-
-    void onMoveMade(QSharedPointer<NotationMove>& move);
-    void onMoveSelected(QSharedPointer<NotationMove>& move);
-    void onEvalScoreChanged(double evalScore);
-
-    void onPrevMoveShortcut();
-    void onNextMoveShortcut();
-    void onFlipBoardShortcut();
-    void onDeleteAfterShortcut();
-    void onDeleteVariationShortcut();
-    void onPromoteVariationShortcut();
-
-    void onPasteClicked();
-    void onLoadPgnClicked();
-    void onResetBoardClicked();
-    void onSavePgnClicked();
-
-signals:
 };
 
 #endif // CHESSGAMEWINDOW_H

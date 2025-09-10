@@ -125,13 +125,14 @@ void DatabaseLibrary::newDatabase()
     AddNewGame(savePath);
 }
 
-void DatabaseLibrary::newChessboard(PGNGame game)
+void DatabaseLibrary::newChessboard(PGNGame game, bool startGameReview)
 {
     ChessGameWindow *gameWin = new ChessGameWindow(nullptr, game);
     gameWin->setAttribute(Qt::WA_DeleteOnClose); // must have! allows destructor to run when window closes
     gameWin->mainSetup();
     gameWin->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
     gameWin->show();
+    if (startGameReview) gameWin->startGameReview();
 
     connect(gameWin, &ChessGameWindow::PGNGameUpdated, this, [this, gameWin](PGNGame &game) {
         QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files (*.pgn)"));
@@ -179,7 +180,9 @@ void DatabaseLibrary::newGameplayBoard(){
     gameWin->gameplaySetup();
     gameWin->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
     gameWin->show();
-    connect(gameWin, &ChessGameWindow::openAnalysisBoard, this, &DatabaseLibrary::newChessboard);
+    connect(gameWin, &ChessGameWindow::openAnalysisBoard, this, [this](PGNGame& game){
+        newChessboard(game, true);
+    });
 }
 
 // Add game to library model
