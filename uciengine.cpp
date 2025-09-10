@@ -26,7 +26,7 @@ UciEngine::~UciEngine() {
 
 void UciEngine::startEngine(const QString &binaryPath) {
     QFileInfo fileInfo(binaryPath);
-    if (!fileInfo.exists() || !fileInfo.isFile()) return;
+    if (!fileInfo.exists()) return;
     m_proc->start(binaryPath);
     sendCommand("uci", false);
     uciNewGame();

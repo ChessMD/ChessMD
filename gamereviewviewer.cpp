@@ -142,8 +142,8 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     createSummaryGrid();
     lay->addWidget(m_summaryWidget);
 
-    auto *engineSelectLayout = new QHBoxLayout;
-    m_engineLabel      = new QLabel(tr("Engine: <none>"), this);
+    QHBoxLayout *engineSelectLayout = new QHBoxLayout;
+    m_engineLabel = new QLabel(tr("Engine: <none>"), this);
     m_selectEngineBtn  = new QPushButton(tr("Select Engine…"), this);
     engineSelectLayout->addWidget(m_engineLabel);
     engineSelectLayout->addWidget(m_selectEngineBtn);

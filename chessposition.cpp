@@ -218,15 +218,7 @@ void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
     newPos.copyFrom(*this);
     newPos.applyMove(sr, sc, dr, dc, promo);
 
-    QString moveText;
-    if (newPos.m_boardData[dr][dc][1] != 'P'){
-        moveText = QString("%1").arg(newPos.m_boardData[dr][dc][1]);
-    }
-    moveText += QString("%1%2").arg(QChar('a' + dc)).arg(8 - dr);
-    if (promo != '\0') {
-        moveText += "=" + QString(promo);
-    }
-
+    QString moveText = lanToSan(sr, sc, dr, dc, promo);
     QSharedPointer<NotationMove> newMove(new NotationMove(moveText, newPos));
     newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
     newMove->m_zobristHash = newPos.computeZobrist();

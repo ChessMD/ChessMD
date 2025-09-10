@@ -133,6 +133,13 @@ void ChessGameWindow::gameplaySetup()
     m_isGameplay = true;
     notationSetup();
     toolbarSetup();
+    m_saveGameAction->setEnabled(false);
+    m_gameReviewAction->setEnabled(false);
+    m_startEngineAction->setEnabled(false);
+    m_stopEngineAction->setEnabled(false);
+    m_openOpeningExplorerAction->setEnabled(false);
+    m_closeOpeningExplorerAction->setEnabled(false);
+
     m_notationDock->hide();
 
     // create viewer with pointer to the same ChessPosition
@@ -420,13 +427,13 @@ void ChessGameWindow::toolbarSetup()
     flipBoard->setIcon(QIcon(getIconPath("flip-board.png")));
     connect(flipBoard, &QAction::triggered, this, &ChessGameWindow::onFlipBoardShortcut);
 
-    QAction* save = m_Toolbar->addAction("Save (Ctrl+S)");
-    save->setIcon(QIcon(getIconPath("savegame.png")));
-    connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
+    m_saveGameAction = m_Toolbar->addAction("Save (Ctrl+S)");
+    m_saveGameAction->setIcon(QIcon(getIconPath("savegame.png")));
+    connect(m_saveGameAction, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
 
-    QAction* review = m_Toolbar->addAction("Game Review");
-    review->setIcon(QIcon(getIconPath("sparkles.png")));
-    connect(review, &QAction::triggered, this, [this]() {
+    m_gameReviewAction = m_Toolbar->addAction("Game Review");
+    m_gameReviewAction->setIcon(QIcon(getIconPath("sparkles.png")));
+    connect(m_gameReviewAction, &QAction::triggered, this, [this]() {
         if (!m_gameReviewDock) return;
         bool visible = m_gameReviewDock->isVisible();
         m_gameReviewDock->setVisible(!visible);
@@ -506,6 +513,7 @@ void ChessGameWindow::updateEngineActions()
     bool hasEngine = (m_engineDock != nullptr);
     m_startEngineAction->setEnabled(!hasEngine);
     m_stopEngineAction->setEnabled(hasEngine);
+    m_positionViewer->setIsEvalActive(hasEngine);
 }
 
 void ChessGameWindow::gameReviewSetup()
@@ -694,8 +702,10 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
 {
     if (m_isGameplay){
         bool isLastMove = !m_notationViewer->m_selectedMove->m_nextMoves.size();
-        onSelectLastMove();
-        if (!isLastMove || !m_gameplayViewer->isEngineIdle()) return;
+        if (!isLastMove || !m_gameplayViewer->isEngineIdle()) {
+            onSelectLastMove();
+            return;
+        }
     }
     auto child = getUniqueNextMove(m_notationViewer->m_selectedMove, move);
     // link move if unique
@@ -773,16 +783,18 @@ void ChessGameWindow::onResetBoardClicked()
 
 void ChessGameWindow::onSavePgnClicked()
 {
-    PGNSaveDialog dialog(this);
+    PGNSaveDialog dialog(nullptr);
     dialog.setHeaders(m_notationViewer->m_game);
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
     dialog.applyTo(m_notationViewer->m_game);
-    QString result; QTextStream out(&result); int plyCount = 0;
+    QString result;
+    QTextStream out(&result);
+    int plyCount = 0;
     writeMoves(m_notationViewer->getRootMove(), out, plyCount);
     m_notationViewer->m_game.bodyText = result.trimmed();
-    saveGame();
+    QTimer::singleShot(200, this, [this]{ saveGame(); });
 }
 
 void ChessGameWindow::showEvent(QShowEvent *ev)

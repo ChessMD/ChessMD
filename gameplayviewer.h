@@ -73,6 +73,8 @@ private:
     QPushButton *m_whiteBtn;
     QPushButton *m_blackBtn;
     QPushButton *m_randomBtn;
+    QLabel *m_engineLabel;
+    QPushButton *m_selectEngineBtn;
     QCheckBox *m_timeCheck;
     QSpinBox *m_minutesSpin;
     QSpinBox *m_secondsSpin;

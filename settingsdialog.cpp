@@ -56,7 +56,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QString openingText = QString("Current opening database: ") + ( (QFileInfo::exists("./opening/openings.bin") && QFileInfo::exists("./opening/openings.headers") ) ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
     mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);
-    QLabel* info = new QLabel(tr("Warning! In %1, 1 GB of memory (RAM) is required for every 3 MB of a PGN database.").arg(QCoreApplication::applicationVersion()), openingsPage);
+    QLabel* info = new QLabel(tr("In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB). You can download").arg(QCoreApplication::applicationVersion()), openingsPage);
     openingsLayout->addWidget(mOpeningsPathLabel);
     openingsLayout->addWidget(loadPgnBtn);
     openingsLayout->addWidget(info);

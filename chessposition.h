@@ -33,6 +33,7 @@ class ChessPosition: public QObject
     Q_PROPERTY(double evalScore READ evalScore WRITE setEvalScore NOTIFY evalScoreChanged)
     Q_PROPERTY(bool isPreview READ isPreview WRITE setIsPreview NOTIFY isPreviewChanged)
     Q_PROPERTY(bool isBoardFlipped READ isBoardFlipped NOTIFY isBoardFlippedChanged)
+    Q_PROPERTY(bool isEvalActive READ isEvalActive NOTIFY isEvalActiveChanged)
     Q_PROPERTY(int lastMove READ lastMove NOTIFY lastMoveChanged)
 
 public:
@@ -65,6 +66,13 @@ public:
         emit evalScoreChanged();
     }
 
+    bool isEvalActive() const { return m_isEvalActive; }
+    void setIsEvalActive(bool p) {
+        if (m_isEvalActive == p) return;
+        m_isEvalActive = p;
+        emit isEvalActiveChanged(p);
+    }
+
     int getPlyCount() const {return m_plyCount;}
 
     // Copies all internal state from another ChessPosition
@@ -93,6 +101,7 @@ signals:
     void moveMade(QSharedPointer<NotationMove>& move);
     void isPreviewChanged(bool);
     void isBoardFlippedChanged(bool);
+    void isEvalActiveChanged(bool);
     void lastMoveChanged();
     void evalScoreChanged();
 
@@ -114,6 +123,7 @@ private:
     int m_lastMove = -1;
     bool m_isPreview = false;
     bool m_isBoardFlipped = false;
+    bool m_isEvalActive = false;
     double m_evalScore = 0;
 };
 

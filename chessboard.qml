@@ -28,6 +28,13 @@ Rectangle {
         width: 20
         color: "#000000" /*hcc*/
         radius: width / 2
+        visible: {
+            if (chessPosition){
+                return chessPosition.isEvalActive
+            } else {
+                return false
+            }
+        }
     }
 
     // white fill bar
@@ -48,6 +55,13 @@ Rectangle {
 
         Behavior on height {
             NumberAnimation { duration: 300 }
+        }
+        visible: {
+            if (chessPosition){
+                return chessPosition.isEvalActive
+            } else {
+                return false
+            }
         }
     }
 
@@ -85,12 +99,27 @@ Rectangle {
         modal: true
         focus: true
         padding: 0
-        x: board.x + promoDc*board.cellSize
+        x: {
+            if (chessPosition){
+                if (chessPosition.isBoardFlipped){
+                    return board.x + (7-promoDc)*board.cellSize
+                } else {
+                    return board.x + promoDc*board.cellSize
+                }
+            } else {
+                return 0
+            }
+        }
         y: {
-            if (promoDr == 0)
-                return board.y
-            else if (promoDr == 7)
-                return board.y + 4*board.cellSize
+            if (chessPosition){
+                if ((promoDr == 0 && !chessPosition.isBoardFlipped) || (promoDr == 7 && chessPosition.isBoardFlipped)) {
+                    return board.y
+                } else {
+                    return board.y + 4*board.cellSize
+                }
+            } else {
+                return 0
+            }
         }
         width: board.cellSize
         height: 4*board.cellSize
@@ -123,10 +152,23 @@ Rectangle {
                         sourceSize.height: parent.height
                         property int index
                         source: {
-                            if (promoDr == 0)
-                                return "img/piece/alpha/" + "w" + promoPopup.promoPiece[promoSquare.index] + ".svg"
-                            else
-                                return "img/piece/alpha/" + "b" + promoPopup.promoPiece[3-promoSquare.index] + ".svg"
+                            if (chessPosition){
+                                if (promoDr == 0) {
+                                    if (!chessPosition.isBoardFlipped){
+                                        return "img/piece/alpha/" + "w" + promoPopup.promoPiece[promoSquare.index] + ".svg"
+                                    } else {
+                                        return "img/piece/alpha/" + "w" + promoPopup.promoPiece[3-promoSquare.index] + ".svg"
+                                    }
+                                } else if (promoDr == 7){
+                                    if (!chessPosition.isBoardFlipped){
+                                        return "img/piece/alpha/" + "b" + promoPopup.promoPiece[3-promoSquare.index] + ".svg"
+                                    } else {
+                                        return "img/piece/alpha/" + "b" + promoPopup.promoPiece[promoSquare.index] + ".svg"
+                                    }
+                                }
+                            } else {
+                                return ""
+                            }
                         }
                         fillMode: Image.PreserveAspectFit
                     }
@@ -134,7 +176,21 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            chessPosition.promote(promoSr, promoSc, promoDr, promoDc, promoPopup.promoPiece[(promoDr == 0 ? promoSquare.index : 3 - promoSquare.index)]);
+                            if (chessPosition){
+                                if (promoDr == 0) {
+                                    if (!chessPosition.isBoardFlipped){
+                                        chessPosition.promote(promoSr, promoSc, promoDr, promoDc, promoPopup.promoPiece[promoSquare.index]);
+                                    } else {
+                                        chessPosition.promote(promoSr, promoSc, promoDr, promoDc, promoPopup.promoPiece[3-promoSquare.index]);
+                                    }
+                                } else if (promoDr == 7){
+                                    if (!chessPosition.isBoardFlipped){
+                                        chessPosition.promote(promoSr, promoSc, promoDr, promoDc, promoPopup.promoPiece[3-promoSquare.index]);
+                                    } else {
+                                        chessPosition.promote(promoSr, promoSc, promoDr, promoDc, promoPopup.promoPiece[promoSquare.index]);
+                                    }
+                                }
+                            }
                             promoPopup.close();
                         }
                     }

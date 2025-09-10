@@ -10,25 +10,18 @@ class ChessGameFilesData  : public QSettings
 public:
     ChessGameFilesData();
 
-
-    void loadData();
     void saveData();
-
     void addNewGame(QString gameFile);
     void removeGameFile(QString gameFile);
 
     QList<QString> getGameFilesList();
-
 
 protected:
 
 private:
     QString m_dataFile;
 
-
 private slots:
-
-
 
 signals:
 };

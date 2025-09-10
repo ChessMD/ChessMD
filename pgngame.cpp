@@ -13,6 +13,7 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 PGNGame::PGNGame()
 {
     result = "*";
+    bodyText = "";
     isParsed = false;
     ChessPosition startPos;
     rootMove = QSharedPointer<NotationMove>::create("", startPos);

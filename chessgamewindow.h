@@ -108,9 +108,10 @@ private:
     QDockWidget* m_gameReviewDock;
     QDockWidget *m_gameplayDock;
 
+    QAction* m_gameReviewAction;
+    QAction* m_saveGameAction;
     QAction* m_startEngineAction;
     QAction* m_stopEngineAction;
-
     QAction* m_openOpeningExplorerAction;
     QAction* m_closeOpeningExplorerAction;
 

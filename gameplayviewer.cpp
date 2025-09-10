@@ -12,7 +12,10 @@
 #include <QLabel>
 #include <QTimer>
 #include <QMessageBox>
-#include <QDebug>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileDialog>
+#include <QOperatingSystemVersion>
 
 GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     : QWidget(parent)
@@ -55,6 +58,20 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     titleSep->setFrameShadow(QFrame::Sunken);
     preLay->addSpacing(8);
     preLay->addWidget(titleSep);
+    preLay->addSpacing(8);
+
+    QHBoxLayout *engineSelectLayout = new QHBoxLayout;
+    m_engineLabel = new QLabel(tr("Engine: <none>"), this);
+    m_selectEngineBtn  = new QPushButton(tr("Select Engine…"), this);
+    engineSelectLayout->addWidget(m_engineLabel);
+    engineSelectLayout->addWidget(m_selectEngineBtn);
+    preLay->addLayout(engineSelectLayout);
+
+    QFrame *engineSep = new QFrame;
+    engineSep->setFrameShape(QFrame::HLine);
+    engineSep->setFrameShadow(QFrame::Sunken);
+    preLay->addSpacing(8);
+    preLay->addWidget(engineSep);
     preLay->addSpacing(8);
 
     m_timeCheck = new QCheckBox;
@@ -224,12 +241,50 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
             border: 1px solid gray;
         }
     )");
+
     QHBoxLayout *playRow = new QHBoxLayout;
     playRow->setContentsMargins(0, 0, 0, 0);
     playRow->addStretch();
     playRow->addWidget(m_playBtn);
     playRow->addStretch();
     preLay->addLayout(playRow);
+
+    ChessQSettings s;
+    s.loadSettings();
+    QString saved = s.getEngineFile();
+    if (!saved.isEmpty() && QFileInfo::exists(saved)) {
+        m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(saved).fileName()));
+        m_playBtn->setEnabled(true);
+    } else {
+        m_engineLabel->setText(tr("Engine: <none>"));
+        m_playBtn->setEnabled(false);
+    }
+
+    connect(m_selectEngineBtn, &QPushButton::clicked, this, [this]() {
+        QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+        QString binary;
+        QString exeDir = QCoreApplication::applicationDirPath();
+        QDir dir(exeDir);
+        if (dir.cd("engine")) {
+            // path is "<parent_of_exe>/engine"
+        } else {
+            dir = QDir(exeDir);
+        }
+
+        if (osVersion.type() == QOperatingSystemVersion::Windows)
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
+        else
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+
+        if (!binary.isEmpty()){
+            ChessQSettings s;
+            s.loadSettings();
+            s.setEngineFile(binary);
+            s.saveSettings();
+            m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(binary).fileName()));
+            m_playBtn->setEnabled(true);
+        }
+    });
 
     m_inGameWidget = new QWidget;
     QVBoxLayout *inLay = new QVBoxLayout(m_inGameWidget);
@@ -413,6 +468,14 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     connect(m_openAnalysisBtn, &QPushButton::clicked, this, &GameplayViewer::onOpenInAnalysisClicked);
     connect(m_takebackBtn, &QPushButton::clicked, this, &GameplayViewer::onTakebackClicked);
     connect(m_playBtn, &QPushButton::clicked, this, [this]{
+        ChessQSettings s;
+        s.loadSettings();
+        QString saved = s.getEngineFile();
+        if (saved.isEmpty() || !QFileInfo::exists(saved)) {
+            m_engineLabel->setText(tr("Engine: <none>"));
+            m_playBtn->setEnabled(false);
+            return;
+        }
         int selectedSide = m_sideButtonGroup->checkedId();
         if (selectedSide == 1) selectedSide = QRandomGenerator::global()->bounded(2);
         if (selectedSide == 2) selectedSide = 1;
