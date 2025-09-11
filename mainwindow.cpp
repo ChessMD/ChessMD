@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QOperatingSystemVersion>
+#include <QStandardPaths>
 
 #include "databaselibrary.h"
 #include "mainwindow.h"
@@ -407,7 +408,12 @@ void MainWindow::startNextChesscomFetch()
 
 void MainWindow::onPGNReady(const QString &combinedPGN, const QString &filename)
 {
-    QString savePath = QFileDialog::getSaveFileName(this, tr("Save combined PGN"), filename, tr("PGN files (*.pgn)"));
+    QString writablePath = "";
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    if (osVersion.type() == QOperatingSystemVersion::MacOS)
+        writablePath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/";
+
+    QString savePath = QFileDialog::getSaveFileName(this, tr("Save combined PGN"), writablePath + filename, tr("PGN files (*.pgn)"));
     if (savePath.isEmpty()) return;
 
     QFile filePath(savePath);

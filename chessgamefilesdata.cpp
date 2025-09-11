@@ -1,11 +1,16 @@
 #include "chessgamefilesdata.h"
-
 #include <QApplication>
+#include <QOperatingSystemVersion>
+#include <QStandardPaths>
 #include <QDir>
 
 ChessGameFilesData::ChessGameFilesData()
 {
-    m_dataFile = "./chessgamefiles.ini";
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    if (osVersion.type() == QOperatingSystemVersion::MacOS)
+        m_dataFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/chessgamefiles.ini";
+    else
+        m_dataFile = "./chessgamefiles.ini";
 }
 
 void ChessGameFilesData::saveData()
