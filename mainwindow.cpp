@@ -47,6 +47,7 @@ MainWindow::MainWindow()
 
 void MainWindow::setupToolbar() {
     QToolBar* toolbar = new QToolBar(this);
+    toolbar->setContextMenuPolicy(Qt::PreventContextMenu);
     toolbar->setOrientation(Qt::Horizontal);
     toolbar->setMovable(false);
     toolbar->setFloatable(false);

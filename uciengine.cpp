@@ -110,6 +110,12 @@ void UciEngine::handleReadyRead() {
             continue;
         }
 
+        if (line.startsWith("id name ")) {
+            // everything after "id name " is the engine's name
+            QString name = line.mid(QStringLiteral("id name ").length());
+            emit nameReceived(name);
+        }
+
         // bestmove
         if (line.startsWith("bestmove ")) {
             auto parts = line.split(' ', Qt::SkipEmptyParts);

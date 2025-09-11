@@ -145,6 +145,7 @@ void ChessGameWindow::gameplaySetup()
     // create viewer with pointer to the same ChessPosition
     m_gameplayViewer = new GameplayViewer(m_positionViewer, this);
     m_gameplayDock = new QDockWidget(tr("Play vs Engine"), this);
+    m_gameplayDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_gameplayDock->setWidget(m_gameplayViewer);
     m_gameplayDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
     m_gameplayDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -157,9 +158,10 @@ void ChessGameWindow::gameplaySetup()
     connect(m_gameplayViewer, &GameplayViewer::resetBoard, this, &ChessGameWindow::onResetBoard);
     connect(m_gameplayViewer, &GameplayViewer::matchBoardFlip, this, &ChessGameWindow::onMatchBoardFlip);
     connect(m_gameplayViewer, &GameplayViewer::requestTakeback, this, &ChessGameWindow::onRequestTakeback);
-    connect(m_gameplayViewer, &GameplayViewer::openAnalysisBoard, this, [this]{
+    connect(m_gameplayViewer, &GameplayViewer::openAnalysisBoard, this, [this](QVector<QPair<QString,QString>> headerInfo){
         PGNGame game;
         game.copyFrom(m_notationViewer->m_game);
+        game.headerInfo = headerInfo;
         emit openAnalysisBoard(game);
     });
 
@@ -395,6 +397,7 @@ void ChessGameWindow::notationSetup()
     vlay->addWidget(m_notationViewer, 1);
 
     m_notationDock = new QDockWidget(tr("Notation"), this);
+    m_notationDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_notationDock->setWidget(container);
     m_notationDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_notationDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -409,7 +412,8 @@ void ChessGameWindow::notationSetup()
 // Builds the toolbar with additional game controls
 void ChessGameWindow::toolbarSetup()
 {
-    m_Toolbar = new QToolBar;
+    m_Toolbar = new QToolBar(tr("Toolbar"));
+    m_Toolbar->setContextMenuPolicy(Qt::PreventContextMenu);
     m_Toolbar->setIconSize(QSize(32,32));
     m_Toolbar->setFloatable(false);
     m_Toolbar->setMovable(false);
@@ -467,6 +471,7 @@ void ChessGameWindow::engineSetup()
     // create the engine dockable panel
     m_engineViewer = new EngineWidget(m_notationViewer->getSelectedMove(), this);
     m_engineDock = new QDockWidget(tr("Engine"), this);
+    m_engineDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_engineDock->setWidget(m_engineViewer);
     m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_engineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -520,6 +525,7 @@ void ChessGameWindow::gameReviewSetup()
 {
     m_gameReviewViewer = new GameReviewViewer(m_notationViewer->getRootMove(), this);
     m_gameReviewDock = new QDockWidget(tr("Game Review"), this);
+    m_gameReviewDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_gameReviewDock->setWidget(m_gameReviewViewer);
     m_gameReviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_gameReviewDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -548,6 +554,7 @@ void ChessGameWindow::openingSetup()
     m_openingViewer->updatePosition(currentMove->m_zobristHash, currentMove->m_position, currentMove->moveText);
 
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
+    m_openingDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_openingDock->setWidget(m_openingViewer);
     m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
     m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);

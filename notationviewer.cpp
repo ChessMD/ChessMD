@@ -73,6 +73,7 @@ void NotationViewer::layoutNotation()
     // Set the viewport's height based on total text height
     verticalScrollBar()->setRange(0, qMax(0, y - viewport()->height()));
     verticalScrollBar()->setPageStep(viewport()->height());
+    verticalScrollBar()->setSingleStep(15);
 }
 
 void NotationViewer::paintEvent(QPaintEvent *event)
@@ -89,7 +90,7 @@ void NotationViewer::paintEvent(QPaintEvent *event)
     }
 
     if (!m_selectedMove.isNull()) {
-        for (const MoveSegment &seg : m_moveSegments) {
+        for (const MoveSegment &seg : std::as_const(m_moveSegments)) {
             if (seg.move == m_selectedMove) {
                 painter.setBrush(QColor(200, 200, 255, 128)); //hcc
                 painter.setPen(Qt::NoPen);

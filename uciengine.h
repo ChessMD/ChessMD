@@ -46,6 +46,7 @@ signals:
     void commandSent(const QString &cmd);
     void infoReceived(const QString &rawInfo);
     void bestMove(const QString &move);
+    void nameReceived(const QString &name);
     void pvUpdate(PvInfo &info);
     void engineReady();
 

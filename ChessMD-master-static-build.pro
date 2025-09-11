@@ -41,6 +41,7 @@ HEADERS += chessgamefilesdata.h \
            uciengine.h \
            variationdialogue.h \
 	   gamereviewviewer.h \
+	   gameplayviewer.h \
 	   engineviewer.h \
 	   draggablecheckbox.h \
 	   theme.h 
@@ -78,6 +79,7 @@ SOURCES += chessgamefilesdata.cpp \
            uciengine.cpp \
            variationdialogue.cpp \
 	   gamereviewviewer.cpp \
+	   gameplayviewer.cpp \
 	   engineviewer.cpp \
 	   draggablecheckbox.cpp \
 	   theme.cpp 

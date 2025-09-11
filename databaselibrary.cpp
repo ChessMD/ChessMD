@@ -130,9 +130,12 @@ void DatabaseLibrary::newChessboard(PGNGame game, bool startGameReview)
     ChessGameWindow *gameWin = new ChessGameWindow(nullptr, game);
     gameWin->setAttribute(Qt::WA_DeleteOnClose); // must have! allows destructor to run when window closes
     gameWin->mainSetup();
-    gameWin->setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive | Qt::WindowMaximized);
-    gameWin->show();
-    if (startGameReview) gameWin->startGameReview();
+    gameWin->showMaximized();
+    gameWin->raise();
+    gameWin->activateWindow();
+    if (startGameReview) {
+        gameWin->startGameReview();
+    }
 
     connect(gameWin, &ChessGameWindow::PGNGameUpdated, this, [this, gameWin](PGNGame &game) {
         QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files (*.pgn)"));

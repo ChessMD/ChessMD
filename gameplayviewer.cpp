@@ -16,6 +16,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QOperatingSystemVersion>
+#include <QDateTime>
 
 GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     : QWidget(parent)
@@ -525,8 +526,9 @@ void GameplayViewer::onPlayClicked(int selectedSide)
     m_engineDepth = 18 + int(std::round(double(m_eloSlider->value() - 1320) / double(3190 - 1320) * (25 - 18))); // linear depth function [20, 25]
     updateClockDisplays();
     m_lastPosition->copyFrom(*m_startPosition);
+    m_engineElo =m_eloSlider->value();
     m_whitePlayerLabel->setText(tr("You"));
-    m_blackPlayerLabel->setText(tr("Engine"));
+    m_blackPlayerLabel->setText(tr("Engine (%1)").arg(m_engineElo));
     m_preGameWidget->setVisible(false);
     m_inGameWidget->setVisible(true);
     m_playBtn->setEnabled(false);
@@ -555,11 +557,13 @@ void GameplayViewer::startEngineProcess()
     m_engine = new UciEngine(this);
     connect(m_engine, &UciEngine::bestMove, this, &GameplayViewer::onEngineBestMove);
     connect(m_engine, &UciEngine::infoReceived, this, &GameplayViewer::onEngineInfo);
+    connect(m_engine, &UciEngine::nameReceived, this, &GameplayViewer::onNameReceived);
+
 
     m_engineReadyConn = connect(m_engine, &UciEngine::engineReady, this, [this]{
         disconnect(m_engineReadyConn); // one-time connection
         m_engine->setLimitStrength(true);
-        m_engine->setOption("UCI_Elo", QString::number(m_eloSlider->value()));
+        m_engine->setOption("UCI_Elo", QString::number(m_engineElo));
         m_engine->setPosition("startpos");
         scheduleNextDisplayUpdate();
         if (m_humanSide == 1) {
@@ -678,8 +682,8 @@ void GameplayViewer::updateClockDisplays()
     bool isFlipped = m_positionViewer->isBoardFlipped();
     m_whiteClock->setText(msToString(isFlipped ? m_blackMs : m_whiteMs));
     m_blackClock->setText(msToString(isFlipped ? m_whiteMs : m_blackMs));
-    m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("Engine") : tr("You"));
-    m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : tr("Engine"));
+    m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("%1 (%2)").arg(m_engineName).arg(m_engineElo) : tr("You"));
+    m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : tr("%1 (%2)").arg(m_engineName).arg(m_engineElo));
     if ((m_positionViewer->m_sideToMove == 'w' && !isFlipped) || (m_positionViewer->m_sideToMove == 'b' && isFlipped)){
         m_whiteClock->setStyleSheet("border: 1px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
         m_blackClock->setStyleSheet("border: 1px solid grey; border-radius: 10px; padding: 6px; background: palette(base);");
@@ -691,6 +695,7 @@ void GameplayViewer::updateClockDisplays()
 
 void GameplayViewer::finishGame(const QString &result, const QString &description)
 {
+    m_result = result;
     m_active = false;
     m_updateTimer.stop();
     stopEngineProcess();
@@ -711,8 +716,8 @@ void GameplayViewer::finishGame(const QString &result, const QString &descriptio
     dlgLay->setSpacing(12);
 
     QString resultText;
-    if (result == "1-0") resultText = (m_humanSide == 0 ? tr("You Won!") : tr("Engine Won"));
-    else if (result == "0-1") resultText = (m_humanSide == 1 ? tr("You Won!") : tr("Engine Won"));
+    if (result == "1-0") resultText = (m_humanSide == 0 ? tr("You Won!") : tr("%1 Won").arg(m_engineName));
+    else if (result == "0-1") resultText = (m_humanSide == 0 ? tr("%1 Won").arg(m_engineName) : tr("You Won!"));
     else if (result == "1/2-1/2") resultText = tr("Draw");
     QLabel *title = new QLabel(resultText);
     QFont titleF = title->font();
@@ -827,7 +832,15 @@ void GameplayViewer::onRematchClicked()
 
 void GameplayViewer::onOpenInAnalysisClicked()
 {
-    emit openAnalysisBoard();
+    QVector<QPair<QString,QString>> headerInfo;
+    QDate date = QDateTime::currentDateTime().date();
+    headerInfo.push_back({"Event", "ChessMD"});
+    headerInfo.push_back({"White", m_humanSide == 0 ? "You" : m_engineName});
+    headerInfo.push_back({"Black", m_humanSide == 0 ? m_engineName : "You"});
+    headerInfo.push_back({QString("%1Elo").arg(m_humanSide == 0 ? "Black" : "White"), QString::number(m_engineElo)});
+    headerInfo.push_back({"Result", m_result});
+    headerInfo.push_back({"Date", QString("%1.%2.%3").arg(date.month()).arg(date.day()).arg(date.year())});
+    emit openAnalysisBoard(headerInfo);
 }
 
 void GameplayViewer::onTakebackClicked()
@@ -839,6 +852,11 @@ void GameplayViewer::onTakebackClicked()
         m_positionHash[m_positionStack.top()]--;
         m_positionStack.pop();
     }
+}
+
+void GameplayViewer::onNameReceived(const QString &name)
+{
+    m_engineName = name;
 }
 
 void GameplayViewer::onEngineInfo(const QString &line)

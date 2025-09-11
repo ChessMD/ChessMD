@@ -26,7 +26,7 @@ public slots:
     void updateClockDisplays();
 
 signals:
-    void openAnalysisBoard();
+    void openAnalysisBoard(QVector<QPair<QString,QString>> headerInfo);
     void resetBoard();
     void matchBoardFlip(QChar side);
     void selectLastMove();
@@ -42,6 +42,7 @@ private slots:
 
     void onEngineBestMove(const QString &uci);
     void onEngineInfo(const QString &line);
+    void onNameReceived(const QString &name);
 
     void onClockTick();
 
@@ -99,7 +100,10 @@ private:
     int m_incMs;
     int m_engineDepth;
 
+    QString m_engineName;
+    QString m_result;
     int m_moveCount;
+    int m_engineElo;
     QStack<QString> m_positionStack;
     QHash<QString, int> m_positionHash;
 

@@ -38,6 +38,7 @@ public slots:
 
 private slots:
     void onEngineMoveClicked(QSharedPointer<NotationMove>& move);
+    void onNameReceived(const QString &name);
     void onConfigEngineClicked();
     void doPendingAnalysis();
     void onPvUpdate(PvInfo &info);
@@ -62,6 +63,7 @@ private:
     QPushButton *m_buttonStop;
     QPushButton *m_evalButton;
     QLabel *m_engineLabel;
+    QPushButton *m_selectEngineBtn;
     QTextEdit *m_console;
     QString m_currentFen;
     QString m_sideToMove;
