@@ -10,6 +10,7 @@
 #include <QHeaderView>
 #include <QPainterPath>
 #include <QApplication>
+#include <QOperatingSystemVersion>
 #include <QSplitter>
 #include <QTimer>
 
@@ -450,9 +451,18 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
 OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
 {
-    // load opening book
-    mOpeningBookLoaded = mOpeningInfo.deserialize("./opening/openings.bin");
+	
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
 
+    // load opening book
+    QDir dirBin(QDir::current());
+    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+        dirBin.setPath(QApplication::applicationDirPath());
+        dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+    }
+    QString finalBinPath = dirBin.filePath("./opening/openings.bin");
+    mOpeningBookLoaded = mOpeningInfo.deserialize(finalBinPath);
+	
     // moves list side
     QVBoxLayout* listsLayout = new QVBoxLayout();
     listsLayout->setContentsMargins(0, 0, 0, 0);
@@ -769,8 +779,16 @@ void OpeningViewer::updateGamesList(const int openingIndex, const PositionWinrat
     }
 
     mPendingGameIDs = mOpeningInfo.readGameIDs(openingIndex);
-    mPendingGames = loadGameHeadersBatch("./opening/openings.headers", mPendingGameIDs);
-
+	
+	QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    QDir dirHeads(QDir::current());
+    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+        dirHeads.setPath(QApplication::applicationDirPath());
+        dirHeads.cdUp(), dirHeads.cdUp(), dirHeads.cdUp();
+    }
+    QString finalHeaderPath = dirHeads.filePath("./opening/openings.headers");
+    mPendingGames = loadGameHeadersBatch(finalHeaderPath, mPendingGameIDs);
+	
     mGamesList->setRowCount(0);
     mGamesList->setSortingEnabled(false); // no sorting while loading
     for (int i = 0; i < qMin(INTIAL_GAMES_TO_LOAD, mPendingGameIDs.size()); i++) {

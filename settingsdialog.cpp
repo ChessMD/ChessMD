@@ -54,8 +54,18 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     // openings page
     QWidget* openingsPage = new QWidget(this);
     QVBoxLayout* openingsLayout = new QVBoxLayout(openingsPage);
-    QString openingText = QString("Current opening database: ") + ( (QFileInfo::exists("./opening/openings.bin") && QFileInfo::exists("./opening/openings.headers") ) ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
-    mOpeningsPathLabel = new QLabel(openingText, openingsPage);
+	
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    QDir dir;
+    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+        dir.setPath(QApplication::applicationDirPath());
+        dir.cdUp(), dir.cdUp(),dir.cdUp();
+    }
+
+    bool openingFilesExist = dir.exists("./opening/openings.bin")  && dir.exists("./opening/openings.headers");
+    QString openingText = QString("Current opening database: ") + (openingFilesExist ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
+	
+	mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);
     QLabel* info = new QLabel(tr("In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).").arg(QCoreApplication::applicationVersion()), openingsPage);
     openingsLayout->addWidget(mOpeningsPathLabel);
@@ -467,9 +477,17 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
 
     // clean up tmp file (we need it closed before finalize)
     tmpHeader.close();
-
+	
+	QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+	
     // finalize and write final headers file
-    QString finalHeaderPath = QDir::current().filePath("./opening/openings.headers");
+    QDir dirHeads(QDir::current());
+    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+        dirHeads.setPath(QApplication::applicationDirPath());
+        dirHeads.cdUp(), dirHeads.cdUp(), dirHeads.cdUp();
+    }
+    QString finalHeaderPath = dirHeads.filePath("./opening/openings.headers");
+
     if (!finalizeHeaderFile(finalHeaderPath, tmpHeaderPath, headerRelativeOffsets)) {
         mOpeningsPathLabel->setText(tr("Failed to write headers file"));
         if (progressBar) progressBar->deleteLater();
@@ -497,7 +515,13 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
     }
 
     // serialize openings.bin same as before
-    openingInfo.serialize("./opening/openings.bin");
+	QDir dirBin(QDir::current());
+    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+        dirBin.setPath(QApplication::applicationDirPath());
+        dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+    }
+    QString finalBinPath = dirBin.filePath("./opening/openings.bin");
+    openingInfo.serialize(finalBinPath);
 
     // finish UI
     if (progressBar) {
