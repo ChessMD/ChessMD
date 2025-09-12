@@ -457,5 +457,6 @@
         <file>img/piece/xkcd/wP.svg</file>
         <file>img/piece/xkcd/wQ.svg</file>
         <file>img/piece/xkcd/wR.svg</file>
+        <file>chessboardsetup.qml</file>
     </qresource>
 </RCC>
