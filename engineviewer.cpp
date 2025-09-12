@@ -18,13 +18,16 @@ April 11, 2025: File Creation
 #include <QOperatingSystemVersion>
 #include <QCoreApplication>
 
-EngineWidget::EngineWidget(QWidget *parent)
+EngineWidget::EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *parent)
     : QWidget(parent),
     m_engine(new UciEngine(this)),
     m_multiPv(3),
     m_console(new QTextEdit(this)),
     m_isHovering(false),
-    m_ignoreHover(false)
+    m_ignoreHover(false),
+    m_sideToMove(move->m_position->m_sideToMove),
+    m_currentFen(move->m_position->positionToFEN()),
+    m_currentMove(move)
 {
     setAttribute(Qt::WA_Hover, true);
     setMouseTracking(true);  
@@ -135,10 +138,54 @@ EngineWidget::EngineWidget(QWidget *parent)
     m_scroll->setWidget(m_container);
     engineLayout->addWidget(m_scroll, 1);
 
-    m_engineLabel = new QLabel(tr("No engine selected!"), this);
+    QHBoxLayout *engineSelectLayout = new QHBoxLayout;
+    m_engineLabel = new QLabel(tr("Engine: <none>"), this);
     m_engineLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    m_engineLabel->setStyleSheet("padding:4px; font-style:italic;");
-    engineLayout->addWidget(m_engineLabel);
+    m_selectEngineBtn  = new QPushButton(tr("Select Engine…"), this);
+    engineSelectLayout->addWidget(m_engineLabel);
+    engineSelectLayout->addWidget(m_selectEngineBtn);
+    engineSelectLayout->addStretch();
+    engineLayout->addLayout(engineSelectLayout);
+
+    ChessQSettings s;
+    s.loadSettings();
+    QString saved = s.getEngineFile();
+    if (!saved.isEmpty() && QFileInfo::exists(saved)) {
+        m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(saved).fileName()));
+    } else {
+        m_engineLabel->setText(tr("Engine: <none>"));
+    }
+
+    connect(m_selectEngineBtn, &QPushButton::clicked, this, [this]() {
+        QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+        QString binary;
+        QString exeDir = QCoreApplication::applicationDirPath();
+        QDir dir(exeDir);
+        if (dir.cd("engine")) {
+            // path is "<parent_of_exe>/engine"
+        } else {
+            dir = QDir(exeDir);
+        }
+
+        if (osVersion.type() == QOperatingSystemVersion::Windows)
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
+        else
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+
+        if (!binary.isEmpty()){
+            ChessQSettings s;
+            s.loadSettings();
+            s.setEngineFile(binary);
+            s.saveSettings();
+            m_engineLabel->setText(tr("No engine selected!"));
+            m_engine->startEngine(binary);
+            QTimer::singleShot(200, this, [this](){ doPendingAnalysis(); });
+        }
+    });
+
+
+    // m_engineLabel->setStyleSheet("padding:4px; font-style:italic;");
+    // engineLayout->addWidget(m_engineLabel);
 
     m_console->setReadOnly(true);
     m_console->setFixedHeight(150);
@@ -154,14 +201,16 @@ EngineWidget::EngineWidget(QWidget *parent)
     m_debounceTimer->setInterval(200);
     connect(m_debounceTimer, &QTimer::timeout, this, &EngineWidget::doPendingAnalysis);
 
-    ChessQSettings s; s.loadSettings();
-    m_engine->startEngine(s.getEngineFile());
-
     connect(m_engine, &UciEngine::pvUpdate, this, &EngineWidget::onPvUpdate);
     connect(m_engine, &UciEngine::infoReceived, this, &EngineWidget::onInfoLine);
     connect(m_engine, &UciEngine::commandSent, this, &EngineWidget::onCmdSent);
+    connect(m_engine, &UciEngine::nameReceived, this, &EngineWidget::onNameReceived);
+    m_engineReadyConn = connect(m_engine, &UciEngine::engineReady, this, [this]{
+        disconnect(m_engineReadyConn);
+        doPendingAnalysis();
+    });
 
-    // doPendingAnalysis();
+    m_engine->startEngine(s.getEngineFile());
 }
 
 void EngineWidget::onConfigEngineClicked()
@@ -176,24 +225,21 @@ void EngineWidget::onConfigEngineClicked()
         dir = QDir(exeDir);
     }
 
-    if (osVersion.type() == QOperatingSystemVersion::Windows)
+    if (osVersion.type() == QOperatingSystemVersion::Windows) {
         binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
-    else
+    } else {
         binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+    }
 
     if (binary.isEmpty()) return;
 
-    ChessQSettings s;
-    s.loadSettings();
-    s.setEngineFile(binary);
-    s.saveSettings();
-
+    ChessQSettings s; s.loadSettings();
+    s.setEngineFile(binary); s.saveSettings();
     m_engine->quitEngine();
     m_engine->startEngine(binary);
-
     m_engineLabel->setText(tr("No engine selected!"));
 
-    doPendingAnalysis();
+    QTimer::singleShot(200, this, [this](){ doPendingAnalysis(); });
 }
 
 void EngineWidget::onMoveSelected(const QSharedPointer<NotationMove>& move)
@@ -241,8 +287,6 @@ void EngineWidget::doPendingAnalysis()
 void EngineWidget::analysePosition() {
     if (m_currentFen.isEmpty()) return;
 
-    m_engine->stopSearch();
-    m_engine->requestReady();
     m_console->clear();
     QLayoutItem *child;
     while ((child = m_containerLay->takeAt(0)) != nullptr) {
@@ -356,14 +400,14 @@ bool EngineWidget::eventFilter(QObject *watched, QEvent *event)
     return QWidget::eventFilter(watched, event);
 }
 
+void EngineWidget::onNameReceived(const QString &name)
+{
+    m_engineLabel->setText(tr("Engine: %1").arg(name));
+}
+
 void EngineWidget::onInfoLine(const QString &line)
 {
     m_console->append(QStringLiteral("<< %1").arg(line));
-    if (line.startsWith("id name ")) {
-        // everything after "id name " is the engine's name
-        QString name = line.mid(QStringLiteral("id name ").length());
-        m_engineLabel->setText(tr("Engine: %1").arg(name));
-    }
 }
 
 void EngineWidget::onCmdSent(const QString &cmd)

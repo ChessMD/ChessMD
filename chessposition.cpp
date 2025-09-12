@@ -3,15 +3,14 @@ March 20, 2025: File Creation
 */
 
 #include "chessposition.h"
+#include "openingviewer.h"
 
-#include <QRegularExpression>
 #include <QDebug>
 
 quint64 ZOBRIST_PIECE[12][64];
 quint64 ZOBRIST_CASTLING[16];
 quint64 ZOBRIST_EN_PASSANT_FILE[8];
 quint64 ZOBRIST_SIDE_TO_MOVE = 0;
-const QHash<char,int> PIECE_INDEX_LOOKUP = {{'P', 0}, {'N', 1}, {'B', 2}, {'R', 3}, {'Q', 4}, {'K', 5}};
 
 ChessPosition::ChessPosition(QObject *parent)
     : QObject(parent)
@@ -51,7 +50,7 @@ void ChessPosition::copyFrom(const ChessPosition &other)
     m_evalScore = other.m_evalScore;
 }
 
-bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol) const
+bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol, bool openingSpeedup) const
 {
     if (oldRow < 0 || oldRow >= 8 || oldCol < 0 || oldCol >= 8 || newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8 || (oldRow == newRow && oldCol == newCol)){
         return false;
@@ -97,11 +96,13 @@ bool ChessPosition::validateMove(int oldRow, int oldCol, int newRow, int newCol)
         return true;
     }
 
-    ChessPosition temp;
-    temp.copyFrom(*this);
-    temp.applyMove(oldRow, oldCol, newRow, newCol, '\0');
-    if (temp.inCheck(color))
-        return false;
+    if (!openingSpeedup){
+        ChessPosition temp;
+        temp.copyFrom(*this);
+        temp.applyMove(oldRow, oldCol, newRow, newCol, '\0');
+        if (temp.inCheck(color))
+            return false;
+    }
 
     switch (piece.toLatin1()) {
     case 'P': {
@@ -217,17 +218,10 @@ void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
     newPos.copyFrom(*this);
     newPos.applyMove(sr, sc, dr, dc, promo);
 
-    QString moveText;
-    if (newPos.m_boardData[dr][dc][1] != 'P'){
-        moveText = QString("%1").arg(newPos.m_boardData[dr][dc][1]);
-    }
-    moveText += QString("%1%2").arg(QChar('a' + dc)).arg(8 - dr);
-    if (promo != '\0') {
-        moveText += "=" + QString(promo);
-    }
-
+    QString moveText = lanToSan(sr, sc, dr, dc, promo);
     QSharedPointer<NotationMove> newMove(new NotationMove(moveText, newPos));
     newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
+    newMove->m_zobristHash = newPos.computeZobrist();
 
     emit moveMade(newMove);
     emit boardDataChanged();
@@ -261,10 +255,11 @@ void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)
 
 QVector<QVector<QString>> ChessPosition::convertFenToBoardData(const QString &fen)
 {
-    return ::convertFenToBoardData(fen);  // Call the standalone function
+    return ::convertFenToBoardData(fen);  
 }
 
 bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) {
+bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move, bool openingSpeedup) {
     san = san.trimmed();
     while (!san.isEmpty() && (san.endsWith('+') || san.endsWith('#'))){
         san.chop(1);
@@ -283,13 +278,11 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
         int newKC = kingSide?6:2;
         int oldRC = kingSide?7:0;
         int newRC = kingSide?5:3;
-        if (!validateMove(row, oldKC, row, newKC)) return false;
+        if (!validateMove(row, oldKC, row, newKC, openingSpeedup)) return false;
         move->lanText = QString("%1%2%3%4").arg(QChar('a' + oldKC)).arg(8 - row).arg(QChar('a' + newKC)).arg(8 - row);
         applyMove(row, oldKC, row, newKC, '\0');
         if (color=='w') { m_castling.whiteKing=m_castling.whiteQueen=false; }
         else { m_castling.blackKing=m_castling.blackQueen=false; }
-        m_halfmoveClock++;
-        if (m_sideToMove=='b') m_fullmoveNumber++;
         return true;
     }
 
@@ -347,8 +340,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
             }
         } else if (disamb.size() == 2) {
             // both file & rank given
-            ok = (sc == disamb[0].unicode() - 'a')
-                 && (sr == (8 - disamb[1].digitValue()));
+            ok = (sc == disamb[0].unicode() - 'a') && (sr == (8 - disamb[1].digitValue()));
         }
         if (ok)
             candidates.append(o);
@@ -357,7 +349,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
     // 9) Try each candidate
     for (auto &o : candidates) {
         int sr = o.first, sc = o.second;
-        if (validateMove(sr, sc, dr, dc)) {
+        if (validateMove(sr, sc, dr, dc, openingSpeedup)) {
             move->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
             applyMove(sr, sc, dr, dc, promo);
             // update halfmove/fullmove…
@@ -371,7 +363,7 @@ bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) 
 void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     QString from = m_boardData[sr][sc];
     if (from.size() < 2) {
-        qWarning() << "Invalid ‘from’ string, aborting move.";
+        qDebug() << "Invalid ‘from’ string, aborting move.";
         return;
     }
 
@@ -426,9 +418,13 @@ void ChessPosition::applyMove(int sr, int sc, int dr, int dc, QChar promotion) {
     if (promotion!=QChar('\0') && from[1]=='P' && (dr==0||dr==7)) {
         m_boardData[dr][dc] = QString(from[0]) + promotion.toUpper();
     }
+
+    if (from[1] == 'P' || target.size()) m_halfmoveClock = 0;
+    else m_halfmoveClock++;
+    m_fullmoveNumber += (m_sideToMove == 'b');
     m_sideToMove = (m_sideToMove=='w'?'b':'w');
     m_plyCount++;
-    m_lastMove  = ((sr * 8 + sc) << 8) | (dr * 8 + dc);
+    m_lastMove = ((sr * 8 + sc) << 8) | (dr * 8 + dc);
 }
 
 bool ChessPosition::inCheck(QChar side) const
@@ -472,153 +468,29 @@ QVector<QPair<int,int>> ChessPosition::findPieceOrigins(QChar piece, const QStri
     return vec;
 }
 
-QVector<SimpleMove> ChessPosition::generateLegalMoves() const {
+bool ChessPosition::isFiftyMove() const
+{
+    return m_halfmoveClock >= 100;
+}
+
+QVector<SimpleMove> ChessPosition::generateLegalMoves() const
+{
     QVector<SimpleMove> legalMoves;
     legalMoves.reserve(128);
     const char promo[4] = {'N', 'B', 'R', 'Q'};
-
-    auto insertValid = [&](int sr, int sc, int dr, int dc, char promo = '\0') {
-        // apply move in place, check legality, undo
-        if (validateMove(sr, sc, dr, dc)){
-            legalMoves.push_back({sr, sc, dr, dc, promo});
-        }
-    };
-
     for (int sr = 0; sr < 8; sr++){
         for (int sc = 0; sc < 8; sc++){
             if (m_boardData[sr][sc].size() < 2) continue;
-            char color = m_boardData[sr][sc][0].toLatin1(), piece = m_boardData[sr][sc][1].toLatin1();
-            switch (piece) {
-            case 'P': {
-                int dir = (color == 'w' ? -1 : 1);
-                int startRow = (color=='w'?6:1);
-                int fr = sr + dir;
-                // single push
-                if (fr >= 0 && fr < 8 && m_boardData[fr][sc].isEmpty()) {
-                    // promotion?
-                    if (fr == 0 || fr == 7) {
-                        for (char p : promo) insertValid(sr, sc, fr, sc, p);
+            for (int dr = 0; dr < 8; dr++){
+                for (int dc = 0; dc < 8; dc++){
+                    if (!validateMove(sr, sc, dr, dc)) continue;
+                    if (sr == (m_sideToMove == 'w' ? 1 : 6) && m_boardData[sr][sc][1] == 'P'){
+                        for (auto c: promo) legalMoves.push_back({sr, sc, dr, dc, c});
                     } else {
-                        insertValid(sr, sc, fr, sc);
-                    }
-                    // double push
-                    int fr2 = sr + 2*dir;
-                    if (sr == startRow && fr2 >= 0 && fr2 < 8 && m_boardData[fr2][sc].isEmpty() && m_boardData[fr][sc].isEmpty()) {
-                        insertValid(sr, sc, fr2, sc);
+                        legalMoves.push_back({sr, sc, dr, dc, '\0'});
                     }
                 }
-                // captures (including en-passant)
-                for (int dc : {-1, +1}) {
-                    int tc = sc + dc;
-                    int tr = sr + dir;
-                    if (tr < 0 || tr >=8 || tc < 0 || tc >=8) continue;
-                    bool capture = !m_boardData[tr][tc].isEmpty() && m_boardData[tr][tc][0] != color;
-                    // en-passant: destination square empty but matches en-passant target
-                    QString destAlg = QChar('a'+tr) + QString::number(8-tc);
-                    bool epCapture = m_boardData[tr][tc].isEmpty() && (m_enPassantTarget == destAlg);
-                    if (capture || epCapture) {
-                        if (tr == 0 || tr == 7) {
-                            for (char p : promo) insertValid(sr,sc,tr,tc, p);
-                        } else {
-                            insertValid(sr,sc,tr,tc);
-                        }
-                    }
-                }
-                break;
             }
-            case 'N': {
-                static const int km[8][2] = {{2,1},{2,-1},{-2,1},{-2,-1},{1,2},{1,-2},{-1,2},{-1,-2}};
-                for (auto &m : km) {
-                    int tr = sr + m[0], tc = sc + m[1];
-                    if (tr<0||tr>=8||tc<0||tc>=8) continue;
-                    if (!m_boardData[tr][tc].isEmpty() && m_boardData[tr][tc][0] == color) continue;
-                    insertValid(sr, sc, tr, tc);
-                }
-                break;
-            }
-            case 'B': {
-                const int dirs[4][2] = {{1,1},{1,-1},{-1,1},{-1,-1}};
-                for (auto &d : dirs) {
-                    int r = sr + d[0], c = sc + d[1];
-                    while (r>=0 && r<8 && c>=0 && c<8) {
-                        if (m_boardData[r][c].isEmpty()) { insertValid(sr, sc, r, c ); }
-                        else {
-                            if (m_boardData[r][c][0] != color) insertValid(sr, sc, r, c);
-                            break;
-                        }
-                        r += d[0]; c += d[1];
-                    }
-                }
-                break;
-            }
-            case 'R': {
-                const int dirs[4][2] = {{1,0},{-1,0},{0,1},{0,-1}};
-                for (auto &d : dirs) {
-                    int r = sr + d[0], c = sc + d[1];
-                    while (r>=0 && r<8 && c>=0 && c<8) {
-                        if (m_boardData[r][c].isEmpty()) { insertValid(sr, sc, r, c); }
-                        else {
-                            if (m_boardData[r][c][0] != color) insertValid(sr, sc, r, c);
-                            break;
-                        }
-                        r += d[0]; c += d[1];
-                    }
-                }
-                break;
-            }
-            case 'Q': {
-                const int dirs[8][2] = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
-                for (auto &d : dirs) {
-                    int r = sr + d[0], c = sc + d[1];
-                    while (r>=0 && r<8 && c>=0 && c<8) {
-                        if (m_boardData[r][c].isEmpty()) { insertValid(sr, sc, r, c); }
-                        else {
-                            if (m_boardData[r][c][0] != color) insertValid(sr, sc, r, c);
-                            break;
-                        }
-                        r += d[0]; c += d[1];
-                    }
-                }
-                break;
-            }
-            case 'K': {
-                for (int rr = -1; rr <= 1; ++rr) {
-                    for (int cc = -1; cc <= 1; ++cc) {
-                        if (rr==0 && cc==0) continue;
-                        int tr = sr + rr, tc = sc + cc;
-                        if (tr<0||tr>=8||tc<0||tc>=8) continue;
-                        if (!m_boardData[tr][tc].isEmpty() && m_boardData[tr][tc][0] == color) continue;
-                        insertValid(sr,sc,tr,tc);
-                    }
-                }
-                // castling
-                if (color == 'w' && m_sideToMove == 'w') {
-                    if (sr == 7 && sc == 4) {
-                        insertValid(sr, sc, 7, 6);
-                        insertValid(sr, sc, 7, 2);
-                    }
-                } else if (color == 'b' && m_sideToMove == 'b') {
-                    if (sr == 0 && sc == 4) {
-                        insertValid(sr, sc, 0, 6);
-                        insertValid(sr, sc, 0, 2);
-                    }
-                }
-                break;
-            }
-            default:
-                break;
-            }
-
-            // for (int dr = 0; dr < 8; dr++){
-            //     for (int dc = 0; dc < 8; dc++){
-            //         if (!validateMove(sr, sc, dr, dc)) continue;
-            //         if (sr == (m_sideToMove == 'w' ? 1 : 6) && m_boardData[sr][sc][1] == 'P'){
-            //             for (auto c: promo) legalMoves.push_back({sr, sc, dr, dc, c});
-            //         } else {
-            //             legalMoves.push_back({sr, sc, dr, dc, '\0'});
-            //         }
-            //     }
-            // }
         }
     }
     return legalMoves;
@@ -660,65 +532,174 @@ void writeMoves(const QSharedPointer<NotationMove>& move, QTextStream& out, int 
     writeMoves(principal, out, plyCount);
 }
 
-void buildNotationTree(const QSharedPointer<VariationNode> varNode, QSharedPointer<NotationMove> parentMove)
+void parseBodyAndBuild(QString &bodyText, QSharedPointer<NotationMove> rootMove, bool openingCutoff)
 {
-    int plyCount = varNode->plyCount;
-    int variationIdx = 0;
-    QString comment;
+    if (!rootMove) return;
+    int n = bodyText.size();
+    int pos = 0, totalDepth = 0;
+    QString token;
 
-    for (int i = 0; i < plyCount; ++i) {
-        QString token = varNode->moves[i];
-        token.remove(QRegularExpression(R"(^\d+\.+)")); // remove move number prefixes
+    // current parent (position *before* the next move)
+    QSharedPointer<NotationMove> curParent = rootMove;
 
-        if (token.startsWith('$')) {
+    // stack storing parents to restore when a ')' is seen
+    QVector<QSharedPointer<NotationMove>> variationStack;
+
+    auto attachCommentTo = [&](const QSharedPointer<NotationMove>& target, const QString& c){
+        if (!target) return;
+        if (!target->commentAfter.isEmpty()) target->commentAfter += " ";
+        target->commentAfter += c.trimmed();
+    };
+
+    auto stripMoveNumberPrefix = [](QString &tkn){
+        int m = tkn.size();
+        int p = 0;
+        while (p < m && tkn.at(p).isDigit()) ++p;
+        if (p > 0) {
+            int dotsStart = p;
+            while (p < m && tkn.at(p) == QChar('.')) ++p;
+            if (p > dotsStart) tkn.remove(0, p);
+        }
+        if (!tkn.isEmpty() && tkn.front().isSpace()) tkn.remove(0, 1);
+    };
+
+    auto processToken = [&](QString tkn)->bool {
+        // returns true to signal we should stop parsing (result token seen)
+        tkn = tkn.trimmed();
+        if (tkn.isEmpty()) return false;
+
+        // strip move number prefix (fast)
+        stripMoveNumberPrefix(tkn);
+        if (tkn.isEmpty()) return false;
+
+        // result tokens -> stop parsing this game/variation
+        if (tkn == "1-0" || tkn == "0-1" || tkn == "1/2-1/2" || tkn == "*") {
+            return true;
+        }
+
+        // NAG ($...) handling
+        if (tkn.startsWith('$')) {
             bool ok = false;
-            int code = token.mid(1).toInt(&ok);
+            int code = tkn.mid(1).toInt(&ok);
             if (ok && NUMERIC_ANNOTATION_MAP.contains(code)) {
-                QString symbol = NUMERIC_ANNOTATION_MAP.value(code);
-                parentMove->annotation1 = symbol;
-                continue;
+                if (curParent) curParent->annotation1 = NUMERIC_ANNOTATION_MAP.value(code);
+            } else {
+                attachCommentTo(curParent, tkn);
             }
+            return false;
         }
-        if (token.startsWith('{')) {
-            token.remove(0, 1);
-            while (!token.endsWith('}')) {
-                comment += token + " ";
-                i++;
-                if (i >= plyCount) break;
-                token = varNode->moves[i];
+
+        // comments embedded as tokens (shouldn't normally happen)
+        if (tkn.startsWith('{')) {
+            if (tkn.endsWith('}')) {
+                QString inner = tkn.mid(1, tkn.size()-2).trimmed();
+                attachCommentTo(curParent, inner);
+            } else {
+                attachCommentTo(curParent, tkn.mid(1).trimmed());
             }
-            if (token.endsWith('}')) {
-                token.chop(1);
-                comment += token;
+            return false;
+        }
+
+        if (openingCutoff && totalDepth >= MAX_OPENING_DEPTH) {
+            return false;
+        }
+
+        // Create child move
+        if (!curParent) return false; // defensive
+        QSharedPointer<NotationMove> child = QSharedPointer<NotationMove>::create(tkn, *curParent->m_position);
+        if (!child->m_position->tryMakeMove(tkn, child, openingCutoff)) {
+            // illegal move -> append as comment
+            attachCommentTo(curParent, tkn);
+            return false;
+        }
+
+        // success - link and advance current parent
+        child->m_zobristHash = child->m_position->computeZobrist();
+        linkMoves(curParent, child);
+        totalDepth++;
+
+        // advance: subsequent tokens belong to this child (continuation)
+        curParent = child;
+        return false;
+    };
+
+    // main loop: collect tokens and handle delimiters explicitly
+    while (pos < n) {
+        QChar ch = bodyText.at(pos);
+
+        // comment start: flush token first, then read full comment and attach
+        if (ch == '{') {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return; // result token seen
+                token.clear();
             }
-            if (!comment.isEmpty()) {
-                parentMove->commentAfter = comment;
-                comment.clear();
+            ++pos; // consume '{'
+            QString comment;
+            while (pos < n) {
+                QChar cc = bodyText.at(pos++);
+                if (cc == '}') break;
+                comment += cc;
+            }
+            attachCommentTo(curParent, comment);
+            continue;
+        }
+
+        // open paren: variation start. Flush token first.
+        if (ch == '(') {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return;
+                token.clear();
+            }
+            ++pos; // consume '('
+
+            // push current parent so we can restore after variation ends
+            variationStack.append(curParent);
+
+            // anchor variation at previous move when available
+            QSharedPointer<NotationMove> anchor = curParent;
+            if (curParent && !curParent->m_previousMove.isNull()) {
+                if (auto locked = curParent->m_previousMove.lock()) anchor = locked;
+            }
+            // start parsing variation anchored at 'anchor'
+            curParent = anchor;
+            continue;
+        }
+
+        // close paren: variation end. Flush token first.
+        if (ch == ')') {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return;
+                token.clear();
+            }
+            ++pos; // consume ')'
+            if (!variationStack.isEmpty()) {
+                // restore parent to what it was before the '('
+                curParent = variationStack.takeLast();
+            } else {
+                // unmatched ')', be defensive: keep curParent as-is
             }
             continue;
         }
 
-        while (variationIdx < varNode->variations.size() && varNode->variations[variationIdx].first == i)
-        {
-            auto subNode = varNode->variations[variationIdx].second;
-            buildNotationTree(subNode, parentMove->m_previousMove);
-            variationIdx++;
-        }
-
-        QSharedPointer<NotationMove> childMove = QSharedPointer<NotationMove>::create(token, *parentMove->m_position);
-        if (!childMove->m_position->tryMakeMove(token, childMove)) {
-            parentMove->commentAfter += token; // illegal move, let's just add it as a comment
+        // whitespace -> token boundary
+        if (ch.isSpace()) {
+            if (!token.isEmpty()) {
+                if (processToken(token)) return;
+                token.clear();
+            }
+            ++pos;
             continue;
         }
-        childMove->m_zobristHash = childMove->m_position->computeZobrist();
-        linkMoves(parentMove, childMove);
-        parentMove = childMove;
+
+        // default: regular token character
+        token += ch;
+        ++pos;
     }
 
-    while (variationIdx < varNode->variations.size()) {
-        auto subNode = varNode->variations[variationIdx].second;
-        buildNotationTree(subNode, parentMove);
-        ++variationIdx;
+    // if leftover token at EOF, process it
+    if (!token.isEmpty()) {
+        processToken(token);
+        token.clear();
     }
 }
 
@@ -764,7 +745,7 @@ QVector<QVector<QString>> convertFenToBoardData(const QString &fen)
     return boardData;
 }
 
-QString ChessPosition::positionToFEN() const {
+QString ChessPosition::positionToFEN(bool forHash) const {
     QStringList rowStr;
     for (auto &row : m_boardData) {
         QString s;
@@ -791,14 +772,14 @@ QString ChessPosition::positionToFEN() const {
     QString ep = m_enPassantTarget;
     QString hm = QString::number(m_halfmoveClock);
     QString fm = QString::number(m_fullmoveNumber);
-    return QString("%1 %2 %3 %4 %5 %6").arg(boardPart, sidePart, cr, ep, hm, fm);
+    return QString("%1 %2 %3 %4").arg(boardPart, sidePart, cr, ep) + (forHash ? "" : QString(" %1 %2").arg(hm, fm));
 }
 
 QString ChessPosition::lanToSan(int sr, int sc, int dr, int dc, QChar promo) const
 {
     const QString fromSq = m_boardData[sr][sc];
     if (fromSq.size() < 2) {
-        qWarning() << "Invalid ‘from’ string, aborting move.";
+        qDebug() << "Invalid ‘from’ string, aborting move.";
         return "";
     }
     QChar piece = fromSq[1];  // 'P','N','B','R','Q','K'
@@ -924,6 +905,7 @@ void initZobristTables()
 
 quint64 ChessPosition::computeZobrist() const
 {
+    const QHash<char,int> PIECE_INDEX_LOOKUP = {{'P', 0}, {'N', 1}, {'B', 2}, {'R', 3}, {'Q', 4}, {'K', 5}};
     quint64 hash = 0;
     for (int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
@@ -941,10 +923,11 @@ quint64 ChessPosition::computeZobrist() const
     if (m_castling.whiteKing) cmask |= 4;
     if (m_castling.whiteQueen) cmask |= 8;
     hash ^= ZOBRIST_CASTLING[cmask];
-    if (!m_enPassantTarget.isEmpty()){
+    if (!m_enPassantTarget.isEmpty() && m_enPassantTarget != "-"){
         int ep = m_enPassantTarget[0].toLatin1() - 'a';
         if (ep >= 0 && ep < 8) hash ^= ZOBRIST_EN_PASSANT_FILE[ep];
     }
+
     if (m_sideToMove == 'b') hash ^= ZOBRIST_SIDE_TO_MOVE;
     return hash;
 }

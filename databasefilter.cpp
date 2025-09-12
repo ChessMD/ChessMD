@@ -1,4 +1,4 @@
-#include "databasefilter.h"
+ #include "databasefilter.h"
 #include "ui_databasefilter.h"
 
 #include <QVBoxLayout>
@@ -97,6 +97,4 @@ DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
 void DatabaseFilter::onPositionChanged(const QString& fen, const QVariant& zobrist)
 {
     _filter.zobrist = zobrist.toULongLong();
-    qDebug() << "Position changed. FEN:" << fen;
-    qDebug() << "Zobrist hash:" << _filter.zobrist;
 }

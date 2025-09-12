@@ -46,32 +46,23 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     boardView->setSource(QUrl(QStringLiteral("qrc:/chessboard.qml")));
     boardView->setMinimumSize(200, 200);
     setCentralWidget(boardView);
-
+    connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
+    
     // link to the rootmove containing the entire game tree
     m_notationViewer = new NotationViewer(game, this);
     m_notationViewer->setRootMove(m_notationViewer->getRootMove());
 
-    // connect moveMade signal when user manually makes a move
-    connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
-
-    // create and connect keyboard shortcuts
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
     QShortcut* nextMove = new QShortcut(QKeySequence(Qt::Key_Right), this);
-    QShortcut* delAfter = new QShortcut(QKeySequence(Qt::Key_Delete), this);
-    QShortcut* delVariation = new QShortcut(QKeySequence("Ctrl+D"), this);
-    QShortcut* promoteVariation = new QShortcut(QKeySequence("Ctrl+Up"), this);
-
+    QShortcut* flipBoard = new QShortcut(QKeySequence("Ctrl+F"), this);
     connect(prevMove, &QShortcut::activated, this, &ChessGameWindow::onPrevMoveShortcut);
     connect(nextMove, &QShortcut::activated, this, &ChessGameWindow::onNextMoveShortcut);
-    connect(delAfter, &QShortcut::activated, this, &ChessGameWindow::onDeleteAfterShortcut);
-    connect(delVariation, &QShortcut::activated, this, &ChessGameWindow::onDeleteVariationShortcut);
-    connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
+    connect(flipBoard, &QShortcut::activated, this, &ChessGameWindow::onFlipBoardShortcut);
 }
-
 
 void ChessGameWindow::closeEvent(QCloseEvent *event)
 {
-    if (m_isPreview || !m_notationViewer->m_isEdited) {
+    if (m_isPreview || m_isGameplay || !m_notationViewer->m_isEdited) {
         QMainWindow::closeEvent(event);
         return;
     }
@@ -111,6 +102,7 @@ void ChessGameWindow::closeEvent(QCloseEvent *event)
 // Configures ChessGameWindow for complete analysis
 void ChessGameWindow::mainSetup(){
     m_isPreview = false;
+    connectEditingShortcuts();
     notationSetup();
     // notationToolbarSetup();
     toolbarSetup();
@@ -130,9 +122,70 @@ void ChessGameWindow::mainSetup(){
 void ChessGameWindow::previewSetup()
 {
     m_isPreview = true;
+    connectEditingShortcuts();
     notationSetup();
     addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
     m_notationDock->show();
+}
+
+void ChessGameWindow::gameplaySetup()
+{
+    m_isGameplay = true;
+    notationSetup();
+    toolbarSetup();
+    m_saveGameAction->setEnabled(false);
+    m_gameReviewAction->setEnabled(false);
+    m_startEngineAction->setEnabled(false);
+    m_stopEngineAction->setEnabled(false);
+    m_openOpeningExplorerAction->setEnabled(false);
+    m_closeOpeningExplorerAction->setEnabled(false);
+
+    m_notationDock->hide();
+
+    // create viewer with pointer to the same ChessPosition
+    m_gameplayViewer = new GameplayViewer(m_positionViewer, this);
+    m_gameplayDock = new QDockWidget(tr("Play vs Engine"), this);
+    m_gameplayDock->setContextMenuPolicy(Qt::PreventContextMenu);
+    m_gameplayDock->setWidget(m_gameplayViewer);
+    m_gameplayDock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+    m_gameplayDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, m_gameplayDock);
+    m_gameplayDock->show();
+
+    connect(m_positionViewer, &ChessPosition::moveMade, m_gameplayViewer, &GameplayViewer::onBoardMoveMade);
+    connect(m_positionViewer, &ChessPosition::isBoardFlippedChanged, m_gameplayViewer, &GameplayViewer::updateClockDisplays);
+    connect(m_gameplayViewer, &GameplayViewer::selectLastMove, this, &ChessGameWindow::onSelectLastMove);
+    connect(m_gameplayViewer, &GameplayViewer::resetBoard, this, &ChessGameWindow::onResetBoard);
+    connect(m_gameplayViewer, &GameplayViewer::matchBoardFlip, this, &ChessGameWindow::onMatchBoardFlip);
+    connect(m_gameplayViewer, &GameplayViewer::requestTakeback, this, &ChessGameWindow::onRequestTakeback);
+    connect(m_gameplayViewer, &GameplayViewer::openAnalysisBoard, this, [this](QVector<QPair<QString,QString>> headerInfo){
+        PGNGame game;
+        game.copyFrom(m_notationViewer->m_game);
+        game.headerInfo = headerInfo;
+        emit openAnalysisBoard(game);
+    });
+
+    QTimer::singleShot(0, this, [this](){
+        if (m_gameplayDock)
+            resizeDocks({m_gameplayDock}, {int(width() * 0.4)}, Qt::Horizontal);
+    });
+}
+
+void ChessGameWindow::startGameReview(){
+    if (!m_gameReviewDock->isVisible()){
+        m_gameReviewDock->setVisible(true);
+        m_gameReviewViewer->autoStartReview();
+    }
+}
+
+void ChessGameWindow::connectEditingShortcuts()
+{
+    QShortcut* deleteMove = new QShortcut(QKeySequence(Qt::Key_Delete), this);
+    QShortcut* deleteVariation = new QShortcut(QKeySequence("Ctrl+D"), this);
+    QShortcut* promoteVariation = new QShortcut(QKeySequence("Ctrl+Up"), this);
+    connect(deleteMove, &QShortcut::activated, this, &ChessGameWindow::onDeleteAfterShortcut);
+    connect(deleteVariation, &QShortcut::activated, this, &ChessGameWindow::onDeleteVariationShortcut);
+    connect(promoteVariation, &QShortcut::activated, this, &ChessGameWindow::onPromoteVariationShortcut);
 }
 
 void ChessGameWindow::saveGame(){
@@ -344,6 +397,7 @@ void ChessGameWindow::notationSetup()
     vlay->addWidget(m_notationViewer, 1);
 
     m_notationDock = new QDockWidget(tr("Notation"), this);
+    m_notationDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_notationDock->setWidget(container);
     m_notationDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_notationDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -358,7 +412,8 @@ void ChessGameWindow::notationSetup()
 // Builds the toolbar with additional game controls
 void ChessGameWindow::toolbarSetup()
 {
-    m_Toolbar = new QToolBar;
+    m_Toolbar = new QToolBar(tr("Toolbar"));
+    m_Toolbar->setContextMenuPolicy(Qt::PreventContextMenu);
     m_Toolbar->setIconSize(QSize(32,32));
     m_Toolbar->setFloatable(false);
     m_Toolbar->setMovable(false);
@@ -372,13 +427,17 @@ void ChessGameWindow::toolbarSetup()
     forward->setIcon(QIcon(getIconPath("arrow-right.png")));
     connect(forward, &QAction::triggered, this, &ChessGameWindow::onNextMoveShortcut);
 
-    QAction* save = m_Toolbar->addAction("Save (Ctrl+S)");
-    save->setIcon(QIcon(getIconPath("savegame.png")));
-    connect(save, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
+    QAction* flipBoard = m_Toolbar->addAction("Flip Board (Ctrl+F)");
+    flipBoard->setIcon(QIcon(getIconPath("flip-board.png")));
+    connect(flipBoard, &QAction::triggered, this, &ChessGameWindow::onFlipBoardShortcut);
 
-    QAction* review = m_Toolbar->addAction("Game Review");
-    review->setIcon(QIcon(getIconPath("sparkles.png")));
-    connect(review, &QAction::triggered, this, [this]() {
+    m_saveGameAction = m_Toolbar->addAction("Save (Ctrl+S)");
+    m_saveGameAction->setIcon(QIcon(getIconPath("savegame.png")));
+    connect(m_saveGameAction, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
+
+    m_gameReviewAction = m_Toolbar->addAction("Game Review");
+    m_gameReviewAction->setIcon(QIcon(getIconPath("sparkles.png")));
+    connect(m_gameReviewAction, &QAction::triggered, this, [this]() {
         if (!m_gameReviewDock) return;
         bool visible = m_gameReviewDock->isVisible();
         m_gameReviewDock->setVisible(!visible);
@@ -410,12 +469,14 @@ void ChessGameWindow::engineSetup()
     }
 
     // create the engine dockable panel
-    m_engineViewer = new EngineWidget(this);
+    m_engineViewer = new EngineWidget(m_notationViewer->getSelectedMove(), this);
     m_engineDock = new QDockWidget(tr("Engine"), this);
+    m_engineDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_engineDock->setWidget(m_engineViewer);
     m_engineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_engineDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, m_engineDock);
+
     if (m_notationDock){
         splitDockWidget(m_notationDock, m_engineDock, Qt::Vertical);
     }
@@ -427,8 +488,6 @@ void ChessGameWindow::engineSetup()
 
     // update engine and board display when position changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_engineViewer, &EngineWidget::onMoveSelected);
-    emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
-
     connect(m_engineViewer, &EngineWidget::engineMoveClicked, m_notationViewer, &NotationViewer::onEngineMoveClicked);
     connect(m_engineViewer, &EngineWidget::moveHovered, this, &ChessGameWindow::onMoveHovered);
     connect(m_engineViewer, &EngineWidget::noHover, this, &ChessGameWindow::onNoHover);
@@ -459,12 +518,14 @@ void ChessGameWindow::updateEngineActions()
     bool hasEngine = (m_engineDock != nullptr);
     m_startEngineAction->setEnabled(!hasEngine);
     m_stopEngineAction->setEnabled(hasEngine);
+    m_positionViewer->setIsEvalActive(hasEngine);
 }
 
 void ChessGameWindow::gameReviewSetup()
 {
     m_gameReviewViewer = new GameReviewViewer(m_notationViewer->getRootMove(), this);
     m_gameReviewDock = new QDockWidget(tr("Game Review"), this);
+    m_gameReviewDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_gameReviewDock->setWidget(m_gameReviewViewer);
     m_gameReviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_gameReviewDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -489,30 +550,28 @@ void ChessGameWindow::openingSetup()
 
     m_openingViewer = new OpeningViewer(this);
     auto currentMove = m_notationViewer->getSelectedMove();
-    if (currentMove->m_zobristHash == -1) currentMove->m_zobristHash = currentMove->m_position->computeZobrist();
+    if (!currentMove->m_zobristHash) currentMove->m_zobristHash = currentMove->m_position->computeZobrist();
     m_openingViewer->updatePosition(currentMove->m_zobristHash, currentMove->m_position, currentMove->moveText);
 
     m_openingDock = new QDockWidget(tr("Opening Explorer"), this);
+    m_openingDock->setContextMenuPolicy(Qt::PreventContextMenu);
     m_openingDock->setWidget(m_openingViewer);
     m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
     m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::BottomDockWidgetArea, m_openingDock);
     
-    // update openingviewer when notationViewer changes
-    connect(m_notationViewer, &NotationViewer::moveSelected, this, [this](QSharedPointer<NotationMove> move) {
-        if (move->m_zobristHash == -1) move->m_zobristHash = move->m_position->computeZobrist();
-        m_openingViewer->updatePosition(move->m_zobristHash, move->m_position, move->moveText);
-    });
+    // update openingViewer when notationViewer changes
+    connect(m_notationViewer, &NotationViewer::moveSelected, m_openingViewer, &OpeningViewer::onMoveSelected);
     
-    connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const QString& move) {
+    connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const SimpleMove& moveData) {
         if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
-            // todo, make it play the move and create a variation maybe idk
+            auto [sr, sc, dr, dc, promo] = moveData;
+            m_positionViewer->buildUserMove(sr, sc, dr, dc, promo);
         }
     });
 
     updateOpeningActions();
 }
-
 
 void ChessGameWindow::openingTeardown()
 {
@@ -520,14 +579,15 @@ void ChessGameWindow::openingTeardown()
         return;
     }
 
-    disconnect(m_notationViewer, &NotationViewer::moveSelected, nullptr, nullptr);
-    disconnect(m_openingViewer,  &OpeningViewer::moveClicked, nullptr, nullptr);
+    // disconnect(m_openingViewer, &OpeningViewer::moveSelected, nullptr, nullptr);
+    // disconnect(m_openingViewer, &OpeningViewer::moveClicked, nullptr, nullptr);
 
     removeDockWidget(m_openingDock);
     m_openingDock->setWidget(nullptr);
-    delete m_openingDock;
-    m_openingDock = nullptr;
+    m_openingViewer->deleteLater();
+    m_openingDock->deleteLater();
     m_openingViewer = nullptr;
+    m_openingDock = nullptr;
 
     updateOpeningActions();
 }
@@ -577,7 +637,49 @@ NotationViewer* ChessGameWindow::getNotationViewer()
     return m_notationViewer;
 }
 
-void ChessGameWindow::onEvalScoreChanged(double evalScore){
+void ChessGameWindow::onResetBoard()
+{
+    auto rootMove = m_notationViewer->getRootMove();
+    m_notationViewer->m_selectedMove = rootMove;
+    emit m_notationViewer->moveSelected(rootMove);
+    emit m_positionViewer->boardDataChanged();
+    emit m_positionViewer->lastMoveChanged();
+    deleteSubtree(rootMove);
+}
+
+void ChessGameWindow::onMatchBoardFlip(QChar side)
+{
+    if ((side == 'w' && m_positionViewer->isBoardFlipped()) || (side == 'b' && !m_positionViewer->isBoardFlipped())){
+        m_positionViewer->flipBoard();
+    }
+}
+
+void ChessGameWindow::onSelectLastMove()
+{
+    auto curMove =  m_notationViewer->m_selectedMove;
+    while (curMove->m_nextMoves.size()){
+        curMove = curMove->m_nextMoves.front();
+    }
+    m_notationViewer->m_selectedMove = curMove;
+    emit m_notationViewer->moveSelected(curMove);
+    m_notationViewer->refresh();
+}
+
+void ChessGameWindow::onRequestTakeback(QChar side)
+{
+    auto curMove = m_notationViewer->m_selectedMove;
+    if (!curMove->m_previousMove.toStrongRef()) return;
+    while (curMove->m_nextMoves.size()){
+        curMove = curMove->m_nextMoves.front();
+    }
+    curMove = curMove->m_previousMove.toStrongRef()->m_previousMove.toStrongRef();
+    deleteSubtree(curMove);
+    emit m_notationViewer->moveSelected(curMove);
+    m_notationViewer->refresh();
+}
+
+void ChessGameWindow::onEvalScoreChanged(double evalScore)
+{
     m_positionViewer->setEvalScore(evalScore);
 }
 
@@ -606,9 +708,23 @@ void ChessGameWindow::onNoHover(){
 // Slot for when a new move is made on the board
 void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
 {
-    m_notationViewer->m_isEdited = true;
-    linkMoves(m_notationViewer->m_selectedMove, move);
-    m_notationViewer->m_selectedMove = move;
+    if (m_isGameplay){
+        bool isLastMove = !m_notationViewer->m_selectedMove->m_nextMoves.size();
+        if (!isLastMove) {
+            onSelectLastMove();
+            return;
+        } else if (!m_gameplayViewer->isEngineIdle()){
+            // todo: premove
+            return;
+        }
+    }
+    auto child = getUniqueNextMove(m_notationViewer->m_selectedMove, move);
+    // link move if unique
+    if (child == move){
+        m_notationViewer->m_isEdited = true;
+        linkMoves(m_notationViewer->m_selectedMove, move);
+    }
+    m_notationViewer->m_selectedMove = child;
     emit m_notationViewer->moveSelected(m_notationViewer->m_selectedMove);
     m_notationViewer->refresh();
 }
@@ -634,6 +750,11 @@ void ChessGameWindow::onPrevMoveShortcut()
 void ChessGameWindow::onNextMoveShortcut()
 {
     m_notationViewer->selectNextMove();
+}
+
+void ChessGameWindow::onFlipBoardShortcut()
+{
+    m_positionViewer->flipBoard();
 }
 
 void ChessGameWindow::onDeleteAfterShortcut()
@@ -673,16 +794,18 @@ void ChessGameWindow::onResetBoardClicked()
 
 void ChessGameWindow::onSavePgnClicked()
 {
-    PGNSaveDialog dialog(this);
+    PGNSaveDialog dialog(nullptr);
     dialog.setHeaders(m_notationViewer->m_game);
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
     dialog.applyTo(m_notationViewer->m_game);
-    QString result; QTextStream out(&result); int plyCount = 0;
+    QString result;
+    QTextStream out(&result);
+    int plyCount = 0;
     writeMoves(m_notationViewer->getRootMove(), out, plyCount);
     m_notationViewer->m_game.bodyText = result.trimmed();
-    saveGame();
+    QTimer::singleShot(200, this, [this]{ saveGame(); });
 }
 
 void ChessGameWindow::showEvent(QShowEvent *ev)

@@ -7,12 +7,13 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 #include <QDebug>
 #include <QFile>
 
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "chessposition.h"
 
 PGNGame::PGNGame()
 {
     result = "*";
+    bodyText = "";
     isParsed = false;
     ChessPosition startPos;
     rootMove = QSharedPointer<NotationMove>::create("", startPos);
@@ -39,7 +40,8 @@ QString PGNGame::serializePGN(){
     return PGNtext;
 }
 
-bool PGNGame::serializeHeaderData(const QString &path, const std::vector<PGNGame> &games) {
+bool PGNGame::serializeHeaderData(const QString &path, const std::vector<PGNGame> &games)
+{
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly)) return false;
     
@@ -83,41 +85,4 @@ bool PGNGame::serializeHeaderData(const QString &path, const std::vector<PGNGame
     
     file.close();
     return true;
-}
-
-PGNGameData::PGNGameData()
-{
-    rootVariation = QSharedPointer<VariationNode>::create();
-}
-
-
-void PGNGameData::addHeader(const QString &tag, const QString &value){
-    headerInfo.push_back(qMakePair(tag, value));
-}
-
-void PGNGameData::printHeader(){
-    for (auto &tagPair: headerInfo){
-        qDebug() << tagPair.first << " " << tagPair.second << "\n";
-    }
-}
-
-void dfsPrint(const QSharedPointer<VariationNode> &curVariation, int curPly){
-    int variationIndex = 0;
-    qDebug() << "\n";
-    for (int i = 0; i < curVariation->plyCount; i++){
-        qDebug() << curVariation->moves[i] << " ";
-        while (variationIndex < curVariation->variations.size() && curVariation->variations[variationIndex].first == i){
-            dfsPrint(curVariation->variations[variationIndex].second, curPly);
-            variationIndex++;
-        }
-    }
-    qDebug() << "\n";
-}
-
-void PGNGameData::printGameTree(){
-    if (!rootVariation.isNull()){
-        dfsPrint(rootVariation, 0);
-    } else {
-        qDebug() << "Error: rootVariation is not initialized!\n";
-    }
 }

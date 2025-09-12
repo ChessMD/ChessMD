@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 #include <QMainWindow>
 #include <QMenuBar>

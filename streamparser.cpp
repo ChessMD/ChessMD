@@ -5,90 +5,73 @@ April 20, 2025: Overhauled C++ headers with Qt framework
 
 #include <string>
 #include <QDebug>
-#include <QRegularExpression>
 
 #include "streamparser.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "chessposition.h"
 
-// Ignore extra whitespace
-void skipWhitespace(std::istream &streamBuffer){
-    while (streamBuffer.peek() == '\n'){
-        streamBuffer.ignore();
-    }
+bool isHeaderLine(const std::string &line) {
+    size_t i = 0;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
+    if (i >= line.size()) return false;
+    if (line[i] != '[') return false;
+    ++i;
+    size_t tagStart = i;
+    while (i < line.size() && (std::isalnum(static_cast<unsigned char>(line[i])) || line[i] == '_')) ++i;
+    if (i == tagStart) return false; // no tag characters
+    if (i >= line.size() || !(line[i] == ' ' || line[i] == '\t')) return false;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) ++i;
+    if (i >= line.size()) return false;
+    if (line[i] != '"') return false;
+    ++i;
+    while (i < line.size() && line[i] != '"') ++i;
+    if (i >= line.size()) return false; // no closing quote
+    ++i;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
+    if (i >= line.size()) return false;
+    if (line[i] != ']') return false;
+    ++i;
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r')) ++i;
+    return i == line.size();
 }
 
-void dfsParse(QString &bodyText, int &pos, QSharedPointer<VariationNode> &curVariation) {
-    int plyCount = 0, n = bodyText.size();
-    bool terminated = false;
-    QString token;
 
-    while (!terminated && pos < n) {
-        QChar c = bodyText[pos++];
-        if (!c.isSpace() && c != ')' && c != '(' && c != '{' && c != '}') {
-            token += c; // separate by spaces and punctuation
-        }
-        if (c == '(') {
-            QSharedPointer<VariationNode> newVariation = QSharedPointer<VariationNode>::create();
-            curVariation->variations.append(qMakePair(plyCount, newVariation));
-            dfsParse(bodyText, pos, newVariation);
-        }
-        if (c == ')') {
-            terminated = true;
-        }
-
-        // process token if delimiter or end-of-text
-        if (!token.isEmpty() && (c.isSpace() || pos >= n || c == ')' || c == '(' || c == '{' || c == '}')) {
-            if (token == "1-0" || token == "0-1" || token == "1/2-1/2" || token == "*") {
-                terminated = true;
-            } else {
-                curVariation->moves.append(token);
-                plyCount++;
-            }
-            token.clear();
-        }
-
-        if (c == '{'){ // comment, skip everything until end-of-comment
-            while (pos < n && bodyText[pos] != '}'){
-                c = bodyText[pos++];
-                token += c;
-            }
-        }
-    }
-
-    curVariation->plyCount = plyCount;
-}
-
-void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove){
-    int pos = 0;
-    QSharedPointer<VariationNode> rootVariation = QSharedPointer<VariationNode>::create();
-    dfsParse(bodyText, pos, rootVariation);
+void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff){
     rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
-    buildNotationTree(rootVariation, rootMove);
+    parseBodyAndBuild(bodyText, rootMove, openingCutoff);
 }
 
 std::vector<PGNGame> StreamParser::parseDatabase(){
     std::vector<PGNGame> database;
-    int gameNumber = 0;
+    std::string bufferedLine;
+    bool hasBufferedLine = false;
 
     // Text files contain BOM indicators which should be skipped
     char c;
     while ((c = streamBuffer.peek()) != EOF && c != '[') {
-        // qDebug() << c;
         streamBuffer.get();
     }
 
     // PGN files can have any number of games, continue parsing until end of file
     while(!streamBuffer.eof()){
-        std::string line, bodyText;
+        std::string bodyText;
         PGNGame game;
 
         // Get PGN header information which is formatted as [<string> "<string>"]
-        while ((c = streamBuffer.peek()) != EOF && c == '['){
+        while (streamBuffer.peek() != EOF){
             QString tag, value;
-            std::getline(streamBuffer, line);
-            auto c = line.begin();
+            std::string line;
+            if (hasBufferedLine){
+                line = bufferedLine;
+                hasBufferedLine = false;
+            } else {
+                std::getline(streamBuffer, line);
+            }
+            if(!isHeaderLine(line)){
+                break;
+            }
 
+            auto c = line.begin();
             // Get header tag
             c++;
             while (c != line.end() && *c != '"'){
@@ -115,74 +98,21 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
             game.headerInfo.push_back({tag, value});
         }
 
-        while ((c = streamBuffer.peek()) != EOF && c != '['){
+        // read body text until next header or EOF
+        while (streamBuffer.peek() != EOF){
             std::string line;
             std::getline(streamBuffer, line);
+            if (isHeaderLine(line)) {
+                bufferedLine = line;
+                hasBufferedLine = true;
+                break;
+            }
             bodyText += line + " ";
         }
 
         game.bodyText = QString::fromStdString(bodyText);
-        gameNumber++;
         database.push_back(std::move(game));
     }
 
     return database;
 }
-
-// Parse a single game from the stream 
-bool StreamParser::parseNextGame(PGNGame& game) {
-    game.headerInfo.clear();
-    game.bodyText.clear();
-    game.result.clear();
-    
-    std::string line;
-    char c;
-    
-    // Skip to next game or EOF
-    while ((c = streamBuffer.peek()) != EOF && c != '[') {
-        streamBuffer.get();
-    }
-    
-    if (streamBuffer.eof()) {
-        return false;
-    }
-    
-    // Parse headers
-    while ((c = streamBuffer.peek()) != EOF && c == '[') {
-        std::getline(streamBuffer, line);
-        
-        // Fast header parsing
-        size_t spacePos = line.find(' ');
-        size_t firstQuote = line.find('"', spacePos);
-        size_t lastQuote = line.rfind('"');
-        
-        if (spacePos != std::string::npos && firstQuote != std::string::npos && lastQuote != std::string::npos) {
-            QString tag = QString::fromStdString(line.substr(1, spacePos - 1));
-            QString value = QString::fromStdString(line.substr(firstQuote + 1, lastQuote - firstQuote - 1));
-            
-            if (tag == "Result") {
-                game.result = value;
-            }
-            
-            game.headerInfo.push_back({tag, value});
-        }
-    }
-    
-    // Parse body text until next game or EOF
-    std::string bodyText;
-    while ((c = streamBuffer.peek()) != EOF && c != '[') {
-        std::getline(streamBuffer, line);
-        bodyText += line;
-    }
-    
-    game.bodyText = QString::fromStdString(bodyText);
-    
-    // Parse the body text into the notation tree structure
-    if (!game.bodyText.isEmpty()) {
-        parseBodyText(game.bodyText, game.rootMove);
-        game.isParsed = true;
-    }
-    
-    return true;
-}
-

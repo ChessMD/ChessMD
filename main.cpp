@@ -14,6 +14,7 @@ Jan 15, 2025 - Program Creation
 #include <QDir>
 #include <QDockWidget>
 #include <QSettings>
+#include <QLockFile>
 
 #include "mainwindow.h"
 #include "theme.h"
@@ -27,9 +28,15 @@ int main(int argc, char *argv[])
 
     QCoreApplication::setOrganizationName("ChessMD");
     QCoreApplication::setApplicationName("ChessMD");
-    QCoreApplication::setApplicationVersion("v1.0-beta.3");
+    QCoreApplication::setApplicationVersion("v1.0");
     QApplication app(argc, argv);
-    
+    QString lockPath = QDir::temp().absoluteFilePath(QCoreApplication::applicationName() + ".lock");
+    QLockFile lockFile(lockPath);
+    lockFile.setStaleLockTime(30000); // time taken for lock expiry after program unresponsiveness
+    if (!lockFile.tryLock(100)) {
+        return 0;
+    }
+
     Theme::applyTheme(app);
 
     //global style cuz of weird default styling
@@ -43,6 +50,7 @@ int main(int argc, char *argv[])
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
     initZobristTables();
+    qRegisterMetaType<SimpleMove>("SimpleMove");
 
     // render the main window
     MainWindow w;

@@ -9,9 +9,10 @@ March 18, 2025: File Creation
 #include "notationviewer.h"
 #include "engineviewer.h"
 #include "chessposition.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "openingviewer.h"
 #include "gamereviewviewer.h"
+#include "gameplayviewer.h"
 
 #include <QQuickWidget>
 #include <QMainWindow>
@@ -37,12 +38,17 @@ public:
 
     void mainSetup();
     void previewSetup();
+    void gameplaySetup();
+
+    void connectEditingShortcuts();
     void saveGame();
+    void startGameReview();
 
     NotationViewer* getNotationViewer();
 
 signals:
     void PGNGameUpdated(PGNGame &game);
+    void openAnalysisBoard(PGNGame &game);
 
 protected:
     void showEvent(QShowEvent *ev) override;
@@ -58,6 +64,28 @@ public slots:
     void onMoveHovered(QSharedPointer<NotationMove>& move);
     void onNoHover();
 
+private slots:
+    void onResetBoard();
+    void onMatchBoardFlip(QChar side);
+    void onSelectLastMove();
+    void onRequestTakeback(QChar side);
+
+    void onMoveMade(QSharedPointer<NotationMove>& move);
+    void onMoveSelected(QSharedPointer<NotationMove>& move);
+    void onEvalScoreChanged(double evalScore);
+
+    void onPrevMoveShortcut();
+    void onNextMoveShortcut();
+    void onFlipBoardShortcut();
+    void onDeleteAfterShortcut();
+    void onDeleteVariationShortcut();
+    void onPromoteVariationShortcut();
+
+    void onPasteClicked();
+    void onLoadPgnClicked();
+    void onResetBoardClicked();
+    void onSavePgnClicked();
+
 private:
     void updateEngineActions();
     void updateOpeningActions();
@@ -71,20 +99,24 @@ private:
     EngineWidget* m_engineViewer;
     ChessPosition* m_positionViewer;
     GameReviewViewer *m_gameReviewViewer;
+    GameplayViewer *m_gameplayViewer;
     QToolBar* m_Toolbar;
 
     QDockWidget* m_notationDock;
     QDockWidget* m_engineDock;
     QDockWidget* m_openingDock;
     QDockWidget* m_gameReviewDock;
+    QDockWidget *m_gameplayDock;
 
+    QAction* m_gameReviewAction;
+    QAction* m_saveGameAction;
     QAction* m_startEngineAction;
     QAction* m_stopEngineAction;
-
     QAction* m_openOpeningExplorerAction;
     QAction* m_closeOpeningExplorerAction;
 
-    bool m_isPreview;
+    bool m_isPreview = false;
+    bool m_isGameplay = false;
 
     QLineEdit* m_whiteField;
     QLineEdit* m_whiteEloField;
@@ -96,25 +128,6 @@ private:
     QLineEdit* m_dateField;
     QToolButton* m_toggleEditBtn;
     bool m_inEditMode = false;
-
-
-private slots:
-    void onMoveMade(QSharedPointer<NotationMove>& move);
-    void onMoveSelected(QSharedPointer<NotationMove>& move);
-    void onEvalScoreChanged(double evalScore);
-
-    void onPrevMoveShortcut();
-    void onNextMoveShortcut();
-    void onDeleteAfterShortcut();
-    void onDeleteVariationShortcut();
-    void onPromoteVariationShortcut();
-
-    void onPasteClicked();
-    void onLoadPgnClicked();
-    void onResetBoardClicked();
-    void onSavePgnClicked();
-
-signals:
 };
 
 #endif // CHESSGAMEWINDOW_H

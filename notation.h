@@ -22,7 +22,7 @@ public:
     NotationMove(const QString &text, ChessPosition &position);
 
     QString FEN;
-    quint64 m_zobristHash;
+    quint64 m_zobristHash = 0;
 
     QString commentBefore;
     QString moveText;
@@ -55,8 +55,10 @@ extern const QVector<CommentEntry> COMMENT_ENTRIES;
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 
+QSharedPointer<NotationMove> getUniqueNextMove(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove> child);
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child);
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move);
+void deleteSubtree(QSharedPointer<NotationMove>& move);
 void deleteAllCommentary(QSharedPointer<NotationMove>& move);
 void promoteVariation(const QSharedPointer<NotationMove>& move);
 QSharedPointer<NotationMove> deleteVariation(const QSharedPointer<NotationMove>& move);

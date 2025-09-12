@@ -23,7 +23,6 @@ PGNUploader::PGNUploader(QWidget *parent)
 
 
 }
-
 // Lets users pick a file from their local computer
 void PGNUploader::getFile(){
 

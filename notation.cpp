@@ -34,7 +34,6 @@ NotationMove::NotationMove(const QString &text, ChessPosition &position)
     QSharedPointer<ChessPosition> pos = QSharedPointer<ChessPosition>::create();
     pos->copyFrom(position);
     m_position = pos;
-    m_zobristHash = -1;
 }
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move)
@@ -61,9 +60,21 @@ QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& mov
     return copy;
 }
 
+// Returns the child if not found in parent next moves, otherwise return existing move
+QSharedPointer<NotationMove> getUniqueNextMove(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove> child)
+{
+    if (!child->m_zobristHash) child->m_zobristHash = child->m_position->computeZobrist();
+    for (const auto& move: std::as_const(parent->m_nextMoves)){
+        if (!move->m_zobristHash) move->m_zobristHash = move->m_position->computeZobrist();
+        if (move->m_zobristHash == child->m_zobristHash) return move;
+    }
+    return child;
+}
+
 // Links a new move to a previous move in the game tree
 void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<NotationMove>& child)
 {
+    if (parent == child) return;
     if (parent->m_nextMoves.size()){
         child->isVarRoot = true;
     }
@@ -71,7 +82,7 @@ void linkMoves(const QSharedPointer<NotationMove>& parent, const QSharedPointer<
     child->m_previousMove = parent;
 }
 
-// Deletes all moves after the current selected move
+// Deletes the current selected move
 QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move)
 {
     if (!move->m_previousMove) return move;
@@ -82,6 +93,15 @@ QSharedPointer<NotationMove> deleteMove(const QSharedPointer<NotationMove>& move
         }
     }
     return move->m_previousMove;
+}
+
+void deleteSubtree(QSharedPointer<NotationMove>& move){
+    if (!move) return;
+    for (auto& childMove: move->m_nextMoves){
+        deleteSubtree(childMove);
+        childMove.reset();
+    }
+    move->m_nextMoves.clear();
 }
 
 void deleteAllCommentary(QSharedPointer<NotationMove>& move){

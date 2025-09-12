@@ -1,7 +1,7 @@
 #ifndef PGNSAVEDIALOG_H
 #define PGNSAVEDIALOG_H
 
-#include "pgngamedata.h"
+#include "pgngame.h"
 
 #include <QDialog>
 #include <QObject>

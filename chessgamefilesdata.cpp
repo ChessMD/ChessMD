@@ -1,17 +1,16 @@
-#include <QApplication>
-
 #include "chessgamefilesdata.h"
+#include <QApplication>
+#include <QOperatingSystemVersion>
+#include <QStandardPaths>
+#include <QDir>
 
 ChessGameFilesData::ChessGameFilesData()
 {
-    m_dataFile = "./chessgamefiles.ini";
-}
-
-void ChessGameFilesData::loadData()
-{
-    QSettings settings(m_dataFile, QSettings::IniFormat);
-
-
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    if (osVersion.type() == QOperatingSystemVersion::MacOS)
+        m_dataFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/chessgamefiles.ini";
+    else
+        m_dataFile = "./chessgamefiles.ini";
 }
 
 void ChessGameFilesData::saveData()
@@ -104,7 +103,8 @@ QList<QString> ChessGameFilesData::getGameFilesList()
     for (int i = 0; i < size; ++i) {
         data.setArrayIndex(i);
         QString name = data.value("name").toString();
-        gameFilesList.append(name);
+        QFileInfo fileInfo(name);
+        if (fileInfo.exists()) gameFilesList.append(name);
     }
     data.endArray();
 

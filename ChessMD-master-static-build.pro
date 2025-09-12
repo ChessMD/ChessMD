@@ -32,7 +32,7 @@ HEADERS += chessgamefilesdata.h \
            notation.h \
            notationviewer.h \
            openingviewer.h \
-           pgngamedata.h \
+           pgngame.h \
            pgnsavedialog.h \
            pgnuploader.h \
            settingsdialog.h \
@@ -41,6 +41,7 @@ HEADERS += chessgamefilesdata.h \
            uciengine.h \
            variationdialogue.h \
 	   gamereviewviewer.h \
+	   gameplayviewer.h \
 	   engineviewer.h \
 	   draggablecheckbox.h \
 	   theme.h 
@@ -69,7 +70,7 @@ SOURCES += chessgamefilesdata.cpp \
            notation.cpp \
            notationviewer.cpp \
            openingviewer.cpp \
-           pgngamedata.cpp \
+           pgngame.cpp \
            pgnsavedialog.cpp \
            pgnuploader.cpp \
            settingsdialog.cpp \
@@ -78,6 +79,7 @@ SOURCES += chessgamefilesdata.cpp \
            uciengine.cpp \
            variationdialogue.cpp \
 	   gamereviewviewer.cpp \
+	   gameplayviewer.cpp \
 	   engineviewer.cpp \
 	   draggablecheckbox.cpp \
 	   theme.cpp 

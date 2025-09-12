@@ -13,7 +13,7 @@ March 18, 2025 - Program Creation
 #include "chessgamewindow.h"
 #include "chessposition.h"
 #include "chesstabhost.h"
-#include "pgngamedata.h"
+#include "pgngame.h"
 #include "draggablecheckbox.h"
 
 
@@ -146,6 +146,7 @@ void DatabaseViewer::setupUI()
     QVBoxLayout* verticalLayout = new QVBoxLayout(this);
     
     QToolBar* toolbar = new QToolBar(this);
+    toolbar->setContextMenuPolicy(Qt::PreventContextMenu);
     toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     toolbar->setIconSize(QSize(24, 24));
     
@@ -412,7 +413,7 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
 
     if(!host->tabExists(title)){
         // create new tab for game
-        ChessGameWindow *gameWindow = new ChessGameWindow(this, game);
+        ChessGameWindow *gameWindow = new ChessGameWindow(nullptr, game);
         connect(gameWindow, &ChessGameWindow::PGNGameUpdated, this, &DatabaseViewer::onPGNGameUpdated);
         gameWindow->mainSetup();
 
@@ -635,8 +636,6 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
 void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QModelIndex &previous)
 {
     if (!proxyIndex.isValid() || proxyIndex.row() < 0) return;
-
-    // get the game information of the selected row
     QModelIndex sourceIndex = proxyModel->mapToSource(proxyIndex);
     int row = sourceIndex.row();
     PGNGame &dbGame = dbModel->getGame(row);
@@ -644,22 +643,17 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
         parseBodyText(dbGame.bodyText, dbGame.rootMove);
         dbGame.isParsed = true;
     }
-
-    // copy game to allow user to make temporary changes
     PGNGame game;
     game.copyFrom(dbGame);
-
-    // build the notation tree from the game and construct a ChessGameWindow preview
-    m_embed = new ChessGameWindow(this, game);
-    m_embed->previewSetup();
-    m_embed->setFocusPolicy(Qt::StrongFocus);
-
     gamePreview->hide();
     if (gamePreview->layout()) {
         clearPreview(gamePreview);
     }
+    // build the notation tree from the game and construct a ChessGameWindow preview
+    m_embed = new ChessGameWindow(gamePreview, game);
+    m_embed->previewSetup();
+    m_embed->setFocusPolicy(Qt::StrongFocus);
     QLayout* containerLayout = new QVBoxLayout(gamePreview);
-
     containerLayout->setContentsMargins(0, 0, 0, 0);
     containerLayout->addWidget(m_embed);
     gamePreview->setLayout(containerLayout);

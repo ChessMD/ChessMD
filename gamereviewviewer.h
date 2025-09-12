@@ -13,7 +13,6 @@
 #include <QPushButton>
 #include <QFileDialog>
 
-#include <QRegularExpression>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
@@ -31,6 +30,7 @@ public:
     explicit GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent = nullptr);
 
     void reviewGame(const QSharedPointer<NotationMove>& root);
+    void autoStartReview();
 
 signals:
     void moveSelected(QSharedPointer<NotationMove> &move);
@@ -104,6 +104,7 @@ private:
     QLabel* m_blackMovesCount;
 
     UciEngine* m_engine;
+    QMetaObject::Connection m_engineReadyConn;
     QQueue<PendingEval> m_pending;
     QVector<double> m_results;
     int m_currentEvalIndex = -1;

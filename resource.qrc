@@ -63,5 +63,15 @@
         <file>img/checkmark.png</file>
         <file>img/trash-icon.png</file>
         <file>img/white_icons/trash-icon.png</file>
+        <file>img/flip-board.png</file>
+        <file>img/chess-king-black.png</file>
+        <file>img/chess-king-white.png</file>
+        <file>img/flag.png</file>
+        <file>img/reload.png</file>
+        <file>img/search.png</file>
+        <file>img/robot-face.png</file>
+        <file>img/white_icons/flag.png</file>
+        <file>img/white_icons/flip-board.png</file>
+        <file>img/white_icons/robot-face.png</file>
     </qresource>
 </RCC>

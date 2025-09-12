@@ -142,8 +142,8 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
     createSummaryGrid();
     lay->addWidget(m_summaryWidget);
 
-    auto *engineSelectLayout = new QHBoxLayout;
-    m_engineLabel      = new QLabel(tr("Engine: <none>"), this);
+    QHBoxLayout *engineSelectLayout = new QHBoxLayout;
+    m_engineLabel = new QLabel(tr("Engine: <none>"), this);
     m_selectEngineBtn  = new QPushButton(tr("Select Engine…"), this);
     engineSelectLayout->addWidget(m_engineLabel);
     engineSelectLayout->addWidget(m_selectEngineBtn);
@@ -224,6 +224,13 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         m_selectEngineBtn->setVisible(false);
         reviewGame(m_rootMove);
     });
+}
+
+void GameReviewViewer::autoStartReview()
+{
+    if (m_engine){
+        emit m_reviewBtn->clicked();
+    }
 }
 
 void GameReviewViewer::createSummaryGrid()
@@ -535,7 +542,7 @@ void GameReviewViewer::onInfoReceived(const QString& line)
 {
     if (!m_isReviewing || !line.startsWith("info")) return;
 
-    QStringList tokens = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    QStringList tokens = line.simplified().split(' ', Qt::SkipEmptyParts);
     int scoreIndex = tokens.indexOf("score");
     if (scoreIndex < 0 || scoreIndex + 2 >= tokens.size()) return;
 
@@ -584,11 +591,14 @@ void GameReviewViewer::reviewGame(const QSharedPointer<NotationMove>& root)
     m_results.assign(N, 0.0);
     m_isReviewing = true;
 
-    m_engine->startEngine(m_settings.getEngineFile());
     connect(m_engine, &UciEngine::infoReceived, this, &GameReviewViewer::onInfoReceived);
     connect(m_engine, &UciEngine::bestMove, this, &GameReviewViewer::onBestMove);
+    m_engineReadyConn = connect(m_engine, &UciEngine::engineReady, this, [this]{
+        disconnect(m_engineReadyConn);
+        startNextEval();
+    });
 
-    startNextEval();
+    m_engine->startEngine(m_settings.getEngineFile());
 }
 
 void GameReviewViewer::finalizeReview()
@@ -602,6 +612,9 @@ void GameReviewViewer::finalizeReview()
     int blackInacc = 0, blackMist = 0, blackBlund = 0, blackBest = 0;
     std::vector<double> winPercentages, evals;
     int moves = m_results.size() - 1;
+    if (moves < 0) return;
+    winPercentages.push_back(winProb(m_results[0]));
+    evals.push_back(m_results[0]/100.0);
     for (int i = 0; i < moves; i++) {
         double cpBefore = m_results[i];
         double cpAfter = -m_results[i+1];
@@ -616,12 +629,8 @@ void GameReviewViewer::finalizeReview()
         else if (drop >= 0.06) move->annotation1 = "?!";
         else move->annotation1.clear();
 
-        winPercentages.push_back(wb);
-        evals.push_back(cpBefore/100.0);
-        if (i + 1 == moves){
-            winPercentages.push_back(1.0-wa);
-            evals.push_back(-cpAfter/100.0);
-        }
+        winPercentages.push_back(1.0-wa);
+        evals.push_back(-cpAfter/100.0);
 
         if (i % 2 == 0) {
             if (move->annotation1 == "?!") whiteInacc++;
@@ -637,7 +646,7 @@ void GameReviewViewer::finalizeReview()
     }
 
     // adjust evaluation to be white's perspective
-    for (int i = 0; i <= evals.size(); i++){
+    for (int i = 0; i < evals.size(); i++){
         if (i % 2 == 1){
             evals[i] = -evals[i];
         }

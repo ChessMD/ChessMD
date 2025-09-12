@@ -7,6 +7,7 @@ April 11, 2025: File Creation
 
 #include <QObject>
 #include <QProcess>
+#include <QDebug>
 
 struct PvInfo {
     int depth;
@@ -23,7 +24,7 @@ public:
     explicit UciEngine(QObject *parent = nullptr);
     ~UciEngine();
 
-    void startEngine(const QString &binaryPath = QStringLiteral("/usr/bin/stockfish"));
+    void startEngine(const QString &binaryPath);
     void quitEngine();
     void requestReady();
 
@@ -35,24 +36,34 @@ public:
 
     void goMovetime(int milliseconds);
 
+    void uciNewGame();
+    void setSkillLevel(int level);
+    void setLimitStrength(bool enabled);
+    void goDepth(int depth);
+    void goDepthWithClocks(int depth, int whiteMs, int blackMs, int whiteIncMs = 0, int blackIncMs = 0);
+
 signals:
     void commandSent(const QString &cmd);
     void infoReceived(const QString &rawInfo);
     void bestMove(const QString &move);
+    void nameReceived(const QString &name);
     void pvUpdate(PvInfo &info);
+    void engineReady();
 
 private slots:
     void handleReadyRead();
 
 private:
-    QProcess *m_proc;
-    bool m_ready = true;
+    void sendCommand(const QString &cmd, bool requireReady = true);
 
-    // helper to write+emit
-    void sendCommand(const QString &cmd) {
-        m_proc->write(cmd.toUtf8());
-        emit commandSent(cmd.trimmed());
-    }
+    QProcess *m_proc;
+    bool m_ready = false;
+
+    bool m_hasPendingGo = false;
+    int m_pending_wtime = 0;
+    int m_pending_btime = 0;
+    int m_pending_winc = 0;
+    int m_pending_binc = 0;
 };
 
 #endif // UCIENGINE_H

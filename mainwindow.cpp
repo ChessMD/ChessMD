@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QOperatingSystemVersion>
+#include <QStandardPaths>
 
 #include "databaselibrary.h"
 #include "mainwindow.h"
@@ -21,7 +22,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QRegularExpression>
 #include <QEventLoop>
 
 MainWindow::MainWindow()
@@ -48,6 +48,7 @@ MainWindow::MainWindow()
 
 void MainWindow::setupToolbar() {
     QToolBar* toolbar = new QToolBar(this);
+    toolbar->setContextMenuPolicy(Qt::PreventContextMenu);
     toolbar->setOrientation(Qt::Horizontal);
     toolbar->setMovable(false);
     toolbar->setFloatable(false);
@@ -66,8 +67,16 @@ void MainWindow::setupToolbar() {
 
     QAction* newBoardAct = new QAction(QIcon(getIconPath("board-icon.png")), tr("New Board"), this);
     newBoardAct->setToolTip(tr("New Chessboard"));
-    connect(newBoardAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newChessboard);
+    connect(newBoardAct, &QAction::triggered, m_dbLibrary, [this]{
+        PGNGame emptyGame;
+        m_dbLibrary->newChessboard(emptyGame);
+    });
     toolbar->addAction(newBoardAct);
+
+    QAction* playGameAct = new QAction(QIcon(getIconPath("robot-face.png")), tr("Play Bots"), this);
+    playGameAct->setToolTip(tr("Play Game Against Engine"));
+    connect(playGameAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newGameplayBoard);
+    toolbar->addAction(playGameAct);
 
     QAction* chessComAct = new QAction(QIcon(getIconPath("cloud-file-download-icon.png")), tr("Import Online Database"), this);
     chessComAct->setToolTip(tr("Import games from Chess.com"));
@@ -399,7 +408,12 @@ void MainWindow::startNextChesscomFetch()
 
 void MainWindow::onPGNReady(const QString &combinedPGN, const QString &filename)
 {
-    QString savePath = QFileDialog::getSaveFileName(this, tr("Save combined PGN"), filename, tr("PGN files (*.pgn)"));
+    QString writablePath = "";
+    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
+    if (osVersion.type() == QOperatingSystemVersion::MacOS)
+        writablePath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/";
+
+    QString savePath = QFileDialog::getSaveFileName(this, tr("Save combined PGN"), writablePath + filename, tr("PGN files (*.pgn)"));
     if (savePath.isEmpty()) return;
 
     QFile filePath(savePath);
