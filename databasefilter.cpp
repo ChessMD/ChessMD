@@ -1,15 +1,63 @@
  #include "databasefilter.h"
 #include "ui_databasefilter.h"
 
+#include <QVBoxLayout>
+#include <QCheckBox>
+#include <QLabel>
+#include <QQmlContext>
+
 DatabaseFilter::DatabaseFilter(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::DatabaseFilter)
 {
     ui->setupUi(this);
     ui->WinsOnly->setEnabled(false);
+
+    mChessPosition = new ChessPosition(this);
+    
+    // starting pos
+    QVector<QVector<QString>> startingBoard = {
+        {"bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"},
+        {"bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"},
+        {"", "", "", "", "", "", "", ""},
+        {"", "", "", "", "", "", "", ""},
+        {"", "", "", "", "", "", "", ""},
+        {"", "", "", "", "", "", "", ""},
+        {"wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"},
+        {"wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"}
+    };
+    mChessPosition->setBoardData(startingBoard);
+    
+    setupPositionTab();
+
     // remove tabs for release since we have unfinished implementations
     delete ui->MaterialTab;
-    delete ui->PositionTab;
+}
+
+void DatabaseFilter::setupPositionTab()
+{
+    QVBoxLayout* layout = new QVBoxLayout(ui->PositionTab);
+
+    mChessboardWidget = new QQuickWidget(ui->PositionTab);
+    mChessboardWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    
+    //qml
+    QQmlContext* context = mChessboardWidget->rootContext();
+    context->setContextProperty("chessPosition", mChessPosition);
+    
+    mChessboardWidget->setSource(QUrl("qrc:/chessboardsetup.qml"));
+    mChessboardWidget->setMinimumSize(400, 400);
+    
+    layout->addWidget(mChessboardWidget);
+
+    //connect qml
+    connect(mChessPosition, &ChessPosition::boardDataChanged, this, [this]() {
+        if (mChessPosition) {
+            const QString fen = mChessPosition->positionToFEN();
+            const quint64 zobrist = mChessPosition->computeZobrist();
+            onPositionChanged(fen, QVariant::fromValue(zobrist));
+        }
+    });
 }
 
 DatabaseFilter::~DatabaseFilter()
@@ -44,4 +92,9 @@ DatabaseFilter::Filter DatabaseFilter::getNameFilters(){
 
     return _filter;
 
+}
+
+void DatabaseFilter::onPositionChanged(const QString& fen, const QVariant& zobrist)
+{
+    _filter.zobrist = zobrist.toULongLong();
 }

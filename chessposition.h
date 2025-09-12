@@ -45,6 +45,9 @@ public:
     // Called from Qml when the user tries to make a new move
     Q_INVOKABLE void release(int sr, int sc, int dr, int dc);
     Q_INVOKABLE void promote(int sr, int sc, int dr, int dc, QChar promo);
+    
+    // Called from QML to convert FEN string to board data
+    Q_INVOKABLE QVector<QVector<QString>> convertFenToBoardData(const QString &fen);
 
     bool isPreview() const { return m_isPreview; }
     void setIsPreview(bool p) {
