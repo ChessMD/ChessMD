@@ -258,7 +258,6 @@ QVector<QVector<QString>> ChessPosition::convertFenToBoardData(const QString &fe
     return ::convertFenToBoardData(fen);  
 }
 
-bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move) {
 bool ChessPosition::tryMakeMove(QString san, QSharedPointer<NotationMove> move, bool openingSpeedup) {
     san = san.trimmed();
     while (!san.isEmpty() && (san.endsWith('+') || san.endsWith('#'))){
