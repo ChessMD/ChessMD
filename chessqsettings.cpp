@@ -1,15 +1,22 @@
 #include <QApplication>
 #include <QOperatingSystemVersion>
 #include <QStandardPaths>
+#include <QFileInfo>
 #include "chessqsettings.h"
 
 ChessQSettings::ChessQSettings()
 { 
-    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();    
-    if (osVersion.type() == QOperatingSystemVersion::MacOS)
-        m_settingsFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/settings.ini";
-    else
-        m_settingsFile = "./settings.ini";
+    QFileInfo program_path(QApplication::applicationDirPath());
+    if (!program_path.isWritable()) {
+
+    	QFileInfo info(".");
+   	if (info.isWritable())
+	    m_settingsFile = "./settings.ini";
+    	else
+	    m_settingsFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/settings.ini";
+    } else {
+    	m_settingsFile = QApplication::applicationDirPath() + "/settings.ini";
+    }
 }
 
 void ChessQSettings::loadSettings()

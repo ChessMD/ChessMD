@@ -6,11 +6,17 @@
 
 ChessGameFilesData::ChessGameFilesData()
 {
-    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-    if (osVersion.type() == QOperatingSystemVersion::MacOS)
-        m_dataFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/chessgamefiles.ini";
-    else
-        m_dataFile = "./chessgamefiles.ini";
+    QFileInfo program_path(QApplication::applicationDirPath());
+    if (!program_path.isWritable()) {
+
+    	QFileInfo info(".");
+    	if (info.isWritable())
+	   m_dataFile = "./chessgamefiles.ini";
+    	else
+	   m_dataFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/chessgamefiles.ini";
+    } else {
+    	m_dataFile = QApplication::applicationDirPath() + "/chessgamefiles.ini";
+    }
 }
 
 void ChessGameFilesData::saveData()

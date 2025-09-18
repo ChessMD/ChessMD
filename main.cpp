@@ -43,10 +43,6 @@ int main(int argc, char *argv[])
     QString globalStyle = getStyle(":/resource/styles/globalstyle.qss");
     app.setStyleSheet(globalStyle);
 
-    QDir dir;
-    if (!dir.exists("./opening")) dir.mkdir("./opening");
-    if (!dir.exists("./engine")) dir.mkdir("./engine");
-
     app.setWindowIcon(QIcon(":/resource/img/logo.png"));
 
     initZobristTables();
