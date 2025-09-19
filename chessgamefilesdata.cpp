@@ -6,16 +6,16 @@
 
 ChessGameFilesData::ChessGameFilesData()
 {
-    QFileInfo program_path(QApplication::applicationDirPath());
-    if (!program_path.isWritable()) {
+#if defined(Q_OS_WIN)
+	QNtfsPermissionCheckGuard permissionGuard; 
+#endif
 
-    	QFileInfo info(".");
-    	if (info.isWritable())
-	   m_dataFile = "./chessgamefiles.ini";
-    	else
-	   m_dataFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/chessgamefiles.ini";
+	QString applicationPath = QApplication::applicationDirPath();
+    QFileInfo programDirInfo(applicationPath);
+    if (!programDirInfo.isWritable()) {
+		m_dataFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/chessgamefiles.ini";
     } else {
-    	m_dataFile = QApplication::applicationDirPath() + "/chessgamefiles.ini";
+    	m_dataFile = applicationPath + "/chessgamefiles.ini";
     }
 }
 

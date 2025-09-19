@@ -2,20 +2,21 @@
 #include <QOperatingSystemVersion>
 #include <QStandardPaths>
 #include <QFileInfo>
+#include <QNtfsPermissionCheckGuard>
 #include "chessqsettings.h"
 
 ChessQSettings::ChessQSettings()
 { 
-    QFileInfo program_path(QApplication::applicationDirPath());
-    if (!program_path.isWritable()) {
-
-    	QFileInfo info(".");
-   	if (info.isWritable())
-	    m_settingsFile = "./settings.ini";
-    	else
-	    m_settingsFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/settings.ini";
+#if defined(Q_OS_WIN)
+	QNtfsPermissionCheckGuard permissionGuard; 
+#endif
+ 
+	QString applicationPath = QApplication::applicationDirPath();
+    QFileInfo programDirInfo(applicationPath);
+    if (!programDirInfo.isWritable()) {
+		m_settingsFile = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/settings.ini";
     } else {
-    	m_settingsFile = QApplication::applicationDirPath() + "/settings.ini";
+    	m_settingsFile = applicationPath + "/settings.ini";
     }
 }
 
