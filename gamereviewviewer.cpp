@@ -19,6 +19,7 @@
 #include <QCursor>
 #include <QOperatingSystemVersion>
 #include <QPalette>
+#include <QApplication>
 
 GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent)
     : QWidget(parent)
@@ -185,10 +186,17 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
             dir = QDir(exeDir);
         }
 
-        if (osVersion.type() == QOperatingSystemVersion::Windows)
+        if (osVersion.type() == QOperatingSystemVersion::Windows) {
             binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
-        else
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+        } else {
+			if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+				QDir dirBin(QApplication::applicationDirPath());
+				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+			} else {
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+			}
+		}
 
         if (!binary.isEmpty()){
             m_settings.loadSettings();

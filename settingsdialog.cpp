@@ -218,7 +218,13 @@ void SettingsDialog::onSelectEngineClicked()
     if (osVersion.type() == QOperatingSystemVersion::Windows) {
         file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
     } else {
-        file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("All files (*)"));
+		if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+			QDir dirBin(QApplication::applicationDirPath());
+			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+			file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+		} else {
+			file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("All files (*)"));
+		}
     }
     
     if (!file_name.isEmpty()) {

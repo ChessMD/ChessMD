@@ -6,7 +6,7 @@ April 11, 2025: File Creation
 #include "chessposition.h"
 #include "chessqsettings.h"
 
-#include "QFile"
+#include <QFile>
 #include <QDebug>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -16,7 +16,8 @@ April 11, 2025: File Creation
 #include <QFileDialog>
 #include <QThread>
 #include <QOperatingSystemVersion>
-#include <QCoreApplication>
+#include <QApplication>
+
 
 EngineWidget::EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *parent)
     : QWidget(parent),
@@ -167,10 +168,17 @@ EngineWidget::EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *pa
             dir = QDir(exeDir);
         }
 
-        if (osVersion.type() == QOperatingSystemVersion::Windows)
+        if (osVersion.type() == QOperatingSystemVersion::Windows) {
             binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
-        else
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+        } else {
+			if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+				QDir dirBin(QApplication::applicationDirPath());
+				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+			} else {
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+			}
+		}
 
         if (!binary.isEmpty()){
             ChessQSettings s;
@@ -228,7 +236,13 @@ void EngineWidget::onConfigEngineClicked()
     if (osVersion.type() == QOperatingSystemVersion::Windows) {
         binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
     } else {
-        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+		if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+			QDir dirBin(QApplication::applicationDirPath());
+			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+		} else {
+			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+		}
     }
 
     if (binary.isEmpty()) return;

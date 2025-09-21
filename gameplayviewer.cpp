@@ -12,11 +12,12 @@
 #include <QLabel>
 #include <QTimer>
 #include <QMessageBox>
-#include <QCoreApplication>
+#include <QApplication>
 #include <QDir>
 #include <QFileDialog>
 #include <QOperatingSystemVersion>
 #include <QDateTime>
+
 
 GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     : QWidget(parent)
@@ -272,10 +273,17 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
             dir = QDir(exeDir);
         }
 
-        if (osVersion.type() == QOperatingSystemVersion::Windows)
+        if (osVersion.type() == QOperatingSystemVersion::Windows) {
             binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
-        else
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+        } else {
+			if (osVersion.type() == QOperatingSystemVersion::MacOS) {
+				QDir dirBin(QApplication::applicationDirPath());
+				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+			} else {
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+			}
+		}
 
         if (!binary.isEmpty()){
             ChessQSettings s;
