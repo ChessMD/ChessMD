@@ -223,7 +223,7 @@ void SettingsDialog::onSelectEngineClicked()
 			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
 			file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
 		} else {
-			file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("All files (*)"));
+            file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
 		}
     }
     
