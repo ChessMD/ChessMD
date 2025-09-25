@@ -32,6 +32,7 @@ DatabaseFilter::DatabaseFilter(QWidget *parent)
 
     // remove tabs for release since we have unfinished implementations
     delete ui->MaterialTab;
+    delete ui->PositionTab;
 }
 
 void DatabaseFilter::setupPositionTab()
