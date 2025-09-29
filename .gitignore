@@ -63,3 +63,5 @@ release/*
 # User‐specific/editor config, CMakeLists.txt.user, wak.toml 
 wak.toml
 .wakatime.cfg
+
+!desktop/*
