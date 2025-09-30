@@ -235,6 +235,18 @@ Rectangle {
                 x: col * board.cellSize
                 y: row * board.cellSize
 
+                Rectangle {
+                    anchors.fill: parent
+                    color: "red"
+                    opacity: 0.35
+                    visible: {
+                        if (!chessPosition) return false
+                        chessPosition.premoveSq // read for QML updates
+                        return chessPosition.isPremoveSquare(chessPosition.isBoardFlipped ? 7-row : row, chessPosition.isBoardFlipped ? 7-col : col)
+                    }
+                    z: 1
+                }
+
                 // file coordinates bottom
                 Text {
                     anchors.bottom: parent.bottom
@@ -261,7 +273,7 @@ Rectangle {
                     visible: col === 0 // Only show on left file
                 }
 
-                Rectangle {  // highlight
+                Rectangle {  // last move highlight
                     anchors.fill: parent
                     color: {
                         if (!chessPosition) return "00000000";

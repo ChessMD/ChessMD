@@ -47,7 +47,8 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     boardView->setMinimumSize(200, 200);
     setCentralWidget(boardView);
     connect(m_positionViewer, &ChessPosition::moveMade, this, &ChessGameWindow::onMoveMade);
-    
+    connect(m_positionViewer, &ChessPosition::premoveMade, this, &ChessGameWindow::onPremoveMade);
+
     // link to the rootmove containing the entire game tree
     m_notationViewer = new NotationViewer(game, this);
     m_notationViewer->setRootMove(m_notationViewer->getRootMove());
@@ -714,8 +715,7 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
             onSelectLastMove();
             return;
         } else if (!m_gameplayViewer->isEngineIdle()){
-            // todo: premove
-            return;
+            return; // engine's turn, don't make move
         }
     }
     auto child = getUniqueNextMove(m_notationViewer->m_selectedMove, move);
@@ -729,6 +729,12 @@ void ChessGameWindow::onMoveMade(QSharedPointer<NotationMove>& move)
     m_notationViewer->refresh();
 }
 
+void ChessGameWindow::onPremoveMade(SimpleMove move)
+{
+    m_gameplayViewer->m_premoves.append(move);
+    m_positionViewer->insertPremove(move);
+}
+
 // Slot for when a move is selected
 void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove>& move)
 {
@@ -739,6 +745,10 @@ void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove>& move)
         m_positionViewer->setIsPreview(false);
         emit m_positionViewer->boardDataChanged();
         emit m_positionViewer->lastMoveChanged();
+        if (m_gameplayViewer && m_gameplayViewer->m_premoves.size() && move->m_nextMoves.size()) {
+            m_gameplayViewer->m_premoves.clear();
+            m_positionViewer->updatePremoves(m_gameplayViewer->m_premoves);
+        }
     }
 }
 

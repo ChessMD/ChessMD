@@ -71,6 +71,7 @@ private slots:
     void onRequestTakeback(QChar side);
 
     void onMoveMade(QSharedPointer<NotationMove>& move);
+    void onPremoveMade(SimpleMove move);
     void onMoveSelected(QSharedPointer<NotationMove>& move);
     void onEvalScoreChanged(double evalScore);
 

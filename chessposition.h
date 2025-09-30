@@ -34,6 +34,7 @@ class ChessPosition: public QObject
     Q_PROPERTY(bool isPreview READ isPreview WRITE setIsPreview NOTIFY isPreviewChanged)
     Q_PROPERTY(bool isBoardFlipped READ isBoardFlipped NOTIFY isBoardFlippedChanged)
     Q_PROPERTY(bool isEvalActive READ isEvalActive NOTIFY isEvalActiveChanged)
+    Q_PROPERTY(quint64 premoveSq READ getPremoveSq NOTIFY premoveSqChanged)
     Q_PROPERTY(int lastMove READ lastMove NOTIFY lastMoveChanged)
 
 public:
@@ -76,6 +77,17 @@ public:
         emit isEvalActiveChanged(p);
     }
 
+    quint64 getPremoveSq() const { return m_premoveSq; }
+    void setPremoveSq(quint64 v) {
+        if (m_premoveSq == v) return;
+        m_premoveSq = v;
+        emit premoveSqChanged();
+    }
+    Q_INVOKABLE bool isPremoveSquare(int row, int col) const {
+        if (row*8 + col < 0 || row*8 + col >= 64) return false;
+        return ((m_premoveSq >> static_cast<quint64>(row*8 + col)) & 1ULL) != 0ULL;
+    }
+
     int getPlyCount() const {return m_plyCount;}
 
     // Copies all internal state from another ChessPosition
@@ -87,7 +99,11 @@ public:
     bool tryMakeMove(QString san, QSharedPointer<NotationMove> move, bool openingSpeedup = false);
     void applyMove(int sr, int sc, int dr, int dc, QChar promotion);
     bool validateMove(int oldRow, int oldCol, int newRow, int newCol, bool openingSpeedup = false) const;
+    bool validatePremove(int sr, int sc, int dr, int dc) const;
     void buildUserMove(int sr, int sc, int dr, int dc, QChar promo);
+    void buildPremove(int sr, int sc, int dr, int dc, QChar promo);
+    void insertPremove(SimpleMove premove);
+    void updatePremoves(QList<SimpleMove> &premoves);
 
     QString lanToSan(int sr, int sc, int dr, int dc, QChar promo) const;
 
@@ -96,6 +112,7 @@ public:
     QVector<SimpleMove> generateLegalMoves() const;
 
     char m_sideToMove;
+    bool m_premoveEnabled = false;
 
 signals:
     // Signals QML to update board display
@@ -103,9 +120,12 @@ signals:
     void requestPromotion(int sr, int sc, int dr, int dc);
     // Signals ChessGameWindow to append new move to current selected move
     void moveMade(QSharedPointer<NotationMove>& move);
+    void premoveMade(SimpleMove move);
+
     void isPreviewChanged(bool);
     void isBoardFlippedChanged(bool);
     void isEvalActiveChanged(bool);
+    void premoveSqChanged();
     void lastMoveChanged();
     void evalScoreChanged();
 
@@ -129,6 +149,7 @@ private:
     bool m_isBoardFlipped = false;
     bool m_isEvalActive = false;
     double m_evalScore = 0;
+    quint64 m_premoveSq = 0;
 };
 
 void initZobristTables();

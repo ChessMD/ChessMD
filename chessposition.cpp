@@ -212,6 +212,17 @@ bool ChessPosition::squareAttacked(int row, int col, QChar attacker) const
     return false;
 }
 
+bool ChessPosition::validatePremove(int sr, int sc, int dr, int dc) const
+{
+    if (sr < 0 || sr >= 8 || sc < 0 || sc >= 8 || dr < 0 || dr >= 8 || dc < 0 || dc >= 8 || (sr == dr && sc == dc)){
+        return false;
+    }
+    if (!m_boardData[sr][sc].size() || m_boardData[sr][sc][0] == m_sideToMove){
+        return false;
+    }
+    return true;
+}
+
 void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
 {
     ChessPosition newPos;
@@ -223,16 +234,32 @@ void ChessPosition::buildUserMove(int sr, int sc, int dr, int dc, QChar promo)
     newMove->lanText = QString("%1%2%3%4").arg(QChar('a' + sc)).arg(8 - sr).arg(QChar('a' + dc)).arg(8 - dr);
     newMove->m_zobristHash = newPos.computeZobrist();
 
+    m_premoveEnabled = false;
     emit moveMade(newMove);
     emit boardDataChanged();
 }
 
+void ChessPosition::buildPremove(int sr, int sc, int dr, int dc, QChar promo)
+{
+    emit premoveMade({sr, sc, dr, dc, promo.toLatin1()});
+}
+
 void ChessPosition::release(int oldRow, int oldCol, int newRow, int newCol)
 {
+    if (m_premoveEnabled){
+        if (!validatePremove(oldRow, oldCol, newRow, newCol)){
+            return;
+        }
+        if (m_boardData[oldRow][oldCol][1] == 'P' && (newRow == 0 || newRow == 7)){
+            emit requestPromotion(oldRow, oldCol, newRow, newCol);
+        } else {
+            buildPremove(oldRow, oldCol, newRow, newCol, '\0');
+        }
+        return;
+    }
     if (!validateMove(oldRow, oldCol, newRow, newCol)){
         return;
     }
-
     if (m_boardData[oldRow][oldCol][1] == 'P' && (newRow == 0 || newRow == 7)){
         emit requestPromotion(oldRow, oldCol, newRow, newCol);
     } else {
@@ -242,7 +269,42 @@ void ChessPosition::release(int oldRow, int oldCol, int newRow, int newCol)
 
 void ChessPosition::promote(int sr, int sc, int dr, int dc, QChar promo)
 {
-    buildUserMove(sr, sc, dr, dc, promo);
+    if (m_premoveEnabled){
+        buildPremove(sr, sc, dr, dc, promo);
+    } else {
+        buildUserMove(sr, sc, dr, dc, promo);
+    }
+}
+
+void ChessPosition::updatePremoves(QList<SimpleMove>& premoves)
+{
+    quint64 premoveSquare = 0;
+    for (int i = 0; i < premoves.size(); i++){
+        auto& [sr, sc, dr, dc, promo] = premoves[i];
+        if (!m_boardData[sr][sc].size()){
+            premoves.resize(i); // remaining premoves invalid
+            break;
+        } else {
+            premoveSquare |= ((1ULL<<static_cast<quint64>(sr*8+sc)) | (1ULL<<static_cast<quint64>(dr*8+dc))); // a8 = 0, h1 = 63
+            m_boardData[dr][dc] = m_boardData[sr][sc];
+            m_boardData[sr][sc] = "";
+        }
+    }
+    emit boardDataChanged();
+    setPremoveSq(premoveSquare);
+}
+
+void ChessPosition::insertPremove(SimpleMove premove)
+{
+    quint64 premoveSquare = m_premoveSq;
+    auto& [sr, sc, dr, dc, promo] = premove;
+    if (m_boardData[sr][sc].size() && m_boardData[sr][sc][0] != m_sideToMove){
+        premoveSquare |= ((1ULL<<static_cast<quint64>(sr*8+sc)) | (1ULL<<static_cast<quint64>(dr*8+dc))); // a8 = 0, h1 = 63
+        m_boardData[dr][dc] = m_boardData[sr][sc];
+        m_boardData[sr][sc] = "";
+        emit boardDataChanged();
+        setPremoveSq(premoveSquare);
+    }
 }
 
 void ChessPosition::setBoardData(const QVector<QVector<QString>> &data)

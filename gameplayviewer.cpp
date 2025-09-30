@@ -534,7 +534,8 @@ void GameplayViewer::onPlayClicked(int selectedSide)
     m_engineDepth = 18 + int(std::round(double(m_eloSlider->value() - 1320) / double(3190 - 1320) * (25 - 18))); // linear depth function [20, 25]
     updateClockDisplays();
     m_lastPosition->copyFrom(*m_startPosition);
-    m_engineElo =m_eloSlider->value();
+    m_positionViewer->m_premoveEnabled = selectedSide;
+    m_engineElo = m_eloSlider->value();
     m_whitePlayerLabel->setText(tr("You"));
     m_blackPlayerLabel->setText(tr("Engine (%1)").arg(m_engineElo));
     m_preGameWidget->setVisible(false);
@@ -567,7 +568,6 @@ void GameplayViewer::startEngineProcess()
     connect(m_engine, &UciEngine::infoReceived, this, &GameplayViewer::onEngineInfo);
     connect(m_engine, &UciEngine::nameReceived, this, &GameplayViewer::onNameReceived);
 
-
     m_engineReadyConn = connect(m_engine, &UciEngine::engineReady, this, [this]{
         disconnect(m_engineReadyConn); // one-time connection
         m_engine->setLimitStrength(true);
@@ -595,8 +595,8 @@ void GameplayViewer::stopEngineProcess()
 void GameplayViewer::onEngineBestMove(const QString &uci)
 {
     m_engineIdle = true;
-    if (!m_active || !applyUciMove(uci)) return;
-    turnFinished();
+    if (!m_active) return;
+    applyUciMove(uci);
 }
 
 bool GameplayViewer::applyUciMove(const QString &uci)
@@ -616,7 +616,11 @@ bool GameplayViewer::applyUciMove(const QString &uci)
 
 void GameplayViewer::onBoardMoveMade(QSharedPointer<NotationMove>& move)
 {
-    if (!m_active || isPlayersTurn() || !m_engineIdle) return;
+    if (!m_active || !m_engineIdle) return;
+    if (isPlayersTurn()) { // engine move
+        turnFinished();
+        return;
+    }
     m_engineIdle = false;
     turnFinished();
     if (!m_engine) return;
@@ -628,33 +632,50 @@ void GameplayViewer::onBoardMoveMade(QSharedPointer<NotationMove>& move)
 void GameplayViewer::turnFinished(){
     if (!m_active) return;
 
+    m_lastPosition->copyFrom(*m_positionViewer);
+    m_positionViewer->updatePremoves(m_premoves);
+    if (m_lastPosition->m_sideToMove != (m_humanSide?'b':'w')){
+        m_positionViewer->m_premoveEnabled = true;
+    }
+
     int elapsedMs = m_clockTimer.elapsed();
-    int& timeMs = (m_positionViewer->m_sideToMove == 'w' ? m_blackMs : m_whiteMs); // sideToMove == 'w' -> black finished turn
+    int& timeMs = (m_lastPosition->m_sideToMove == 'w' ? m_blackMs : m_whiteMs); // sideToMove == 'w' -> black finished turn
     timeMs -= (elapsedMs - m_incMs);
     updateClockDisplays();
 
-    m_lastPosition->copyFrom(*m_positionViewer);
     m_moveCount++;
     updateTakebackEnabled();
-    if (!m_positionViewer->generateLegalMoves().size()){
-        if (m_positionViewer->inCheck(m_positionViewer->m_sideToMove)){
-            finishGame(m_positionViewer->m_sideToMove == 'w' ? "0-1" : "1-0", tr("By checkmate"));
+    if (!m_lastPosition->generateLegalMoves().size()){
+        if (m_lastPosition->inCheck(m_lastPosition->m_sideToMove)){
+            finishGame(m_lastPosition->m_sideToMove == 'w' ? "0-1" : "1-0", tr("By checkmate"));
         } else {
             finishGame("1/2-1/2", tr("By stalement"));
         }
     }
-    if (m_positionViewer->isFiftyMove()){
+    if (m_lastPosition->isFiftyMove()){
         finishGame("1/2-1/2", tr("By 50-move rule"));
     }
-    QString fen = m_positionViewer->positionToFEN(/*forHash=*/true);
+    QString fen = m_lastPosition->positionToFEN(/*forHash=*/true);
     m_positionStack.push(fen);
     m_positionHash[fen]++;
-    qDebug() << m_positionHash[fen];
     if (m_positionHash[fen] >= 3){
         finishGame("1/2-1/2", tr("By repetition"));
     }
 
     scheduleNextDisplayUpdate();
+
+    // apply premoves from queue
+    if (m_lastPosition->m_sideToMove == (m_humanSide?'b':'w') && m_premoves.size()){
+        auto move = m_premoves.takeFirst();
+        auto [sr, sc, dr, dc, promo] = move;
+        m_positionViewer->copyFrom(*m_lastPosition);
+        if (!m_lastPosition->validateMove(sr, sc, dr, dc)) { // illegal premove
+            m_premoves.clear();
+            m_positionViewer->updatePremoves(m_premoves);
+        } else {
+            m_positionViewer->buildUserMove(sr, sc, dr, dc, promo);
+        }
+    }
 }
 
 void GameplayViewer::scheduleNextDisplayUpdate()
@@ -704,6 +725,8 @@ void GameplayViewer::updateClockDisplays()
 void GameplayViewer::finishGame(const QString &result, const QString &description)
 {
     m_result = result;
+    m_premoves.clear();
+    m_positionViewer->updatePremoves(m_premoves);
     m_active = false;
     m_updateTimer.stop();
     stopEngineProcess();

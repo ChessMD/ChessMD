@@ -20,6 +20,7 @@ class GameplayViewer : public QWidget {
 public:
     explicit GameplayViewer(ChessPosition *positionViewer, QWidget *parent = nullptr);
     bool isEngineIdle(){ return m_engineIdle; };
+    QList<SimpleMove> m_premoves;
 
 public slots:
     void onBoardMoveMade(QSharedPointer<NotationMove>& move);
