@@ -638,9 +638,11 @@ void GameplayViewer::turnFinished(){
         m_positionViewer->m_premoveEnabled = true;
     }
 
-    int elapsedMs = m_clockTimer.elapsed();
-    int& timeMs = (m_lastPosition->m_sideToMove == 'w' ? m_blackMs : m_whiteMs); // sideToMove == 'w' -> black finished turn
-    timeMs -= (elapsedMs - m_incMs);
+    if (m_moveCount >= 2){
+        int elapsedMs = m_clockTimer.elapsed();
+        int& timeMs = (m_lastPosition->m_sideToMove == 'w' ? m_blackMs : m_whiteMs); // sideToMove == 'w' -> black finished turn
+        timeMs -= (elapsedMs - m_incMs);
+    }
     updateClockDisplays();
 
     m_moveCount++;
@@ -680,7 +682,6 @@ void GameplayViewer::turnFinished(){
 
 void GameplayViewer::scheduleNextDisplayUpdate()
 {
-    if (!m_active || !m_timeCheck->isChecked()) return;
     if (m_updateTimer.isActive()) m_updateTimer.stop();
     int& timeMs = (m_positionViewer->m_sideToMove == 'w' ? m_whiteMs : m_blackMs);
     int tenths = (timeMs+99)/100, delay = qMax(1, timeMs-(tenths-1)*100);
@@ -690,7 +691,7 @@ void GameplayViewer::scheduleNextDisplayUpdate()
 
 void GameplayViewer::onClockTick()
 {
-    if (!m_active || !m_timeCheck->isChecked()) return;
+    if (!m_active || !m_timeCheck->isChecked() || m_moveCount < 2) return;
     int& timeMs = (m_positionViewer->m_sideToMove == 'w' ? m_whiteMs : m_blackMs);
     timeMs -= m_updateTimer.interval();
     updateClockDisplays();
@@ -714,11 +715,11 @@ void GameplayViewer::updateClockDisplays()
     m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("%1 (%2)").arg(m_engineName).arg(m_engineElo) : tr("You"));
     m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : tr("%1 (%2)").arg(m_engineName).arg(m_engineElo));
     if ((m_positionViewer->m_sideToMove == 'w' && !isFlipped) || (m_positionViewer->m_sideToMove == 'b' && isFlipped)){
-        m_whiteClock->setStyleSheet("border: 1px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
+        m_whiteClock->setStyleSheet("border: 2px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
         m_blackClock->setStyleSheet("border: 1px solid grey; border-radius: 10px; padding: 6px; background: palette(base);");
     } else {
         m_whiteClock->setStyleSheet("border: 1px solid grey; border-radius: 10px; padding: 6px; background: palette(base);");
-        m_blackClock->setStyleSheet("border: 1px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
+        m_blackClock->setStyleSheet("border: 2px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
     }
 }
 
