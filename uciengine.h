@@ -52,18 +52,22 @@ signals:
 
 private slots:
     void handleReadyRead();
+	void processStarted();
+	void handleProcessError(QProcess::ProcessError error);
 
 private:
     void sendCommand(const QString &cmd, bool requireReady = true);
 
     QProcess *m_proc;
     bool m_ready = false;
+    bool m_processStarted = false;
 
     bool m_hasPendingGo = false;
     int m_pending_wtime = 0;
     int m_pending_btime = 0;
     int m_pending_winc = 0;
     int m_pending_binc = 0;
+	
 };
 
 #endif // UCIENGINE_H
