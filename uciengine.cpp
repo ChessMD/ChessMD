@@ -32,7 +32,7 @@ void UciEngine::startEngine(const QString &binaryPath) {
 	connect(m_proc, &QProcess::started, this, &UciEngine::processStarted);
 	connect(m_proc, &QProcess::errorOccurred, this, &UciEngine::handleProcessError);
     m_proc->start(binaryPath);
-    if (m_proc->waitForFinished(1000)) {
+    if (m_proc->waitForStarted(1000)) {
         m_processStarted = true;
     	sendCommand("uci", false);
     	uciNewGame();
