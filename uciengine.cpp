@@ -5,6 +5,7 @@ April 11, 2025: File Creation
 #include "uciengine.h"
 #include <QTextStream>
 #include <QFileInfo>
+#include <QMessageBox>
 
 UciEngine::UciEngine(QObject *parent)
     : QObject(parent)
@@ -27,9 +28,15 @@ UciEngine::~UciEngine() {
 void UciEngine::startEngine(const QString &binaryPath) {
     QFileInfo fileInfo(binaryPath);
     if (!fileInfo.exists()) return;
+    m_processStarted = false;
+	connect(m_proc, &QProcess::started, this, &UciEngine::processStarted);
+	connect(m_proc, &QProcess::errorOccurred, this, &UciEngine::handleProcessError);
     m_proc->start(binaryPath);
-    sendCommand("uci", false);
-    uciNewGame();
+    if (m_proc->waitForStarted(1000)) {
+        m_processStarted = true;
+    	sendCommand("uci", false);
+    	uciNewGame();
+    }
 }
 
 void UciEngine::sendCommand(const QString &cmd, bool requireReady) {
@@ -171,4 +178,16 @@ void UciEngine::handleReadyRead() {
             emit pvUpdate(info);
         }
     }
+}
+
+void UciEngine::processStarted() {
+    if (m_processStarted == false) {
+        m_processStarted = true;
+		sendCommand("uci", false);
+		uciNewGame();
+	}
+}
+
+void UciEngine::handleProcessError(QProcess::ProcessError error) {
+
 }
