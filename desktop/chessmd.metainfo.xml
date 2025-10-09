@@ -3,7 +3,7 @@
   <id>org.chessmd.chessmd</id>
   
   <name>ChessMD</name>
-  <summary>ChessMD is a chess game play, analysis, review and opening explorer tool.</summary>
+  <summary>ChessMD is a Qt-based chess app to play, analysis, review chess game and browse chess opening database.</summary>
   
   <metadata_license>FTL</metadata_license>
   <project_license>AGPL-3.0-only</project_license>
@@ -26,22 +26,34 @@
   <launchable type="desktop-id">org.chessmd.chessmd.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://a.fsdn.com/con/app/proj/chessmd/screenshots/Snipaste_2025-09-22_09-03-08-fd01e152.jpg</image>
+      <image>https://raw.githubusercontent.com/dxu0107-png/flathub/refs/heads/new-branch/Figure_2.1a.jpg</image>
+	  <caption>Play with Bot</caption>
     </screenshot>
     <screenshot>
-      <image>https://chessmd.org/screenshots/Figure_2.1c.png</image>
+      <image>https://raw.githubusercontent.com/dxu0107-png/flathub/refs/heads/new-branch/Figure_2.1c.jpg</image>
+	  <caption>Game review</caption>
     </screenshot>
     <screenshot>
-      <image>https://a.fsdn.com/con/app/proj/chessmd/screenshots/Figure_2.1b-05c03fe6.jpg</image>
+      <image>https://raw.githubusercontent.com/dxu0107-png/flathub/refs/heads/new-branch/Figure_2.1b.jpg</image>
+	  <caption>Games preview</caption>
     </screenshot>
   </screenshots>
 
   <categories>
-    <category>Games</category>
-    <category>Board Game</category>
+    <category>Game</category>
+    <category>BoardGame</category>
   </categories>
+  
+  <keywords>
+    <keyword>Chess</keyword>
+    <keyword>QT</keyword>
+  </keywords>
 
-  <icon type="stock">org.chessmd.chessmd.svg</icon>
+  <icon type="stock">org.chessmd.chessmd</icon>
+  
+  <branding>
+    <color type="primary" scheme_preference="dark">#993d3d</color>
+  </branding>
 
   <content_rating type="oars-1.1" />
 
