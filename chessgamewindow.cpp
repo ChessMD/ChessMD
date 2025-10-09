@@ -745,7 +745,7 @@ void ChessGameWindow::onMoveSelected(QSharedPointer<NotationMove>& move)
         m_positionViewer->setIsPreview(false);
         emit m_positionViewer->boardDataChanged();
         emit m_positionViewer->lastMoveChanged();
-        if (m_gameplayViewer && m_gameplayViewer->m_premoves.size() && move->m_nextMoves.size()) {
+        if (m_isGameplay && m_gameplayViewer->m_premoves.size() && move->m_nextMoves.size()) {
             m_gameplayViewer->m_premoves.clear();
             m_positionViewer->updatePremoves(m_gameplayViewer->m_premoves);
         }
