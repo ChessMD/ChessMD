@@ -9,9 +9,14 @@
   <project_license>AGPL-3.0-only</project_license>
   
   <description>
-    <p>
-      Master Chess with ChessMD, the ultimate chess training software.  Improve your game with unlimited game review, interactive engine anlaysis, and several other state-of-the-art training utilities developed by chess masters.
-    </p>
+    <p>Improve your chess with unlimited game review, interactive engine analysis, and several other state-of-the-art training utilities.</p>
+	<ul>
+      <li>Play with bots - You can play with engine with different ELOs</li>
+      <li>Game Review - The game review feature provides a detailed analysis of each move to help players understand the accuracies of their moves.</li>
+      <li>Chess Engine Analysis - You can select a chess engine to analyze the game.</li>
+      <li>Import chess.com games - You can import your chess.com games</li>
+      <li>Opening Explorer - You can browse chess database move by move</li>
+    </ul>
   </description>
   
   <developer id="chessmd.org">
@@ -21,43 +26,41 @@
   <launchable type="desktop-id">org.chessmd.chessmd.desktop</launchable>
   <screenshots>
     <screenshot type="default">
+      <image>https://a.fsdn.com/con/app/proj/chessmd/screenshots/Snipaste_2025-09-22_09-03-08-fd01e152.jpg</image>
+    </screenshot>
+    <screenshot>
       <image>https://chessmd.org/screenshots/Figure_2.1c.png</image>
     </screenshot>
     <screenshot>
-      <image>https://a.fsdn.com/con/app/proj/chessmd/screenshots/Snipaste_2025-09-18_07-49-37-28d992ea.jpg/max/max/1</image>
-    </screenshot>
-    <screenshot>
-      <image>https://a.fsdn.com/con/app/proj/chessmd/screenshots/Snipaste_2025-07-19_14-16-14-922956f2.jpg/max/max/1</image>
+      <image>https://a.fsdn.com/con/app/proj/chessmd/screenshots/Figure_2.1b-05c03fe6.jpg</image>
     </screenshot>
   </screenshots>
-</component>
 
-   <categories>
-  <category>Games</category>
-  <category>Board Game</category>
-</categories>
+  <categories>
+    <category>Games</category>
+    <category>Board Game</category>
+  </categories>
 
   <icon type="stock">org.chessmd.chessmd.svg</icon>
-
-  <branding>
-  <color type="primary" scheme_preference="dark">#993d3d</color>
-</branding>
 
   <content_rating type="oars-1.1" />
 
   <url type="homepage">https://chessmd.org/</url>
+  <url type="bugtracker">https://github.com/ChessMD/ChessMD/issues</url>
 
   <releases>
-  <release version="1.0.0" date="2025-09-11">
-    <url type="details">https://github.com/ChessMD/ChessMD/releases</url>
-    <description>
-      <p>Release description</p>
-        <ul>
-          <li>Introduced play against bots: play live chess games against bots, featuring customizable skill levels and time controls</li>
-          <li>Revamped opening explorer: process opening databases containing hundreds of thousands of games with ease to get detailed insights on position win rates and play rates</li>
-	  <li>Polished several features to offer a better user experience</li>
-        </ul>
-    </description>
-  </release>
-</releases>
+    <release version="1.0.0" date="2025-09-11">
+      <url type="details">https://github.com/ChessMD/ChessMD/releases</url>
+      <description>
+        <p>Release description</p>
+          <ul>
+            <li>Introduced play against bots: play live chess games against bots, featuring customizable skill levels and time controls</li>
+            <li>Revamped opening explorer: process opening databases containing hundreds of thousands of games with ease to get detailed insights on position win rates and play rates</li>
+	        <li>Polished several features to offer a better user experience</li>
+          </ul>
+      </description>
+    </release>
+  </releases>
+  
+</component>
 
