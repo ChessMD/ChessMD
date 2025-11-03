@@ -11,6 +11,7 @@
 #include <QButtonGroup>
 #include <QLabel>
 #include <QStack>
+#include <QElapsedTimer>
 
 #include "chessposition.h"
 #include "uciengine.h"

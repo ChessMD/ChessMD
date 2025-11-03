@@ -12,6 +12,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QElapsedTimer>
 
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
