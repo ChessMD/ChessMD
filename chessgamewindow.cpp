@@ -33,7 +33,7 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     , m_engineDock(nullptr)
     , m_openingDock(nullptr)
 {
-    setMinimumSize(1024,768);
+    setMinimumSize(200, 200);
     setGeometry(100, 100, 0, 0);
     setWindowFlags(Qt::Widget);
     setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AnimatedDocks);

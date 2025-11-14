@@ -5,18 +5,13 @@ History:
 March 18, 2025 - Program Creation
 */
 
-#include "chesstabhost.h"
-#include "chessgamewindow.h"
-#include "databaseviewer.h"
-#include "databaselibrary.h"
-#include "helpers.h"
-
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QCloseEvent>
 #include <QPainter>
 #include <QRect>
 #include <QPalette>
+#include <QApplication>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -24,13 +19,19 @@ March 18, 2025 - Program Creation
 #include <windowsx.h>
 #endif
 
+#include "chesstabhost.h"
+#include "chessgamewindow.h"
+#include "databaseviewer.h"
+#include "databaselibrary.h"
+#include "helpers.h"
+
 //initializes custom tab bar
 CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     : QTabBar(parent)
     , defaultWidth(defaultWidth)
 {
     setUsesScrollButtons(false);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred); 
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     setTabsClosable(false);
     setMovable(true);
     setExpanding(false);
@@ -44,35 +45,35 @@ CustomTabBar::CustomTabBar(int defaultWidth, QWidget* parent)
     setStyleSheet(
         "QTabBar {"
         "    border: none;"
-        "    margin: 0px;"           
-        "    padding: 0px;" 
+        "    margin: 0px;"
+        "    padding: 0px;"
         "}"
         "QTabBar::tab {"
-        "    background-color: rgba(128, 128, 128, 0.1);" 
+        "    background-color: rgba(128, 128, 128, 0.1);"
         "    border-top-left-radius: 8px;"
         "    border-top-right-radius: 8px;"
         "    margin-right: 2px;"
         "    margin-top: 20px;"
         "    min-height: 30px;"
-        "    color: palette(midlight);" 
+        "    color: palette(midlight);"
         "}"
         "QTabBar::tab:selected {"
-        "    background-color: palette(window);"  
+        "    background-color: palette(window);"
         "    color: palette(text);"
-        "    border: 1px solid rgba(128, 128, 128, 1);" 
-        "    border-bottom: none;"        
+        "    border: 1px solid rgba(128, 128, 128, 1);"
+        "    border-bottom: none;"
         "}"
         "QTabBar::tab:hover:!selected {"
         "    background-color: rgba(128, 128, 128, 0.25);"
         "}"
-    );
+        );
 }
 
 void CustomTabBar::addCloseButton(int index) {
     // container to position close button
     QWidget* container = new QWidget(this);
-    container->setFixedSize(30, 30); 
-    
+    container->setFixedSize(30, 30);
+
     QPushButton* closeButton = new QPushButton(container);
     closeButton->setIcon(QIcon(getIconPath("close.png")));
     closeButton->setIconSize(QSize(12, 12));
@@ -84,15 +85,15 @@ void CustomTabBar::addCloseButton(int index) {
         "    border-radius: 8px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: rgba(128, 128, 128, 0.2);" 
+        "    background-color: rgba(128, 128, 128, 0.2);"
         "}"
         "QPushButton:pressed {"
-        "    background-color: rgba(128, 128, 128, 0.3);" 
+        "    background-color: rgba(128, 128, 128, 0.3);"
         "}"
-    );
-    
+        );
+
     closeButton->move(9, 20);
-    
+
     // find current index when clicked
     connect(closeButton, &QPushButton::clicked, [this, closeButton]() {
         for (int i = 0; i < count(); ++i) {
@@ -103,7 +104,7 @@ void CustomTabBar::addCloseButton(int index) {
             }
         }
     });
-    
+
     setTabButton(index, QTabBar::RightSide, container);
 }
 
@@ -147,18 +148,18 @@ QSize CustomTabBar::tabSizeHint(int index) const {
 void CustomTabBar::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         int tabIndex = tabAt(event->pos());
-        
+
         if (tabIndex < 0) {
             dragStartPos = event->pos();
-            isDraggingWindow = false; 
+            isDraggingWindow = false;
             event->accept();
             return;
         }
     }
-    
+
     dragStartPos = QPoint(-1, -1);
     isDraggingWindow = false;
-    
+
     QTabBar::mousePressEvent(event);
 }
 
@@ -166,14 +167,14 @@ void CustomTabBar::mouseMoveEvent(QMouseEvent* event) {
     if (!isDraggingWindow && dragStartPos.x() >= 0) {
         QPoint diff = event->pos() - dragStartPos;
         //15 px jut like title bar
-        if(diff.manhattanLength() >= 15) { 
+        if(diff.manhattanLength() >= 15) {
             if(window()->isMaximized()) {
                 QPoint globalClickPos = mapToGlobal(dragStartPos);
                 window()->showNormal();
-                
+
                 QRect restoredGeometry = window()->geometry();
                 dragStartPos = QPoint(globalClickPos.x() - restoredGeometry.x(), globalClickPos.y() - restoredGeometry.y());
-                
+
                 window()->move(globalClickPos.x() - dragStartPos.x(), globalClickPos.y() - dragStartPos.y());
             } else {
                 dragStartPos = event->pos();
@@ -181,26 +182,26 @@ void CustomTabBar::mouseMoveEvent(QMouseEvent* event) {
             isDraggingWindow = true;
         }
     }
-    
+
     if (isDraggingWindow) {
         QPoint diff = event->pos() - dragStartPos;
         window()->move(window()->pos() + diff);
         event->accept();
         return;
     }
-    
+
     QTabBar::mouseMoveEvent(event);
 }
 
 void CustomTabBar::mouseReleaseEvent(QMouseEvent* event) {
     isDraggingWindow = false;
-    dragStartPos = QPoint(-1, -1); 
+    dragStartPos = QPoint(-1, -1);
     QTabBar::mouseReleaseEvent(event);
 }
 
 void CustomTabBar::mouseDoubleClickEvent(QMouseEvent* event) {
     int tabIndex = tabAt(event->pos());
-    
+
     if (tabIndex < 0) {
         if (CustomTitleBar* titleBar = qobject_cast<CustomTitleBar*>(parent())) {
             titleBar->MaximizeWindow();
@@ -208,7 +209,7 @@ void CustomTabBar::mouseDoubleClickEvent(QMouseEvent* event) {
         event->accept();
         return;
     }
-    
+
     QTabBar::mouseDoubleClickEvent(event);
 }
 
@@ -221,18 +222,18 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     // Set properties
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     setMaximumHeight(50);
-    setMinimumHeight(50);  
+    setMinimumHeight(50);
 
-    
+
     QHBoxLayout* horizontalLayout = new QHBoxLayout(this);
-    horizontalLayout->setContentsMargins(0, 0, 0, 0);  
-    horizontalLayout->setSpacing(0);   
+    horizontalLayout->setContentsMargins(0, 0, 0, 0);
+    horizontalLayout->setSpacing(0);
 
     horizontalLayout->addSpacing(10);
 
     tabBar = new CustomTabBar(300, this);
     horizontalLayout->addWidget(tabBar);
-    
+
     minimizeButton = new QPushButton(this);
     maximizeButton = new QPushButton(this);
     closeButton = new QPushButton(this);
@@ -245,25 +246,7 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
     maximizeButton->setIconSize(QSize(16, 16));
     closeButton->setIconSize(QSize(16, 16));
 
-    QString buttonStyle = 
-        "QPushButton {"
-        "    background-color: transparent;"
-        "    border: none;"
-        "    min-width: 46px;"           
-        "    max-width: 46px;"
-        "    min-height: 50px;"          
-        "    max-height: 50px;"
-        "    padding: 0px;"
-        "}"
-        "QPushButton:hover {"
-        "    background-color: rgba(128, 128, 128, 0.2);"
-        "}"
-        "QPushButton:pressed {"
-        "    background-color: rgba(128, 128, 128, 0.3);" 
-        "}";
-
-    //red styling for close
-    QString closeButtonStyle = 
+    QString buttonStyle =
         "QPushButton {"
         "    background-color: transparent;"
         "    border: none;"
@@ -274,11 +257,29 @@ CustomTitleBar::CustomTitleBar(QWidget* parent)
         "    padding: 0px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #e81123;" 
-        "    color: white;" 
+        "    background-color: rgba(128, 128, 128, 0.2);"
         "}"
         "QPushButton:pressed {"
-        "    background-color: #c50e1f;" 
+        "    background-color: rgba(128, 128, 128, 0.3);"
+        "}";
+
+    //red styling for close
+    QString closeButtonStyle =
+        "QPushButton {"
+        "    background-color: transparent;"
+        "    border: none;"
+        "    min-width: 46px;"
+        "    max-width: 46px;"
+        "    min-height: 50px;"
+        "    max-height: 50px;"
+        "    padding: 0px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #e81123;"
+        "    color: white;"
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: #c50e1f;"
         "}";
 
     minimizeButton->setStyleSheet(buttonStyle);
@@ -321,10 +322,10 @@ void CustomTitleBar::startDrag(QPoint localPos) {
     if(window()->isMaximized()) {
         QPoint globalClickPos = mapToGlobal(localPos);
         window()->showNormal();
-        
+
         QRect restoredGeometry = window()->geometry();
         clickPos = QPoint(globalClickPos.x() - restoredGeometry.x(),  globalClickPos.y() - restoredGeometry.y());
-        
+
         window()->move(globalClickPos.x() - clickPos.x(), globalClickPos.y() - clickPos.y());
     } else {
         clickPos = localPos;
@@ -337,18 +338,18 @@ void CustomTitleBar::startDrag(QPoint localPos) {
 //handles window adjustment
 void CustomTitleBar::mousePressEvent(QMouseEvent* event){
     clickPos = event->pos();
-    isMoving = false; 
+    isMoving = false;
 }
 
 void CustomTitleBar::mouseMoveEvent(QMouseEvent* event){
     if(!isMoving) {
         QPoint diff = event->pos() - clickPos;
         //15px threshhold to start moving
-        if(diff.manhattanLength() >= 15) { 
-            startDrag(clickPos);  
+        if(diff.manhattanLength() >= 15) {
+            startDrag(clickPos);
         }
     }
-    
+
     if(isMoving){
         QPoint diff = event->pos() - clickPos;
         window()->move(window()->pos() + diff);
@@ -381,15 +382,21 @@ void CustomTitleBar::showEvent(QShowEvent* event) {
 ChessTabHost::ChessTabHost(QWidget* parent)
     : QWidget(parent)
 {
-    setMinimumSize(1024,768);
+    setMinimumSize(200, 200);
     setWindowFlags(Qt::Window | Qt::CustomizeWindowHint);
 
-    #ifdef Q_OS_WIN
+#ifdef Q_OS_WIN
     setAttribute(Qt::WA_NativeWindow);
-    #endif
-    
+#endif
+
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
+
+#ifdef ENABLE_WIDGET_RESIZE
+    mainLayout->setContentsMargins(2, 2, 2, 2); // set edge for resizing
+    setMouseTracking(true); // track mouse movement for set resizing mouse cursor
+#else
     mainLayout->setContentsMargins(0, 0, 0, 0);
+#endif
 
     CustomTitleBar* titleBar = new CustomTitleBar(this);
 
@@ -405,6 +412,8 @@ ChessTabHost::ChessTabHost(QWidget* parent)
 
     mainLayout->addWidget(titleBar);
     mainLayout->addWidget(stack);
+
+    mouseLeftButtonPressed = false;
 }
 
 #ifdef Q_OS_WIN
@@ -414,7 +423,7 @@ bool ChessTabHost::nativeEvent(const QByteArray &eventType, void *message, qintp
 
         if (msg->message == WM_NCHITTEST) {
             QPoint cursorPos = mapFromGlobal(QCursor::pos());
-            
+
             // check if cursor is in the title bar area (top 50px)
             if (cursorPos.y() >= 0 && cursorPos.y() <= 50) {
                 // get the CustomTitleBar widget to find the tab bar area
@@ -422,7 +431,7 @@ bool ChessTabHost::nativeEvent(const QByteArray &eventType, void *message, qintp
                 if (titleBar && titleBar->tabBar) {
                     // convert cursor position to tab bar coordinates
                     QPoint tabBarPos = titleBar->tabBar->mapFromGlobal(QCursor::pos());
-                    
+
                     // check if cursor is over a tab
                     if (titleBar->tabBar->rect().contains(tabBarPos)) {
                         int tabIndex = titleBar->tabBar->tabAt(tabBarPos);
@@ -431,10 +440,10 @@ bool ChessTabHost::nativeEvent(const QByteArray &eventType, void *message, qintp
                         }
                     }
                 }
-                
+
                 // check if not over window control buttons (right edge buttons are 138px wide: 46*3)
                 if (cursorPos.x() < width() - 138) {
-                    *result = HTCAPTION; 
+                    *result = HTCAPTION;
                     return true;
                 }
             }
@@ -583,4 +592,113 @@ void ChessTabHost::activateTabByLabel(QString label)
             break;
         }
     }
+}
+
+
+void ChessTabHost::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        mouseLeftButtonPressed = true;
+        lastPressedPt = event->globalPosition().toPoint();
+#ifdef ENABLE_WIDGET_RESIZE
+        curMouseRegion = getMouseRegion(event->pos().x(), event->pos().y());
+#endif
+    }
+}
+
+void ChessTabHost::mouseReleaseEvent(QMouseEvent *event)
+{
+    mouseLeftButtonPressed = false;
+
+#ifdef ENABLE_WIDGET_RESIZE
+    QApplication::restoreOverrideCursor();//restore mouse cursor
+#endif
+}
+
+void ChessTabHost::mouseMoveEvent(QMouseEvent *event)
+{
+#ifdef ENABLE_WIDGET_RESIZE
+    MouseRegion	region = getMouseRegion(event->pos().x(), event->pos().y());
+    setMouseCursor(region);
+#endif
+
+    if (mouseLeftButtonPressed) {
+#ifdef ENABLE_WIDGET_RESIZE
+        QPoint pt_offset = event->globalPosition().toPoint() - lastPressedPt;
+        if (curMouseRegion == Middle) { // Move Windows
+            move(this->pos() + pt_offset);
+        } else  {
+            QRect w = this->geometry();
+            if (curMouseRegion == TopLeftCorner)
+                w.setTopLeft(w.topLeft() + pt_offset);
+            else if (curMouseRegion == TopRightCorner)
+                w.setTopRight(w.topRight() + pt_offset);
+            else if (curMouseRegion == BottomLeftCorner)
+                w.setBottomLeft(w.bottomLeft() + pt_offset);
+            else if (curMouseRegion == BottomRightCorner)
+                w.setBottomRight(w.bottomRight() + pt_offset);
+            else if (curMouseRegion == TopEdge)
+                w.setTop(w.top() + pt_offset.y());
+            else if (curMouseRegion == BottomEdge)
+                w.setBottom(w.bottom() + pt_offset.y());
+            else if (curMouseRegion == LeftEdge)
+                w.setLeft(w.left() + pt_offset.x());
+            else if (curMouseRegion == RightEdge)
+                w.setRight(w.right() + pt_offset.x());
+
+            this->setGeometry(w);
+            update();
+        }
+#endif
+        lastPressedPt = event->globalPosition().toPoint();
+    }
+}
+
+
+MouseRegion	ChessTabHost::getMouseRegion(int x, int y)
+{
+    MouseRegion region;
+
+    if (x < MOUSE_MARGIN) {
+        if (y < MOUSE_MARGIN)
+            region = TopLeftCorner;
+        else if (y > this->height() - MOUSE_MARGIN)
+            region = BottomLeftCorner;
+        else
+            region = LeftEdge;
+    } else if (x > this->width() - MOUSE_MARGIN) {
+        if (y < MOUSE_MARGIN)
+            region = TopRightCorner;
+        else if (y > this->height() - MOUSE_MARGIN)
+            region = BottomRightCorner;
+        else
+            region = RightEdge;
+    } else {
+        if (y < MOUSE_MARGIN)
+            region = TopEdge;
+        else if (y > this->height() - MOUSE_MARGIN)
+            region = BottomEdge;
+        else
+            region = Middle;
+    }
+
+    return region;
+}
+
+void ChessTabHost::setMouseCursor(MouseRegion region)
+{
+    Qt::CursorShape cursor = Qt::ArrowCursor;
+
+    if (region == TopLeftCorner || region == BottomRightCorner)
+        cursor = Qt::SizeFDiagCursor;
+    else if (region == TopRightCorner || region == BottomLeftCorner)
+        cursor = Qt::SizeBDiagCursor;
+    else if (region == LeftEdge || region == RightEdge)
+        cursor = Qt::SizeHorCursor;
+    else if (region == TopEdge || region == BottomEdge)
+        cursor = Qt::SizeVerCursor;
+    //else if (region == Middle)
+    //	cursor = Qt::OpenHandCursor;
+
+    setCursor(cursor);
 }

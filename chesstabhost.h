@@ -19,12 +19,12 @@ public:
 
 protected:
     QSize tabSizeHint(int index) const override;
-    #ifndef Q_OS_WIN
+#ifndef Q_OS_WIN
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
-    #endif
+#endif
     void tabInserted(int index) override;
     void tabRemoved(int index) override;
 
@@ -59,12 +59,12 @@ public slots:
     void CloseWindow();
 
 protected:
-    #ifndef Q_OS_WIN
+#ifndef Q_OS_WIN
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
-    #endif
+#endif
 
     void paintEvent(QPaintEvent* event) override;
     void showEvent(QShowEvent* event) override;
@@ -73,11 +73,29 @@ private:
     QPushButton* minimizeButton;
     QPushButton* maximizeButton;
     QPushButton* closeButton;
-    
+
     QPoint clickPos = QPoint(-1, -1);
     bool isMoving = false;
 
 };
+
+#define MOUSE_MARGIN 10
+
+enum MouseRegion {
+    Middle = 1,
+    LeftEdge,
+    RightEdge,
+    TopEdge,
+    BottomEdge,
+    TopLeftCorner,
+    TopRightCorner,
+    BottomLeftCorner,
+    BottomRightCorner
+};
+
+#ifdef Q_OS_LINUX
+#define ENABLE_WIDGET_RESIZE
+#endif
 
 class ChessTabHost : public QWidget
 {
@@ -92,9 +110,15 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) override;
 
+
+
 #ifdef Q_OS_WIN
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 #endif
+
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
 
 private slots:
     void onTabChanged(int index);
@@ -104,6 +128,13 @@ private slots:
     void onTabReplaced(const QString &fileIdentifier);
 
 private:
+    MouseRegion	getMouseRegion(int x, int y);
+    void setMouseCursor(MouseRegion region);
+
+    bool mouseLeftButtonPressed;
+    QPoint lastPressedPt;
+    MouseRegion	curMouseRegion;
+
     QTabBar* tabBar;
     QToolButton* addTabButton;
     QStackedWidget* stack;
