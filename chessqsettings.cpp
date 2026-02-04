@@ -2,13 +2,15 @@
 #include <QOperatingSystemVersion>
 #include <QStandardPaths>
 #include <QFileInfo>
+#if defined(Q_OS_WIN)
 #include <QNtfsPermissionCheckGuard>
+#endif
 #include "chessqsettings.h"
 
 ChessQSettings::ChessQSettings()
 { 
 #if defined(Q_OS_WIN)
-	QNtfsPermissionCheckGuard permissionGuard; 
+    QNtfsPermissionCheckGuard permissionGuard;
 #endif
  
 	QString applicationPath = QApplication::applicationDirPath();
