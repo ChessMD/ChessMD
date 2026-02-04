@@ -58,7 +58,6 @@ release/*
 
 # QtCreator/Qt autosave‐backup files:
 *.autosave.*
-*.*??????
 
 # User‐specific/editor config, CMakeLists.txt.user, wak.toml 
 wak.toml

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.chessmd.chessmd</id>
+  
+  <name>ChessMD</name>
+  <summary>ChessMD is a Qt-based chess app to play, analysis, review chess game and browse chess opening database.</summary>
+  
+  <metadata_license>FTL</metadata_license>
+  <project_license>AGPL-3.0-only</project_license>
+  
+  <description>
+    <p>Improve your chess with unlimited game review, interactive engine analysis, and several other state-of-the-art training utilities.</p>
+	<ul>
+      <li>Play with bots - You can play with engine with different ELOs</li>
+      <li>Game Review - The game review feature provides a detailed analysis of each move to help players understand the accuracies of their moves.</li>
+      <li>Chess Engine Analysis - You can select a chess engine to analyze the game.</li>
+      <li>Import chess.com games - You can import your chess.com games</li>
+      <li>Opening Explorer - You can browse chess database move by move</li>
+    </ul>
+  </description>
+  
+  <developer id="chessmd.org">
+  <name>Daniel Xu</name>
+  </developer>
+  
+  <launchable type="desktop-id">org.chessmd.chessmd.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/dxu0107-png/flathub/refs/heads/new-branch/Figure_2.1a.jpg</image>
+	  <caption>Play with Bot</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/dxu0107-png/flathub/refs/heads/new-branch/Figure_2.1c.jpg</image>
+	  <caption>Game review</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/dxu0107-png/flathub/refs/heads/new-branch/Figure_2.1b.jpg</image>
+	  <caption>Games preview</caption>
+    </screenshot>
+  </screenshots>
+
+  <categories>
+    <category>Game</category>
+    <category>BoardGame</category>
+  </categories>
+  
+  <keywords>
+    <keyword>Chess</keyword>
+    <keyword>QT</keyword>
+  </keywords>
+
+  <icon type="stock">org.chessmd.chessmd</icon>
+  
+  <branding>
+    <color type="primary" scheme_preference="dark">#993d3d</color>
+  </branding>
+
+  <content_rating type="oars-1.1" />
+
+  <url type="homepage">https://chessmd.org/</url>
+  <url type="bugtracker">https://github.com/ChessMD/ChessMD/issues</url>
+
+  <releases>
+    <release version="1.0.0" date="2025-09-11">
+      <url type="details">https://github.com/ChessMD/ChessMD/releases</url>
+      <description>
+        <p>Release description</p>
+          <ul>
+            <li>Introduced play against bots: play live chess games against bots, featuring customizable skill levels and time controls</li>
+            <li>Revamped opening explorer: process opening databases containing hundreds of thousands of games with ease to get detailed insights on position win rates and play rates</li>
+	        <li>Polished several features to offer a better user experience</li>
+          </ul>
+      </description>
+    </release>
+  </releases>
+  
+</component>
+
