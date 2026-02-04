@@ -9,6 +9,7 @@
 #include <QTextBrowser>
 #include <QPushButton>
 #include <QLabel>
+#include <QElapsedTimer>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>

@@ -49,7 +49,6 @@
     <keyword>QT</keyword>
   </keywords>
 
-  <icon type="stock">org.chessmd.chessmd</icon>
   
   <branding>
     <color type="primary" scheme_preference="dark">#993d3d</color>
