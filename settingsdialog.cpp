@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QProgressBar>
 #include <QApplication>
+#include <QDebug>
 #include <QOperatingSystemVersion>
 #include <QSettings>
 #include <QComboBox>
@@ -223,7 +224,10 @@ void SettingsDialog::onSelectEngineClicked()
 			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
 			file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
 		} else {
-            file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+            QFileDialog::Options opts;
+            opts |= QFileDialog::DontUseNativeDialog;
+            qDebug() << "Opening engine file dialog (Linux) in" << QDir("./engine").absolutePath();
+            file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"), nullptr, opts);
 		}
     }
     
