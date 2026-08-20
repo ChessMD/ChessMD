@@ -429,7 +429,6 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
     host->raise();
     host->activateWindow(); // for Windows
     host->show();
-
 }
 
 // Clear existing layouts inside preview

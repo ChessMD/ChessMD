@@ -32,8 +32,9 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     : QMainWindow{parent}
     , m_engineDock(nullptr)
     , m_openingDock(nullptr)
+    , m_notationDock(nullptr)
 {
-    setMinimumSize(200, 200);
+    setMinimumSize(800, 200);
     setGeometry(100, 100, 0, 0);
     setWindowFlags(Qt::Widget);
     setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AnimatedDocks);
@@ -114,7 +115,8 @@ void ChessGameWindow::mainSetup(){
     updateOpeningActions();
     setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-    resizeDocks({m_notationDock}, {int(width() )}, Qt::Horizontal);
+    addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
+    resizeDocks({m_notationDock}, {800}, Qt::Horizontal);
     QShortcut* saveGame = new QShortcut(QKeySequence("Ctrl+S"), this);
     connect(saveGame, &QShortcut::activated, this, &ChessGameWindow::onSavePgnClicked);
 }
@@ -289,7 +291,7 @@ void ChessGameWindow::notationSetup()
     headerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     headerWidget->setStyleSheet(R"(
         QWidget#gameInfoHeader {
-            background: palette(alternate-base); 
+            background: palette(alternate-base);
             font-weight: bold;
             font-size: 12pt;
         }
@@ -316,14 +318,14 @@ void ChessGameWindow::notationSetup()
                 border: none;
                 font-size: 12pt;
                 font-weight: bold;
-                background: palette(alternate-base); 
+                background: palette(alternate-base);
                 padding: 0;
             }
             QLineEdit[editable="true"] {
-                border: 1px solid palette(text); 
+                border: 1px solid palette(text);
                 font-size: 12pt;
                 font-weight: bold;
-                background: palette(alternate-base); 
+                background: palette(alternate-base);
             }
         )");
         edit->style()->unpolish(edit);
@@ -406,8 +408,6 @@ void ChessGameWindow::notationSetup()
 
     // connect moveSelected signal when user clicks on a move in the notation
     connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);
-
-    addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
 }
 
 // Builds the toolbar with additional game controls
@@ -560,10 +560,10 @@ void ChessGameWindow::openingSetup()
     m_openingDock->setAllowedAreas(Qt::AllDockWidgetAreas);
     m_openingDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::BottomDockWidgetArea, m_openingDock);
-    
+
     // update openingViewer when notationViewer changes
     connect(m_notationViewer, &NotationViewer::moveSelected, m_openingViewer, &OpeningViewer::onMoveSelected);
-    
+
     connect(m_openingViewer, &OpeningViewer::moveClicked, this, [this](const SimpleMove& moveData) {
         if (!m_notationViewer->getSelectedMove().isNull() && m_notationViewer->getSelectedMove()->m_position) {
             auto [sr, sc, dr, dc, promo] = moveData;
@@ -818,8 +818,3 @@ void ChessGameWindow::onSavePgnClicked()
     QTimer::singleShot(200, this, [this]{ saveGame(); });
 }
 
-void ChessGameWindow::showEvent(QShowEvent *ev)
-{
-    QMainWindow::showEvent(ev);
-    setMinimumSize(0,0);
-}

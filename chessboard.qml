@@ -252,7 +252,11 @@ Rectangle {
                     anchors.bottom: parent.bottom
                     anchors.right: parent.right
                     anchors.margins: 2
-                    text: String.fromCharCode(97 + col) // a-h
+                    text: {
+                        if (!chessPosition) return ""
+                        return String.fromCharCode(97 + (chessPosition.isBoardFlipped ? 7-col : col)) // a-h
+                    }
+
                     font.pixelSize: board.cellSize * 0.2
                     font.weight: Font.Bold
                     color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#999999" : "#EEE" /*hcc*/
@@ -265,7 +269,10 @@ Rectangle {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.margins: 2
-                    text: String(8 - row) // 8-1
+                    text: {
+                        if (!chessPosition) return ""
+                        return String(chessPosition.isBoardFlipped ? 1+row : 8-row) // 8-1
+                    }
                     font.pixelSize: board.cellSize * 0.2
                     font.weight: Font.Bold
                     color: ((Math.floor(index / 8) + (index % 8)) % 2 === 0) ? "#999999" : "#EEE" /*hcc*/

@@ -51,7 +51,6 @@ signals:
     void openAnalysisBoard(PGNGame &game);
 
 protected:
-    void showEvent(QShowEvent *ev) override;
     void closeEvent(QCloseEvent *event) override;
 
 public slots:
