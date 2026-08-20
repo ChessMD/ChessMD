@@ -1,7 +1,8 @@
 [Desktop Entry]
 Name=ChessMD
-Exec=start.sh
-Icon=org.chessmd.chessmd
+GenericName=ChessMD
+Comment=Chess training software
+Exec=ChessMD
+Icon=ChessMD
 Type=Application
-Categories=Game
-
+Categories=Game;BoardGame;

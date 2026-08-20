@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=ChessMD
+Exec=start.sh
+Icon=org.chessmd.chessmd
+Type=Application
+Categories=Game
+
