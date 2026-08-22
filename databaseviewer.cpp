@@ -415,7 +415,11 @@ void DatabaseViewer::onDoubleSelected(const QModelIndex &proxyIndex) {
         // create new tab for game
         ChessGameWindow *gameWindow = new ChessGameWindow(nullptr, game);
         connect(gameWindow, &ChessGameWindow::PGNGameUpdated, this, &DatabaseViewer::onPGNGameUpdated);
+
+        gameWindow->setWindowFlags(Qt::Widget);
+        gameWindow->setGeometry(gameWindow->screen()->availableGeometry());
         gameWindow->mainSetup();
+        gameWindow->adjustSize();
 
         host->addNewTab(gameWindow, title);
     } else {

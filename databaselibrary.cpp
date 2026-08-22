@@ -129,8 +129,10 @@ void DatabaseLibrary::newChessboard(PGNGame game, bool startGameReview)
 {
     ChessGameWindow *gameWin = new ChessGameWindow(nullptr, game);
     gameWin->setAttribute(Qt::WA_DeleteOnClose); // must have! allows destructor to run when window closes
+    gameWin->setGeometry(gameWin->screen()->availableGeometry());
+    gameWin->setWindowState(Qt::WindowMaximized);
     gameWin->mainSetup();
-    gameWin->showMaximized();
+    gameWin->show();
     gameWin->raise();
     gameWin->activateWindow();
     if (startGameReview) {

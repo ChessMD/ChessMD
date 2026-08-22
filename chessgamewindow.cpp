@@ -34,9 +34,6 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     , m_openingDock(nullptr)
     , m_notationDock(nullptr)
 {
-    setMinimumSize(800, 200);
-    setGeometry(100, 100, 0, 0);
-    setWindowFlags(Qt::Widget);
     setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AnimatedDocks);
 
     // set the chessboard as central widget of window, and link to QML
@@ -104,6 +101,7 @@ void ChessGameWindow::closeEvent(QCloseEvent *event)
 // Configures ChessGameWindow for complete analysis
 void ChessGameWindow::mainSetup(){
     m_isPreview = false;
+
     connectEditingShortcuts();
     notationSetup();
     // notationToolbarSetup();
@@ -113,10 +111,12 @@ void ChessGameWindow::mainSetup(){
     gameReviewSetup();
     // openingSetup();
     updateOpeningActions();
+
     setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
     addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
-    resizeDocks({m_notationDock}, {800}, Qt::Horizontal);
+    resizeDocks({m_notationDock}, {width()/2}, Qt::Horizontal);
+
     QShortcut* saveGame = new QShortcut(QKeySequence("Ctrl+S"), this);
     connect(saveGame, &QShortcut::activated, this, &ChessGameWindow::onSavePgnClicked);
 }
@@ -125,6 +125,8 @@ void ChessGameWindow::mainSetup(){
 void ChessGameWindow::previewSetup()
 {
     m_isPreview = true;
+    setWindowFlags(Qt::Widget);
+
     connectEditingShortcuts();
     notationSetup();
     addDockWidget(Qt::BottomDockWidgetArea, m_notationDock);
