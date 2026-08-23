@@ -866,7 +866,7 @@ void GameplayViewer::onOpenInAnalysisClicked()
 {
     QVector<QPair<QString,QString>> headerInfo;
     QDate date = QDateTime::currentDateTime().date();
-    headerInfo.push_back({"Event", "ChessMD"});
+    headerInfo.push_back({"Event", QCoreApplication::applicationName()});
     headerInfo.push_back({"White", m_humanSide == 0 ? "You" : m_engineName});
     headerInfo.push_back({"Black", m_humanSide == 0 ? m_engineName : "You"});
     headerInfo.push_back({QString("%1Elo").arg(m_humanSide == 0 ? "Black" : "White"), QString::number(m_engineElo)});

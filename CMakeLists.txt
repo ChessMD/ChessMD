@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql Charts)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql Charts)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql Charts LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets QuickWidgets Svg Sql Charts LinguistTools)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -35,8 +35,9 @@ endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets)
+    find_package(Qt6 REQUIRED COMPONENTS Core)
 
     qt_add_executable(ChessMD
         MANUAL_FINALIZATION
@@ -91,6 +92,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
         theme.h
         img/white_icons/arrow-left.png img/white_icons/arrow-right.png img/white_icons/board-icon.png img/white_icons/book.png img/white_icons/book-off.png img/white_icons/check.png img/white_icons/cloud-file-download-icon.png img/white_icons/database-add-icon.png img/white_icons/database-upload-icon.png img/white_icons/edit.png img/white_icons/engine.png img/white_icons/enginedebug.png img/white_icons/engine-start.png img/white_icons/engine-stop.png img/white_icons/filter.png img/white_icons/help-circle.png img/white_icons/savegame.png img/white_icons/settings.png img/white_icons/sparkles.png
         gameplayviewer.h gameplayviewer.cpp
+        translationmanager.h translationmanager.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ChessMD APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -110,10 +112,20 @@ else()
     endif()
 endif()
 
+qt_add_translations(${PROJECT_NAME}
+    SOURCE_TARGETS ${PROJECT_NAME}
+    TS_FILE_BASE ${PROJECT_NAME}
+    TS_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_fr.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_zh.ts"
+
+)
+
 target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt6::Charts)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
 target_link_libraries(ChessMD PRIVATE Qt6::Widgets)
+target_link_libraries(ChessMD PRIVATE Qt6::Core)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

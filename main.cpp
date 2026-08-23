@@ -1,31 +1,19 @@
-/*
-ChessMD
-ICS4U
-Michael Qu, Daniel Xu
-Main file
-History:
-Jan 15, 2025 - Program Creation
-*/
-
 #include <QApplication>
 #include <QCoreApplication>
 #include <QObject>
 #include <QFile>
 #include <QDir>
 #include <QDockWidget>
-#include <QSettings>
 #include <QLockFile>
 
 #include "mainwindow.h"
 #include "theme.h"
 #include "helpers.h"
 #include "chessposition.h"
+#include "translationmanager.h"
 
 int main(int argc, char *argv[])
 {
-    QSettings settings;
-    QString theme = settings.value("theme", "light").toString();
-
     QCoreApplication::setOrganizationName("ChessMD");
     QCoreApplication::setApplicationName("ChessMD");
     QCoreApplication::setApplicationVersion("v1.0");
@@ -37,9 +25,10 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    TranslationManager::instance().initializeLanguage();
     Theme::applyTheme(app);
 
-    //global style cuz of weird default styling
+    // global style cuz of weird default styling
     QString globalStyle = getStyle(":/resource/styles/globalstyle.qss");
     app.setStyleSheet(globalStyle);
 

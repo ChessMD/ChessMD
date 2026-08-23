@@ -468,10 +468,10 @@ OpeningViewer::OpeningViewer(QWidget *parent)
     listsLayout->setContentsMargins(0, 0, 0, 0);
     listsLayout->setSpacing(4);
 
-    mPositionLabel = new QLabel("Loading Position...");
+    mPositionLabel = new QLabel(tr("Loading Position..."));
     mPositionLabel->setStyleSheet("font-weight: bold; font-size: 13px;");
 
-    mStatsLabel = new QLabel("No position data");
+    mStatsLabel = new QLabel(tr("No position data"));
     mStatsLabel->setStyleSheet("font-size: 12px;");
 
     QWidget* leftHeader = new QWidget(this);
@@ -484,7 +484,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
 
     mMovesList = new QTableWidget();
     mMovesList->setColumnCount(3);
-    mMovesList->setHorizontalHeaderLabels(QStringList() << "Move" << "Games" << "Win %");
+    mMovesList->setHorizontalHeaderLabels(QStringList() << tr("Move") << tr("Games") << tr("Win %"));
     mMovesList->setAlternatingRowColors(false);
     mMovesList->setShowGrid(false);
     mMovesList->viewport()->setAttribute(Qt::WA_Hover, true);
@@ -528,7 +528,7 @@ OpeningViewer::OpeningViewer(QWidget *parent)
 
     mGamesList = new QTableWidget();
     mGamesList->setColumnCount(7);
-    mGamesList->setHorizontalHeaderLabels(QStringList() << "White" << "WhiteElo" << "Black" << "BlackElo" << "Result" << "Date" << "Event");
+    mGamesList->setHorizontalHeaderLabels(QStringList() << tr("White") << tr("WhiteElo") << tr("Black") << tr("BlackElo") << tr("Result") << tr("Date") << tr("Event"));
     mGamesList->setAlternatingRowColors(false);
     mGamesList->setShowGrid(false);
     mGamesList->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -656,13 +656,13 @@ void OpeningViewer::updatePosition(const quint64 zobrist, QSharedPointer<ChessPo
     } else {
         numPrefix = QString::number(moveNum) + "...";
     }
-    mPositionLabel->setText((moveText.isEmpty() ? "Starting Position" : "Position after " + numPrefix + moveText));
+    mPositionLabel->setText((moveText.isEmpty() ? tr("Starting Position") : tr("Position after %1%2").arg(numPrefix, moveText)));
     if (total){
         updateGamesList(openingIndex, winrate);
     } else {
         mMovesList->setRowCount(0);
         mGamesList->setRowCount(0);
-        mGamesLabel->setText("Games: 0 of 0 shown");
+        mGamesLabel->setText(tr("Games: 0 of 0 shown"));
         mStatsLabel->setText(tr("0 Games"));
     }
     mMovesList->setSortingEnabled(true);

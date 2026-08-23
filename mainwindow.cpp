@@ -110,7 +110,7 @@ QWidget* MainWindow::setupSidebar() {
         }
     )");
 
-    //spacer to put settings at bottom
+    // spacer to put settings at bottom
     QWidget* spacer = new QWidget(this);
     spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     spacer->setMinimumHeight(10);
@@ -118,23 +118,23 @@ QWidget* MainWindow::setupSidebar() {
 
     QToolButton* aboutButton = new QToolButton(this);
     aboutButton->setIcon(QIcon(getIconPath("help-circle.png")));
-    aboutButton->setToolTip(tr("About ChessMD"));
+    aboutButton->setToolTip(tr("About %1").arg(QCoreApplication::applicationName()));
     aboutButton->setIconSize(QSize(32,32));
     aboutButton->setAutoRaise(true);
     connect(aboutButton, &QToolButton::clicked, this, [this](){
         QMessageBox msg(this);
-        msg.setWindowTitle(tr("About ChessMD"));
+        msg.setWindowTitle(tr("About %1").arg(QCoreApplication::applicationName()));
         msg.setTextFormat(Qt::RichText);
         // allow the user to click links
         msg.setTextInteractionFlags(Qt::TextBrowserInteraction);
         msg.setStandardButtons(QMessageBox::Ok);
         msg.setText(tr(
-                        "<h3>ChessMD</h3>"
-                        "<p>Version %1</p>"
-                        "<p>© 2025 ChessMD</p>"
+                        "<h3>%1</h3>"
+                        "<p>Version %2</p>"
+                        "<p>© 2025 %1</p>"
                         "<p>A lightweight PGN database viewer and analysis tool.</p>"
                         "<p>Visit our <a href=\"https://chessmd.org/\">website</a> for more info.</p>"
-                        ).arg(QCoreApplication::applicationVersion()));
+                        ).arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion()));
 
         // find the internal QLabel and enable external link opening
         if (auto *label = msg.findChild<QLabel*>("qt_msgbox_label")) {
@@ -209,7 +209,7 @@ void MainWindow::fetchChesscomGamesAndSave(const QString &username, const int ma
 
         QUrl profileUrl(QString("https://api.chess.com/pub/player/%1").arg(username));
         QNetworkRequest profileRequest(profileUrl);
-        QString agentInfo = QString("ChessMD/%2 (Contact: support@chessmd.org)").arg(QCoreApplication::applicationVersion());
+        QString agentInfo = QString("%1/%2 (Contact: support@chessmd.org)").arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion());
         profileRequest.setRawHeader("User-Agent", agentInfo.toUtf8());
         QNetworkReply *profileReply = networkManager.get(profileRequest);
         if (!profileReply) {
@@ -442,7 +442,7 @@ void MainWindow::onImportOnlineDatabase()
 
 void MainWindow::onAddGame()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "Select a chess PGN file", "", "PGN files (*.pgn)");
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Select a chess PGN file"), "", tr("PGN files (*.pgn)"));
 
     m_dbLibrary->AddNewGame(file_name);
 }

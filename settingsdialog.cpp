@@ -2,6 +2,7 @@
 #include "streamparser.h"
 #include "chessqsettings.h"
 #include "openingviewer.h"
+#include "translationmanager.h"
 
 #include <QListWidget>
 #include <QStackedWidget>
@@ -27,9 +28,11 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
 
     mCategoryList = new QListWidget(this);
+    mCategoryList->setEditTriggers(QAbstractItemView::NoEditTriggers);
     mCategoryList->addItem(tr("Engine"));
     mCategoryList->addItem(tr("Opening"));
     mCategoryList->addItem(tr("Theme"));
+    mCategoryList->addItem(tr("Language"));
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
@@ -121,6 +124,29 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     themeLayout->addStretch();
     mStackedWidget->addWidget(themePage);
 
+    // language page
+    QWidget* languagePage = new QWidget(this);
+    QVBoxLayout* languageLayout = new QVBoxLayout(languagePage);
+    QLabel* languageLabel = new QLabel(tr("Language:"), languagePage);
+    mLanguageComboBox = new QComboBox(languagePage);
+
+    auto supportedLanguages = TranslationManager::instance().supportedLanguages();
+    for (const auto& language: supportedLanguages){
+        mLanguageComboBox->addItem(language.name);
+    }
+
+    int curLangIndex = tsettings.value("language").toInt();
+    if (curLangIndex < 0 || curLangIndex >= supportedLanguages.size()) {
+        curLangIndex = 0; // english fallback
+    }
+    mLanguageComboBox->setCurrentIndex(curLangIndex);
+
+    languageLayout->addWidget(languageLabel);
+    languageLayout->addWidget(mLanguageComboBox);
+    languageLayout->addStretch();
+
+    mStackedWidget->addWidget(languagePage);
+
 
     mainLayout->addWidget(mStackedWidget);
 
@@ -129,7 +155,8 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     connect(loadPgnBtn, &QPushButton::clicked, this, &SettingsDialog::onLoadPgnClicked);
     connect(selectEngineBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectEngineClicked);
     connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
-    
+    connect(mLanguageComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onLanguageChanged);
+
     ChessQSettings settings;
     QString enginePath = settings.getEngineFile();
     if (!enginePath.isEmpty()) {
@@ -591,4 +618,18 @@ void SettingsDialog::onThemeChanged() {
 
     QSettings settings;
     settings.setValue("theme", theme);
+}
+
+void SettingsDialog::onLanguageChanged() {
+    int index = mLanguageComboBox->currentIndex();
+    auto supportedLanguages = TranslationManager::instance().supportedLanguages();
+
+    if (index < 0 || index >= supportedLanguages.size()){
+        index = 0; // english fallback
+    }
+
+    TranslationManager::instance().setLanguage(index);
+
+    QSettings settings;
+    settings.setValue("language", index);
 }

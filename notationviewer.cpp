@@ -344,7 +344,7 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
 
         connect(act, &QAction::triggered, this, [this, annotation]() {
             m_isEdited = true;
-            if (annotation.text == "(none)") {
+            if (annotation.text == tr("(none)")) {
                 m_selectedMove->annotation1.clear();
                 m_selectedMove->annotation2.clear();
             } else if (!annotation.secondary) {

@@ -37,6 +37,7 @@ private slots:
     void onLoadPgnClicked();
     void onSelectEngineClicked();
     void onThemeChanged();
+    void onLanguageChanged();
     void onDownloadLinkReply(QNetworkReply *reply);
 
 private:
@@ -48,6 +49,7 @@ private:
     QLabel* mOpeningsPathLabel;
     QLabel* mEnginePathLabel;
     QComboBox* mThemeComboBox;
+    QComboBox* mLanguageComboBox;
     QString mOpeningsPath;
 
     QLabel *mDownloadLinkLabel;

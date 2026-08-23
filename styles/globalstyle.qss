@@ -43,10 +43,6 @@ QListView {
     background-color: palette(base);
 }
 
-QListView::item {
-    padding: 6px 12px;
-}
-
 QListView::item:selected {
     background: rgba(128,128,128,0.5);
 }
