@@ -16,11 +16,6 @@ const QVector<AnnotationOption> ANNOTATION_OPTIONS = {
     { "?!", false, QKeySequence() },
     { "!!", false, QKeySequence() },
     { "??", false, QKeySequence() },
-    };
-
-const QVector<CommentEntry> COMMENT_ENTRIES = {
-    { QObject::tr("Enter Comment Before"), &NotationMove::commentBefore },
-    { QObject::tr("Enter Comment After"), &NotationMove::commentAfter }
 };
 
 NotationMove::NotationMove(const QString &text, ChessPosition &position)

@@ -106,7 +106,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     m_secondsSpin = new QSpinBox;
     m_secondsSpin->setRange(0, 59);
     m_secondsSpin->setValue(0);
-    QLabel *incLbl = new QLabel(tr("Inc (s):"));
+    QLabel *incLbl = new QLabel(tr("Increment (seconds):"));
     m_incrementSpin = new QSpinBox;
     m_incrementSpin->setRange(0, 60);
     m_incrementSpin->setValue(0);
@@ -274,14 +274,14 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
         }
 
         if (osVersion.type() == QOperatingSystemVersion::Windows) {
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*.exe)");
         } else {
 			if (osVersion.type() == QOperatingSystemVersion::MacOS) {
 				QDir dirBin(QApplication::applicationDirPath());
 				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+                binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), "(*)");
 			} else {
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+                binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*)");
 			}
 		}
 
@@ -322,7 +322,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     QFont blackF = m_blackPlayerLabel->font();
     blackF.setPointSize(12);
     m_blackPlayerLabel->setFont(blackF);
-    m_blackClock = new QLabel(tr("00:15"));
+    m_blackClock = new QLabel("00:15");
     m_blackClock->setAlignment(Qt::AlignCenter);
     QFont bigClockFont = m_blackClock->font();
     bigClockFont.setPointSize(22);
@@ -365,7 +365,7 @@ GameplayViewer::GameplayViewer(ChessPosition *positionViewer, QWidget *parent)
     QFont whiteF = m_whitePlayerLabel->font();
     whiteF.setPointSize(12);
     m_whitePlayerLabel->setFont(whiteF);
-    m_whiteClock = new QLabel(tr("00:15"));
+    m_whiteClock = new QLabel("00:15");
     m_whiteClock->setAlignment(Qt::AlignCenter);
     m_whiteClock->setFont(bigClockFont);
     m_whiteClock->setMinimumSize(160, 48);
@@ -712,8 +712,8 @@ void GameplayViewer::updateClockDisplays()
     bool isFlipped = m_positionViewer->isBoardFlipped();
     m_whiteClock->setText(msToString(isFlipped ? m_blackMs : m_whiteMs));
     m_blackClock->setText(msToString(isFlipped ? m_whiteMs : m_blackMs));
-    m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("%1 (%2)").arg(m_engineName).arg(m_engineElo) : tr("You"));
-    m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : tr("%1 (%2)").arg(m_engineName).arg(m_engineElo));
+    m_whitePlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? QString("%1 (%2)").arg(m_engineName).arg(m_engineElo) : tr("You"));
+    m_blackPlayerLabel->setText((isFlipped && !m_humanSide) || (!isFlipped && m_humanSide) ? tr("You") : QString("%1 (%2)").arg(m_engineName).arg(m_engineElo));
     if ((m_positionViewer->m_sideToMove == 'w' && !isFlipped) || (m_positionViewer->m_sideToMove == 'b' && isFlipped)){
         m_whiteClock->setStyleSheet("border: 2px solid green; border-radius: 10px; padding: 6px; background: palette(base);");
         m_blackClock->setStyleSheet("border: 1px solid grey; border-radius: 10px; padding: 6px; background: palette(base);");

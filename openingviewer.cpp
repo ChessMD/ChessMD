@@ -910,7 +910,7 @@ void OpeningViewer::onGameSelected(QTableWidgetItem* item)
     gameWin->show();
 
     connect(gameWin, &ChessGameWindow::PGNGameUpdated, this, [this, gameWin](PGNGame &game) {
-        QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files (*.pgn)"));
+        QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files %1").arg("(*.pgn)"));
         if (savePath.isEmpty()) {
             return;
         }

@@ -248,9 +248,9 @@ void SettingsDialog::onSelectEngineClicked()
 		if (osVersion.type() == QOperatingSystemVersion::MacOS) {
 			QDir dirBin(QApplication::applicationDirPath());
 			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
-			file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+            file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), "(*)");
 		} else {
-            file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+            file_name = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*)");
 		}
     }
     

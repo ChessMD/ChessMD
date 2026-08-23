@@ -246,7 +246,7 @@ void NotationViewer::mousePressEvent(QMouseEvent *event)
     pos.setY(pos.y() + verticalScrollBar()->value());
 
     // Check for clicked move segment
-    for (const MoveSegment &seg : m_moveSegments) {
+    for (const MoveSegment &seg : std::as_const(m_moveSegments)) {
         if (seg.rect.contains(pos)) {
             m_selectedMove = seg.move;
             emit moveSelected(m_selectedMove);
@@ -352,11 +352,16 @@ void NotationViewer::contextMenuEvent(QContextMenuEvent *event) {
         });
     }
 
+    const QVector<CommentEntry> COMMENT_ENTRIES = {
+        { tr("Enter Comment Before"), &NotationMove::commentBefore },
+        { tr("Enter Comment After"), &NotationMove::commentAfter }
+    };
+
     for (auto &commentEntry : COMMENT_ENTRIES) {
         QAction *act = menu.addAction(commentEntry.actionText);
         connect(act, &QAction::triggered, this, [this, commentEntry]() {
             QString initial = (m_selectedMove.data()->*(commentEntry.member)); bool ok = false;
-            QString text = QInputDialog::getText(this, commentEntry.actionText, tr("Enter %1").arg(commentEntry.actionText), QLineEdit::Normal, initial, &ok);
+            QString text = QInputDialog::getText(this, commentEntry.actionText, commentEntry.actionText, QLineEdit::Normal, initial, &ok);
             if (ok) {
                 m_isEdited = true;
                 m_selectedMove.data()->*(commentEntry.member) = text.trimmed();

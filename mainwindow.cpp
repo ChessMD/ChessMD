@@ -65,7 +65,7 @@ void MainWindow::setupToolbar() {
     connect(newDbAct, &QAction::triggered, m_dbLibrary, &DatabaseLibrary::newDatabase);
     toolbar->addAction(newDbAct);
 
-    QAction* newBoardAct = new QAction(QIcon(getIconPath("board-icon.png")), tr("New Board"), this);
+    QAction* newBoardAct = new QAction(QIcon(getIconPath("board-icon.png")), tr("New Chessboard"), this);
     newBoardAct->setToolTip(tr("New Chessboard"));
     connect(newBoardAct, &QAction::triggered, m_dbLibrary, [this]{
         PGNGame emptyGame;
@@ -128,13 +128,12 @@ QWidget* MainWindow::setupSidebar() {
         // allow the user to click links
         msg.setTextInteractionFlags(Qt::TextBrowserInteraction);
         msg.setStandardButtons(QMessageBox::Ok);
-        msg.setText(tr(
-                        "<h3>%1</h3>"
+        msg.setText(tr( "<h3>%1</h3>"
                         "<p>Version %2</p>"
-                        "<p>© 2025 %1</p>"
+                        "<p>© 2026 %1</p>"
                         "<p>A lightweight PGN database viewer and analysis tool.</p>"
-                        "<p>Visit our <a href=\"https://chessmd.org/\">website</a> for more info.</p>"
-                        ).arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion()));
+                        "<p>Visit our <a href=\"%3\">website</a> for more info.</p>"
+                        ).arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion(), "https://chessmd.org/"));
 
         // find the internal QLabel and enable external link opening
         if (auto *label = msg.findChild<QLabel*>("qt_msgbox_label")) {

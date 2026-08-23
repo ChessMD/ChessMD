@@ -47,7 +47,6 @@ struct CommentEntry {
 
 extern const QMap<int, QString> NUMERIC_ANNOTATION_MAP;
 extern const QVector<AnnotationOption> ANNOTATION_OPTIONS ;
-extern const QVector<CommentEntry> COMMENT_ENTRIES;
 
 QSharedPointer<NotationMove> cloneNotationTree(QSharedPointer<NotationMove>& move);
 

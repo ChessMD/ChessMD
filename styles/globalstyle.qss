@@ -37,7 +37,10 @@ QToolButton:pressed {
     background-color: palette(mid);
 }
 
-
+QListView::item:focus {
+    outline: none;
+    border: none;
+}
 
 QListView {
     background-color: palette(base);

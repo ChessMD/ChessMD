@@ -279,11 +279,6 @@ QString findTag(const QVector<QPair<QString,QString>>& hdr, const QString& tag, 
 {
     for (auto &kv : hdr) {
         if (kv.first == tag) return kv.second;
-
-        //custom ones
-        if(tag == "bElo" && kv.first == "BlackElo") return kv.second;
-        if(tag == "wElo" && kv.first == "WhiteElo") return kv.second;
-
     }
     return notFound;
 }
@@ -505,7 +500,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
 
         DraggableCheckBoxContainer* container = new DraggableCheckBoxContainer(&dialog);
 
-        QStringList essentialHeaders = {"#", "White", "Black", "Result", "Event", "Date"};
+        QStringList essentialHeaders = {"#", "White", "WhiteElo", "Black", "BlackElo", "Result", "Event", "Date"};
         
         //readd in proper order
         for(int i = 0; i < dbModel->columnCount(); i++){
@@ -548,7 +543,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         QRegularExpression regex("[A-Za-z]{0,15}");  
         QValidator* validator = new QRegularExpressionValidator(regex, addEdit);
         addEdit->setValidator(validator);
-        addEdit->setPlaceholderText(tr("e.g ECO, WhiteTitle"));
+        addEdit->setPlaceholderText(tr("e.g. ECO"));
 
         QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
         addLayout->addWidget(addEdit);

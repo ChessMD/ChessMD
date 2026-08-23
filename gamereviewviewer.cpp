@@ -21,6 +21,35 @@
 #include <QPalette>
 #include <QApplication>
 
+const QVector<GameReviewViewer::CategoryInfo> GameReviewViewer::s_categories = {
+    {GameReviewViewer::Category::Brilliant,   "brilliant",   "#26C2A3"},
+    {GameReviewViewer::Category::Great,       "great",       "#749BBF"},
+    {GameReviewViewer::Category::Best,        "best",        "#81B64C"},
+    {GameReviewViewer::Category::Inaccuracy,  "inaccuracy",  "#F7C631"},
+    {GameReviewViewer::Category::Mistake,     "mistake",     "#FFA459"},
+    {GameReviewViewer::Category::Blunder,     "blunder",     "#FA412D"}
+};
+
+QString GameReviewViewer::categoryDisplayName(Category category) const
+{
+    switch (category) {
+    case Category::Brilliant:
+        return tr("Brilliant");
+    case Category::Great:
+        return tr("Great");
+    case Category::Best:
+        return tr("Best");
+    case Category::Inaccuracy:
+        return tr("Inaccuracy");
+    case Category::Mistake:
+        return tr("Mistake");
+    case Category::Blunder:
+        return tr("Blunder");
+    }
+
+    Q_UNREACHABLE();
+}
+
 GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent)
     : QWidget(parent)
     , m_rootMove(rootMove)
@@ -164,7 +193,7 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
 
     m_settings.loadSettings();
     QString saved = m_settings.getEngineFile();
-    if (!saved.isEmpty() && QFileInfo(saved).exists()) {
+    if (!saved.isEmpty() && QFileInfo::exists(saved)) {
         m_engine = new UciEngine(this);
         m_engineLabel->setText(tr("Engine: %1").arg(QFileInfo(saved).fileName()));
         m_reviewBtn->setEnabled(true);
@@ -187,14 +216,14 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
         }
 
         if (osVersion.type() == QOperatingSystemVersion::Windows) {
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*.exe)");
         } else {
 			if (osVersion.type() == QOperatingSystemVersion::MacOS) {
 				QDir dirBin(QApplication::applicationDirPath());
 				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+                binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), "(*)");
 			} else {
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+                binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*)");
 			}
 		}
 
@@ -255,15 +284,6 @@ void GameReviewViewer::createSummaryGrid()
     g->setHorizontalSpacing(8);
     g->setVerticalSpacing(6);
 
-    QStringList columns = { "Brilliant", "Great", "Best", "Inaccuracy", "Mistake", "Blunder" };
-    QMap<QString, QString> colorMap;
-    colorMap["Brilliant"] = "#26C2A3";
-    colorMap["Great"] = "#749BBF";
-    colorMap["Best"] = "#81B64C";
-    colorMap["Inaccuracy"] = "#F7C631";
-    colorMap["Mistake"] = "#FFA459";
-    colorMap["Blunder"] = "#FA412D";
-
     // sizing for value cells
     const int valueCellWidth = 96;
     const int valueCellHeight = 36;
@@ -272,9 +292,10 @@ void GameReviewViewer::createSummaryGrid()
     g->setColumnMinimumWidth(0, leftLabelWidth);
     g->setColumnStretch(0, 0);
 
-    for (int c = 1; c <= columns.size(); ++c) {
-        g->setColumnMinimumWidth(c, valueCellWidth);
-        g->setColumnStretch(c, 0);
+    // category columns start at column 1, as column 0 is reserved for row labels
+    for (int i = 0; i < s_categories.size(); i++) {
+        g->setColumnMinimumWidth(i + 1, valueCellWidth);
+        g->setColumnStretch(i + 1, 0);
     }
 
     gridW->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
@@ -286,39 +307,41 @@ void GameReviewViewer::createSummaryGrid()
     leftHeader->setObjectName("leftHeader");
     g->addWidget(leftHeader, 0, 0);
 
-    for (int i = 0; i < columns.size(); i++) {
-        QLabel* catLabel = new QLabel(QObject::tr(columns[i].toUtf8().constData()), gridW);
-        catLabel->setAlignment(Qt::AlignCenter);
-        catLabel->setMinimumSize(valueCellWidth, valueCellHeight);
-        catLabel->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
-        g->addWidget(catLabel, 0, i + 1, Qt::AlignCenter);
+    for (int i = 0; i < s_categories.size(); i++){
+        const CategoryInfo &category = s_categories[i];
+        QLabel* label = new QLabel(categoryDisplayName(category.category), gridW);
+        label->setAlignment(Qt::AlignCenter);
+        label->setMinimumSize(valueCellWidth, valueCellHeight);
+        label->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
+        g->addWidget(label, 0, i+1, Qt::AlignCenter);
     }
 
     const int ICON_PX = 24;
-    for (int i = 0; i < columns.size(); i++) {
-        const QString cat = columns[i];
+    for (int i = 0; i < s_categories.size(); i++) {
+        const CategoryInfo &category = s_categories[i];
+
         QLabel* header = new QLabel(gridW);
         header->setAlignment(Qt::AlignCenter);
         header->setMinimumSize(valueCellWidth, valueCellHeight);
 
-        QString iconName = QString(":/resource/img/%1-icon").arg(cat.toLower());
+        QString iconName = QString(":/resource/img/%1-icon").arg(category.iconName);
         QIcon icon(iconName);
         if (!icon.isNull()) {
             header->setPixmap(icon.pixmap(ICON_PX, ICON_PX));
         } else {
-            header->setText(cat);
-            header->setStyleSheet(QString("font-weight:700; font-size:12px; color:%1;").arg(colorMap.value(cat, "#444444")));
+            header->setText(categoryDisplayName(category.category));
+            header->setStyleSheet(QString("font-weight:700; font-size:12px; color:%1;").arg(category.color));
         }
         g->addWidget(header, 2, i + 1, Qt::AlignCenter);
     }
 
-    QLabel* whiteLabel = new QLabel(QObject::tr("White:"), gridW);
+    QLabel* whiteLabel = new QLabel(tr("White:"), gridW);
     whiteLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     whiteLabel->setMinimumWidth(leftLabelWidth);
     whiteLabel->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
     g->addWidget(whiteLabel, 1, 0, Qt::AlignVCenter);
 
-    QLabel* blackLabel = new QLabel(QObject::tr("Black:"), gridW);
+    QLabel* blackLabel = new QLabel(tr("Black:"), gridW);
     blackLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     blackLabel->setMinimumWidth(leftLabelWidth);
     blackLabel->setStyleSheet(QString("font-size:13px; %1 padding-left:6px;").arg(boldStyle));
@@ -335,28 +358,17 @@ void GameReviewViewer::createSummaryGrid()
     };
 
     // add cells for each category
-    for (int i = 0; i < columns.size(); ++i) {
-        const int col = i + 1;
-        const QString category = columns[i];
-        if (category == "Brilliant") {
-            makeValue(m_whiteBrilliantLabel, "whiteCell"); g->addWidget(m_whiteBrilliantLabel, 1, col, Qt::AlignCenter);
-            makeValue(m_blackBrilliantLabel, "blackCell"); g->addWidget(m_blackBrilliantLabel, 3, col, Qt::AlignCenter);
-        } else if (category == "Great") {
-            makeValue(m_whiteGreatLabel, "whiteCell"); g->addWidget(m_whiteGreatLabel, 1, col, Qt::AlignCenter);
-            makeValue(m_blackGreatLabel, "blackCell"); g->addWidget(m_blackGreatLabel, 3, col, Qt::AlignCenter);
-        } else if (category == "Best") {
-            makeValue(m_whiteBestLabel, "whiteCell"); g->addWidget(m_whiteBestLabel, 1, col, Qt::AlignCenter);
-            makeValue(m_blackBestLabel, "blackCell"); g->addWidget(m_blackBestLabel, 3, col, Qt::AlignCenter);
-        } else if (category == "Inaccuracy") {
-            makeValue(m_whiteInaccuracyLabel, "whiteCell"); g->addWidget(m_whiteInaccuracyLabel, 1, col, Qt::AlignCenter);
-            makeValue(m_blackInaccuracyLabel, "blackCell"); g->addWidget(m_blackInaccuracyLabel, 3, col, Qt::AlignCenter);
-        } else if (category == "Mistake") {
-            makeValue(m_whiteMistakeLabel, "whiteCell"); g->addWidget(m_whiteMistakeLabel, 1, col, Qt::AlignCenter);
-            makeValue(m_blackMistakeLabel, "blackCell"); g->addWidget(m_blackMistakeLabel, 3, col, Qt::AlignCenter);
-        } else if (category == "Blunder") {
-            makeValue(m_whiteBlunderLabel, "whiteCell"); g->addWidget(m_whiteBlunderLabel, 1, col, Qt::AlignCenter);
-            makeValue(m_blackBlunderLabel, "blackCell"); g->addWidget(m_blackBlunderLabel, 3, col, Qt::AlignCenter);
-        }
+    m_whiteCategoryLabels.clear();
+    m_blackCategoryLabels.clear();
+    for (int i = 0; i < s_categories.size(); i++){
+        QLabel* whiteCell = nullptr;
+        QLabel* blackCell = nullptr;
+        makeValue(whiteCell, QStringLiteral("whiteCell"));
+        makeValue(blackCell, QStringLiteral("blackCell"));
+        m_whiteCategoryLabels.append(whiteCell);
+        m_blackCategoryLabels.append(blackCell);
+        g->addWidget(whiteCell, 1, i + 1, Qt::AlignCenter);
+        g->addWidget(blackCell, 3, i + 1, Qt::AlignCenter);
     }
 
     lay->addWidget(gridW, 0, Qt::AlignHCenter);
@@ -404,7 +416,9 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
 
         QString prefix = QString::number((idx-1)/2+1) + QString(idx%2 ? "." : "...");
         const QString moveText = (m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : tr("Starting Position"));
-        QString tip = tr("%1%2\nEvaluation: %3").arg(idx ? prefix : "").arg(moveText).arg(p.y,0,'f',2);
+        const QString prefixText = (idx ? prefix : "");
+        const QString evalText = tr("Evaluation: %1").arg(QString::number(p.y, 'f', 2));
+        QString tip = QString("%1%2\n%3").arg(prefixText, moveText, evalText);
         QToolTip::showText(glPt, tip, m_chartView);
 
         // vertical line
@@ -670,18 +684,28 @@ void GameReviewViewer::finalizeReview()
         lbl->setText(text);
     };
 
-    setCellText(m_whiteBrilliantLabel, QString("?"));
-    setCellText(m_blackBrilliantLabel, QString("?"));
-    setCellText(m_whiteGreatLabel, QString("?"));
-    setCellText(m_blackGreatLabel, QString("?"));
-    setCellText(m_whiteBestLabel, QString::number(whiteBest));
-    setCellText(m_blackBestLabel, QString::number(blackBest));
-    setCellText(m_whiteInaccuracyLabel, QString::number(whiteInacc));
-    setCellText(m_blackInaccuracyLabel, QString::number(blackInacc));
-    setCellText(m_whiteMistakeLabel, QString::number(whiteMist));
-    setCellText(m_blackMistakeLabel, QString::number(blackMist));
-    setCellText(m_whiteBlunderLabel, QString::number(whiteBlund));
-    setCellText(m_blackBlunderLabel, QString::number(blackBlund));
+    const QVector<QString> whiteValues = {
+        QStringLiteral("?"),
+        QStringLiteral("?"),
+        QString::number(whiteBest),
+        QString::number(whiteInacc),
+        QString::number(whiteMist),
+        QString::number(whiteBlund)
+    };
+
+    const QVector<QString> blackValues = {
+        QStringLiteral("?"),
+        QStringLiteral("?"),
+        QString::number(blackBest),
+        QString::number(blackInacc),
+        QString::number(blackMist),
+        QString::number(blackBlund)
+    };
+
+    for (int i = 0; i < s_categories.size(); ++i) {
+        m_whiteCategoryLabels.at(i)->setText(whiteValues.at(i));
+        m_blackCategoryLabels.at(i)->setText(blackValues.at(i));
+    }
 
     m_origPts.clear();
     m_areaPts.clear();

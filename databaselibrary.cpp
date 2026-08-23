@@ -111,7 +111,7 @@ void DatabaseLibrary::importDatabase()
 
 void DatabaseLibrary::newDatabase()
 {
-    QString savePath = QFileDialog::getSaveFileName(this, tr("Create a new PGN file"), QString(), tr("PGN files (*.pgn)"));
+    QString savePath = QFileDialog::getSaveFileName(this, tr("Create a new PGN file"), QString(), tr("PGN files %1").arg("(*.pgn)"));
     if (savePath.isEmpty()) {
         return;
     }
@@ -140,7 +140,7 @@ void DatabaseLibrary::newChessboard(PGNGame game, bool startGameReview)
     }
 
     connect(gameWin, &ChessGameWindow::PGNGameUpdated, this, [this, gameWin](PGNGame &game) {
-        QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files (*.pgn)"));
+        QString savePath = QFileDialog::getSaveFileName(this, tr("Save PGN Game"), QString(), tr("PGN files %1").arg("(*.pgn)"));
         if (savePath.isEmpty()) {
             return;
         }

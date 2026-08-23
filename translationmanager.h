@@ -36,7 +36,7 @@ private:
     static const QVector<Language> m_supportedLanguages;
 
     std::unique_ptr<QTranslator> m_translator;
-    int m_curLangIndex;
+    int m_curLangIndex = 0; // english
 
 signals:
     void languageChanged(int langIndex);

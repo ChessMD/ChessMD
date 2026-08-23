@@ -16,12 +16,12 @@ bool TranslationManager::initializeLanguage()
 {
     QSettings settings;
 
-    int m_curLangIndex = settings.value("theme").toInt();
-    if (m_curLangIndex < 0 || m_curLangIndex >= m_supportedLanguages.size()) {
-        m_curLangIndex = 0; // english fallback
+    int curLangIndex = settings.value("language").toInt();
+    if (curLangIndex < 0 || curLangIndex >= m_supportedLanguages.size()) {
+        m_curLangIndex = 0;
         return false;
     }
-
+    setLanguage(curLangIndex);
     return true;
 }
 

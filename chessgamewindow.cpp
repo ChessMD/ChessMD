@@ -110,8 +110,8 @@ void ChessGameWindow::mainSetup(){
 
     setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-    addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
     resizeDocks({m_notationDock}, {width()/2}, Qt::Horizontal);
+    splitDockWidget(m_notationDock, m_gameReviewDock, Qt::Vertical);
 
     QShortcut* saveGame = new QShortcut(QKeySequence("Ctrl+S"), this);
     connect(saveGame, &QShortcut::activated, this, &ChessGameWindow::onSavePgnClicked);
@@ -340,7 +340,7 @@ void ChessGameWindow::notationSetup()
     topHBox->addStretch();
     topHBox->addWidget(m_whiteField, 2);
     topHBox->addWidget(m_whiteEloField, 1);
-    QLabel* vsLabel = new QLabel(tr("vs"), topRow);
+    QLabel* vsLabel = new QLabel("vs", topRow);
     vsLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     vsLabel->setContentsMargins(0, 0, 2, 0);
     vsLabel->setStyleSheet(R"(
@@ -403,6 +403,7 @@ void ChessGameWindow::notationSetup()
     m_notationDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     m_notationDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     m_notationDock->setMinimumSize(100, 0);
+    addDockWidget(Qt::RightDockWidgetArea, m_notationDock);
 
     // connect moveSelected signal when user clicks on a move in the notation
     connect(m_notationViewer, &NotationViewer::moveSelected, this, &ChessGameWindow::onMoveSelected);

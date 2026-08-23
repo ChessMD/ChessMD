@@ -2,7 +2,8 @@
 #include "streamparser.h"
 
 DatabaseViewerModel::DatabaseViewerModel(QObject *parent): QAbstractItemModel{parent} {
-    mHeaders << "#" << "White" << "wElo" << "Black" << "bElo" << "Result" << "Moves" << "Event" << "Date";
+    // PGN identifying headers -
+    mHeaders << "#" << "White" << "WhiteElo" << "Black" << "BlackElo" << "Result" << "Moves" << "Event" << "Date";
 }
 
 // Returns the number of rows

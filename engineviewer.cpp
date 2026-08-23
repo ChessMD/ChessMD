@@ -165,14 +165,14 @@ EngineWidget::EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *pa
         }
 
         if (osVersion.type() == QOperatingSystemVersion::Windows) {
-            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*.exe)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*.exe)");
         } else {
 			if (osVersion.type() == QOperatingSystemVersion::MacOS) {
 				QDir dirBin(QApplication::applicationDirPath());
 				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+                binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), "(*)");
 			} else {
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+                binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*)");
 			}
 		}
 
@@ -230,14 +230,14 @@ void EngineWidget::onConfigEngineClicked()
     }
 
     if (osVersion.type() == QOperatingSystemVersion::Windows) {
-        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files (*.exe)"));
+        binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("Executable files %1").arg("(*.exe)"));
     } else {
 		if (osVersion.type() == QOperatingSystemVersion::MacOS) {
 			QDir dirBin(QApplication::applicationDirPath());
 			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
-			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), "(*)");
 		} else {
-			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+            binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", "(*)");
 		}
     }
 
@@ -336,7 +336,7 @@ void EngineWidget::onPvUpdate(PvInfo &info) {
     info.score = abs(info.score);
 
     QSharedPointer<NotationMove> rootMove = parseEngineLine(info.pvLine, m_currentMove); // parse LAN into a notation tree
-    QString evalTxt = (info.positive ? "" : "-") + (info.isMate ? tr("M%1").arg(info.score) : QString("%1").arg(info.score, 0, 'f', 2));
+    QString evalTxt = (info.positive ? "" : "-") + (info.isMate ? QString("M%1").arg(info.score) : QString("%1").arg(info.score, 0, 'f', 2));
 
     if (!rootMove){
         return;
