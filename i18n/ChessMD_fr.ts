@@ -12,107 +12,168 @@
 <context>
     <name>ChessGameWindow</name>
     <message>
-        <location filename="../chessgamewindow.cpp" line="71"/>
+        <location filename="../chessgamewindow.cpp" line="67"/>
         <source>Save changes?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="72"/>
+        <location filename="../chessgamewindow.cpp" line="68"/>
         <source>Do you want to save your changes to this game?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="73"/>
+        <location filename="../chessgamewindow.cpp" line="69"/>
         <source>Yes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="74"/>
+        <location filename="../chessgamewindow.cpp" line="70"/>
         <source>No</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="75"/>
+        <location filename="../chessgamewindow.cpp" line="71"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="152"/>
+        <location filename="../chessgamewindow.cpp" line="148"/>
         <source>Play vs Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="338"/>
+        <location filename="../chessgamewindow.cpp" line="334"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="339"/>
+        <location filename="../chessgamewindow.cpp" line="335"/>
         <source>WhiteElo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="340"/>
+        <location filename="../chessgamewindow.cpp" line="336"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="341"/>
+        <location filename="../chessgamewindow.cpp" line="337"/>
         <source>BlackElo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="342"/>
+        <location filename="../chessgamewindow.cpp" line="338"/>
         <source>Result</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="347"/>
+        <location filename="../chessgamewindow.cpp" line="343"/>
         <source>vs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="367"/>
+        <location filename="../chessgamewindow.cpp" line="363"/>
         <source>Edit game info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="377"/>
+        <location filename="../chessgamewindow.cpp" line="373"/>
         <source>Event</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="378"/>
+        <location filename="../chessgamewindow.cpp" line="374"/>
         <source>Round</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="379"/>
+        <location filename="../chessgamewindow.cpp" line="375"/>
         <source>Date</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="404"/>
+        <location filename="../chessgamewindow.cpp" line="400"/>
         <source>Notation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="418"/>
+        <location filename="../chessgamewindow.cpp" line="414"/>
         <source>Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="476"/>
+        <location filename="../chessgamewindow.cpp" line="421"/>
+        <source>Back (Left Arrow)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="425"/>
+        <source>Forward (Right Arrow)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="429"/>
+        <source>Flip Board (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="433"/>
+        <source>Save (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="445"/>
+        <source>Start Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="449"/>
+        <source>Stop engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="453"/>
+        <source>Open Opening Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="457"/>
+        <source>Close Opening Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="472"/>
         <source>Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="530"/>
+        <location filename="../chessgamewindow.cpp" line="606"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="607"/>
+        <source>Load PGN</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="608"/>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="609"/>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../chessgamewindow.cpp" line="437"/>
+        <location filename="../chessgamewindow.cpp" line="526"/>
         <source>Game Review</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../chessgamewindow.cpp" line="559"/>
+        <location filename="../chessgamewindow.cpp" line="555"/>
         <source>Opening Explorer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -256,6 +317,21 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../databaselibrary.cpp" line="71"/>
+        <source>Loading...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../databaselibrary.cpp" line="102"/>
+        <source>Select a chess PGN file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../databaselibrary.cpp" line="102"/>
+        <source>PGN files %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../databaselibrary.cpp" line="114"/>
         <source>Create a new PGN file</source>
         <translation type="unfinished"></translation>
@@ -288,6 +364,11 @@
         <source>Loading ...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../databaselibrary.cpp" line="246"/>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DatabaseUploader</name>
@@ -300,6 +381,21 @@
 <context>
     <name>DatabaseViewer</name>
     <message>
+        <location filename="../databaseviewer.cpp" line="153"/>
+        <source>Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../databaseviewer.cpp" line="154"/>
+        <source>Add Game</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../databaseviewer.cpp" line="337"/>
+        <source>N/A</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../databaseviewer.cpp" line="464"/>
         <source>Delete Game</source>
         <translation type="unfinished"></translation>
@@ -308,6 +404,11 @@
         <location filename="../databaseviewer.cpp" line="497"/>
         <location filename="../databaseviewer.cpp" line="502"/>
         <source>Configure Columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../databaseviewer.cpp" line="551"/>
+        <source>e.g ECO, WhiteTitle</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -353,73 +454,73 @@
 <context>
     <name>EngineWidget</name>
     <message>
-        <location filename="../engineviewer.cpp" line="61"/>
+        <location filename="../engineviewer.cpp" line="57"/>
         <source>Configure engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="72"/>
+        <location filename="../engineviewer.cpp" line="68"/>
         <source>Show/Hide UCI debug console</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="92"/>
+        <location filename="../engineviewer.cpp" line="88"/>
         <source>Engine Lines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="143"/>
-        <location filename="../engineviewer.cpp" line="157"/>
+        <location filename="../engineviewer.cpp" line="139"/>
+        <location filename="../engineviewer.cpp" line="153"/>
         <source>Engine: &lt;none&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="145"/>
+        <location filename="../engineviewer.cpp" line="141"/>
         <source>Select Engine…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="155"/>
-        <location filename="../engineviewer.cpp" line="419"/>
+        <location filename="../engineviewer.cpp" line="151"/>
+        <location filename="../engineviewer.cpp" line="415"/>
         <source>Engine: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="172"/>
-        <location filename="../engineviewer.cpp" line="177"/>
-        <location filename="../engineviewer.cpp" line="179"/>
-        <location filename="../engineviewer.cpp" line="237"/>
-        <location filename="../engineviewer.cpp" line="242"/>
-        <location filename="../engineviewer.cpp" line="244"/>
+        <location filename="../engineviewer.cpp" line="168"/>
+        <location filename="../engineviewer.cpp" line="173"/>
+        <location filename="../engineviewer.cpp" line="175"/>
+        <location filename="../engineviewer.cpp" line="233"/>
+        <location filename="../engineviewer.cpp" line="238"/>
+        <location filename="../engineviewer.cpp" line="240"/>
         <source>Select a chess engine file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="172"/>
+        <location filename="../engineviewer.cpp" line="168"/>
         <source>(*.exe)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="177"/>
-        <location filename="../engineviewer.cpp" line="179"/>
-        <location filename="../engineviewer.cpp" line="242"/>
-        <location filename="../engineviewer.cpp" line="244"/>
+        <location filename="../engineviewer.cpp" line="173"/>
+        <location filename="../engineviewer.cpp" line="175"/>
+        <location filename="../engineviewer.cpp" line="238"/>
+        <location filename="../engineviewer.cpp" line="240"/>
         <source>(*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="188"/>
-        <location filename="../engineviewer.cpp" line="254"/>
+        <location filename="../engineviewer.cpp" line="184"/>
+        <location filename="../engineviewer.cpp" line="250"/>
         <source>No engine selected!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="237"/>
+        <location filename="../engineviewer.cpp" line="233"/>
         <source>Executable files (*.exe)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../engineviewer.cpp" line="343"/>
+        <location filename="../engineviewer.cpp" line="339"/>
         <source>M%1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -477,12 +578,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gamereviewviewer.cpp" line="664"/>
-        <source>White accuracy: %1%</source>
+        <location filename="../gamereviewviewer.cpp" line="406"/>
+        <source>Starting Position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gamereviewviewer.cpp" line="407"/>
+        <source>%1%2
+Evaluation: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../gamereviewviewer.cpp" line="665"/>
+        <source>White accuracy: %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gamereviewviewer.cpp" line="666"/>
         <source>Black accuracy: %1%</source>
         <translation type="unfinished"></translation>
     </message>
@@ -896,37 +1008,37 @@
 <context>
     <name>NotationViewer</name>
     <message>
-        <location filename="../notationviewer.cpp" line="338"/>
+        <location filename="../notationviewer.cpp" line="334"/>
         <source>Add Annotation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notationviewer.cpp" line="347"/>
+        <location filename="../notationviewer.cpp" line="343"/>
         <source>(none)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notationviewer.cpp" line="363"/>
+        <location filename="../notationviewer.cpp" line="359"/>
         <source>Enter %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notationviewer.cpp" line="372"/>
+        <location filename="../notationviewer.cpp" line="368"/>
         <source>Delete Variation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notationviewer.cpp" line="378"/>
+        <location filename="../notationviewer.cpp" line="374"/>
         <source>Delete Move</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notationviewer.cpp" line="384"/>
+        <location filename="../notationviewer.cpp" line="380"/>
         <source>Delete All Commentary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notationviewer.cpp" line="388"/>
+        <location filename="../notationviewer.cpp" line="384"/>
         <source>Promote Variation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1116,16 +1228,26 @@
         <source>OR</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../pgnuploader.cpp" line="29"/>
+        <source>Select a chess PGN file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../pgnuploader.cpp" line="29"/>
+        <source>PGN files %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../notation.cpp" line="27"/>
+        <location filename="../notation.cpp" line="22"/>
         <source>Enter Comment Before</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../notation.cpp" line="28"/>
+        <location filename="../notation.cpp" line="23"/>
         <source>Enter Comment After</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1165,6 +1287,11 @@
     <message>
         <location filename="../settingsdialog.cpp" line="35"/>
         <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="48"/>
+        <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1228,6 +1355,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../settingsdialog.cpp" line="48"/>
         <location filename="../settingsdialog.cpp" line="164"/>
         <location filename="../settingsdialog.cpp" line="263"/>
         <source>Current engine: %1</source>
@@ -1297,6 +1425,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../settingsdialog.cpp" line="69"/>
         <location filename="../settingsdialog.cpp" line="564"/>
         <location filename="../settingsdialog.cpp" line="595"/>
         <source>Current opening database: %1</source>
@@ -1315,6 +1444,14 @@
     <message>
         <location filename="../settingsdialog.cpp" line="576"/>
         <source>Processing PGN file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VariationDialogue</name>
+    <message>
+        <location filename="../variationdialogue.cpp" line="9"/>
+        <source>Select Variation</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

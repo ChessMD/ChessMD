@@ -1,7 +1,3 @@
-/*
-April 11, 2025: File Creation
-*/
-
 #include "uciengine.h"
 #include <QTextStream>
 #include <QFileInfo>

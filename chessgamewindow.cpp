@@ -1,7 +1,3 @@
-/*
-March 18, 2025: File Creation
-*/
-
 #include "chessgamewindow.h"
 #include "notation.h"
 #include "notationviewer.h"
@@ -422,23 +418,23 @@ void ChessGameWindow::toolbarSetup()
     m_Toolbar->setMovable(false);
     m_Toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-    QAction* back = m_Toolbar->addAction("Back (Left Arrow)");
+    QAction* back = m_Toolbar->addAction(tr("Back (Left Arrow)"));
     back->setIcon(QIcon(getIconPath("arrow-left.png")));
     connect(back, &QAction::triggered, this, &ChessGameWindow::onPrevMoveShortcut);
 
-    QAction* forward = m_Toolbar->addAction("Forward (Right Arrow)");
+    QAction* forward = m_Toolbar->addAction(tr("Forward (Right Arrow)"));
     forward->setIcon(QIcon(getIconPath("arrow-right.png")));
     connect(forward, &QAction::triggered, this, &ChessGameWindow::onNextMoveShortcut);
 
-    QAction* flipBoard = m_Toolbar->addAction("Flip Board (Ctrl+F)");
+    QAction* flipBoard = m_Toolbar->addAction(tr("Flip Board (Ctrl+F)"));
     flipBoard->setIcon(QIcon(getIconPath("flip-board.png")));
     connect(flipBoard, &QAction::triggered, this, &ChessGameWindow::onFlipBoardShortcut);
 
-    m_saveGameAction = m_Toolbar->addAction("Save (Ctrl+S)");
+    m_saveGameAction = m_Toolbar->addAction(tr("Save (Ctrl+S)"));
     m_saveGameAction->setIcon(QIcon(getIconPath("savegame.png")));
     connect(m_saveGameAction, &QAction::triggered, this, &ChessGameWindow::onSavePgnClicked);
 
-    m_gameReviewAction = m_Toolbar->addAction("Game Review");
+    m_gameReviewAction = m_Toolbar->addAction(tr("Game Review"));
     m_gameReviewAction->setIcon(QIcon(getIconPath("sparkles.png")));
     connect(m_gameReviewAction, &QAction::triggered, this, [this]() {
         if (!m_gameReviewDock) return;
@@ -446,19 +442,19 @@ void ChessGameWindow::toolbarSetup()
         m_gameReviewDock->setVisible(!visible);
     });
 
-    m_startEngineAction = m_Toolbar->addAction("Start Engine");
+    m_startEngineAction = m_Toolbar->addAction(tr("Start Engine"));
     m_startEngineAction->setIcon(QIcon(getIconPath("engine-start.png")));
     connect(m_startEngineAction, &QAction::triggered, this, &ChessGameWindow::engineSetup);
 
-    m_stopEngineAction = m_Toolbar->addAction("Stop engine");
+    m_stopEngineAction = m_Toolbar->addAction(tr("Stop engine"));
     m_stopEngineAction->setIcon(QIcon(getIconPath("engine-stop.png")));
     connect(m_stopEngineAction, &QAction::triggered, this, &ChessGameWindow::engineTeardown);
 
-    m_openOpeningExplorerAction = m_Toolbar->addAction("Open Opening Explorer");
+    m_openOpeningExplorerAction = m_Toolbar->addAction(tr("Open Opening Explorer"));
     m_openOpeningExplorerAction->setIcon(QIcon(getIconPath("book.png")));
     connect(m_openOpeningExplorerAction, &QAction::triggered, this, &ChessGameWindow::openingSetup);
 
-    m_closeOpeningExplorerAction = m_Toolbar->addAction("Close Opening Explorer");
+    m_closeOpeningExplorerAction = m_Toolbar->addAction(tr("Close Opening Explorer"));
     m_closeOpeningExplorerAction->setIcon(QIcon(getIconPath("book-off.png")));
     connect(m_closeOpeningExplorerAction, &QAction::triggered, this, &ChessGameWindow::openingTeardown);
     addToolBar(m_Toolbar);
@@ -607,10 +603,10 @@ void ChessGameWindow::notationToolbarSetup()
 {
     m_Toolbar = new QToolBar;
 
-    QPushButton* pasteGame = new QPushButton("Paste");
-    QPushButton* loadPgn = new QPushButton("Load PGN");
-    QPushButton* resetBoard = new QPushButton("Reset");
-    QPushButton* savePgn = new QPushButton("Save");
+    QPushButton* pasteGame = new QPushButton(tr("Paste"));
+    QPushButton* loadPgn = new QPushButton(tr("Load PGN"));
+    QPushButton* resetBoard = new QPushButton(tr("Reset"));
+    QPushButton* savePgn = new QPushButton(tr("Save"));
 
     // horizontal layout for toolbar buttons
     QHBoxLayout* buttonLayout = new QHBoxLayout;

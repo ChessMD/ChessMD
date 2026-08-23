@@ -1,7 +1,3 @@
-/*
-April 11, 2025: File Creation
-*/
-
 #ifndef UCIENGINE_H
 #define UCIENGINE_H
 

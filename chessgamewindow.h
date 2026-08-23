@@ -1,7 +1,3 @@
-/*
-March 18, 2025: File Creation
-*/
-
 #ifndef CHESSGAMEWINDOW_H
 #define CHESSGAMEWINDOW_H
 

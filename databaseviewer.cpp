@@ -150,8 +150,8 @@ void DatabaseViewer::setupUI()
     toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     toolbar->setIconSize(QSize(24, 24));
     
-    QAction* filterAction = new QAction(QIcon(getIconPath("filter.png")), "Filter", this);
-    QAction* addGameAction = new QAction(QIcon(getIconPath("board-icon.png")), "Add Game", this);
+    QAction* filterAction = new QAction(QIcon(getIconPath("filter.png")), tr("Filter"), this);
+    QAction* addGameAction = new QAction(QIcon(getIconPath("board-icon.png")), tr("Add Game"), this);
     
     toolbar->addAction(filterAction);
     toolbar->addAction(addGameAction);
@@ -334,7 +334,7 @@ void DatabaseViewer::importPGN()
 
 
                 QString value;
-                if(tag == "Moves") value = "N/A";
+                if(tag == "Moves") value = tr("N/A");
                 else value = findTag(game.headerInfo, tag, "");
                 dbModel->setData(idx, value);
             }
@@ -548,7 +548,7 @@ void DatabaseViewer::onHeaderContextMenu(const QPoint &pos){
         QRegularExpression regex("[A-Za-z]{0,15}");  
         QValidator* validator = new QRegularExpressionValidator(regex, addEdit);
         addEdit->setValidator(validator);
-        addEdit->setPlaceholderText("e.g ECO, WhiteTitle");
+        addEdit->setPlaceholderText(tr("e.g ECO, WhiteTitle"));
 
         QPushButton* addBtn = new QPushButton(tr("Add Header"), &dialog);
         addLayout->addWidget(addEdit);

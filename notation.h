@@ -1,7 +1,3 @@
-/*
-March 18, 2025: File Creation
-*/
-
 #ifndef NOTATION_H
 #define NOTATION_H
 

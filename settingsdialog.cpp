@@ -45,7 +45,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     QString engineSaved = s.getEngineFile();
     QWidget* enginePage = new QWidget(this);
     QVBoxLayout* engineLayout = new QVBoxLayout(enginePage);
-    QString engineText = "Current engine: " + ((!engineSaved.isEmpty() && QFileInfo::exists(engineSaved)) ? engineSaved : "None");
+    QString engineText = tr("Current engine: %1").arg((!engineSaved.isEmpty() && QFileInfo::exists(engineSaved)) ? engineSaved : tr("None"));
     mEnginePathLabel = new QLabel(engineText, enginePage);
     QPushButton* selectEngineBtn = new QPushButton(tr("Select Engine..."), enginePage);
 
@@ -66,7 +66,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     }
 
     bool openingFilesExist = dir.exists("./opening/openings.bin")  && dir.exists("./opening/openings.headers");
-    QString openingText = QString("Current opening database: ") + (openingFilesExist ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
+    QString openingText = tr("Current opening database: %1").arg(openingFilesExist ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
 	
 	mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);

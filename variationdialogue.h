@@ -1,7 +1,3 @@
-/*
-March 19, 2025: File Creation
-*/
-
 #ifndef VARIATIONDIALOGUE_H
 #define VARIATIONDIALOGUE_H
 

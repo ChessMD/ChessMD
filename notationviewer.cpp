@@ -1,7 +1,3 @@
-/*
-March 18, 2025: File Creation
-*/
-
 #include "notationviewer.h"
 #include "variationdialogue.h"
 #include "chessposition.h"

@@ -1,8 +1,3 @@
-/*
-March 18, 2025: File Creation
-*/
-
-
 #include "notation.h"
 #include "chessposition.h"
 

@@ -1,7 +1,3 @@
-/*
-March 20, 2025: File Creation
-*/
-
 #ifndef CHESSPOSITION_H
 #define CHESSPOSITION_H
 

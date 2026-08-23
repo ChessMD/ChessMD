@@ -1,10 +1,3 @@
-/*
-Chess Tab Host
-Reusable widget that allows for embeds within a custom tab and user event bar.
-History:
-March 18, 2025 - Program Creation
-*/
-
 #include <QPushButton>
 #include <QMouseEvent>
 #include <QCloseEvent>

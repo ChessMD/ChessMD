@@ -403,7 +403,8 @@ bool GameReviewViewer::eventFilter(QObject *watched, QEvent *event)
         QPoint glPt = m_chartView->viewport()->mapToGlobal(vpPt);
 
         QString prefix = QString::number((idx-1)/2+1) + QString(idx%2 ? "." : "...");
-        QString tip = QString("%1%2\nEvaluation: %3").arg(idx ? prefix : "").arg((m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : "Starting Position")).arg(p.y,0,'f',2);
+        const QString moveText = (m_moves[idx]->moveText != "" ? m_moves[idx]->moveText : tr("Starting Position"));
+        QString tip = tr("%1%2\nEvaluation: %3").arg(idx ? prefix : "").arg(moveText).arg(p.y,0,'f',2);
         QToolTip::showText(glPt, tip, m_chartView);
 
         // vertical line

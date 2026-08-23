@@ -1,9 +1,3 @@
-/*
-March 5, 2025: File Creation
-March 18, 2025: Completed PGN Parsing
-April 20, 2025: Overhauled C++ headers with Qt framework
-*/
-
 #include <QDebug>
 #include <QFile>
 

@@ -1,8 +1,3 @@
-/* 
-March 3, 2025: File Creation
-April 20, 2025: Overhauled C++ headers with Qt framework
-*/
-
 #include <vector>
 #include <iostream>
 #include <istream>

@@ -1,7 +1,3 @@
-/*
-April 11, 2025: File Creation
-*/
-
 #include "engineviewer.h"
 #include "chessposition.h"
 #include "chessqsettings.h"

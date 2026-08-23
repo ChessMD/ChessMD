@@ -1,7 +1,3 @@
-/*
-March 19, 2025: File Creation
-*/
-
 #include "variationdialogue.h"
 
 #include <QDebug>
@@ -10,7 +6,7 @@ March 19, 2025: File Creation
 #include <QPushButton>
 
 VariationDialogue::VariationDialogue(QWidget* parent) : QDialog(parent) {
-    setWindowTitle("Select Variation");
+    setWindowTitle(tr("Select Variation"));
     setModal(true);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 

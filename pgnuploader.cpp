@@ -1,7 +1,6 @@
 #include "pgnuploader.h"
 #include "ui_pgnuploader.h"
 
-
 #include <QDebug>
 #include <QFileDialog>
 #include <QPushButton>
@@ -27,7 +26,7 @@ PGNUploader::PGNUploader(QWidget *parent)
 void PGNUploader::getFile(){
 
 
-    QString file_name = QFileDialog::getOpenFileName(this, "Select a chess PGN file", "", "PGN files (*.pgn)");
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Select a chess PGN file"), "", tr("PGN files %1").arg("(*.pgn)"));
 
     ui->plainTextEdit->setPlainText(file_name);
 

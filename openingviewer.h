@@ -1,4 +1,4 @@
- #ifndef OPENINGVIEWER_H
+#ifndef OPENINGVIEWER_H
 #define OPENINGVIEWER_H
 
 #include <QWidget>

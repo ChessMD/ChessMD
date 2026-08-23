@@ -1,7 +1,3 @@
-/*
-March 20, 2025: File Creation
-*/
-
 #include "chessposition.h"
 #include "openingviewer.h"
 

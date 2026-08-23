@@ -68,7 +68,7 @@ void DatabaseLibrary::onDoubleClick(const QModelIndex &index)
         auto *mainWindow = qobject_cast<MainWindow*>(this->window());
         connect(databaseViewer, &DatabaseViewer::saveRequested, mainWindow, &MainWindow::onSaveRequested);
 
-        mainWindow->setStatusBarText("Loading ...");
+        mainWindow->setStatusBarText(tr("Loading..."));
         QApplication::processEvents();
 
         databaseViewer->importPGN();
@@ -99,7 +99,7 @@ void DatabaseLibrary::onClick(const QModelIndex &index)
 
 void DatabaseLibrary::importDatabase()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "Select a chess PGN file", "", "PGN files (*.pgn)");
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Select a chess PGN file"), "", tr("PGN files %1").arg("*.pgn"));
     int row = getFileNameRow(file_name);
     if (row > 0) { // already exist
         listView->setCurrentIndex(model->index(row, 0));
@@ -243,7 +243,7 @@ void DatabaseLibrary::showContextMenu(const QPoint& pos)
 
     QMenu rightClickMenu(listView);
 
-    QAction* deleteAction = rightClickMenu.addAction("Delete");
+    QAction* deleteAction = rightClickMenu.addAction(tr("Delete"));
 
     QAction*  selectedMenuItem = rightClickMenu.exec(globalPos);
 
