@@ -172,7 +172,10 @@ EngineWidget::EngineWidget(const QSharedPointer<NotationMove>& move, QWidget *pa
 				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
 				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
 			} else {
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+				QFileDialog::Options opts;
+				opts |= QFileDialog::DontUseNativeDialog;
+				qDebug() << "Opening engine file dialog (Linux) in" << QDir("./engine").absolutePath();
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"), nullptr, opts);
 			}
 		}
 
@@ -237,7 +240,10 @@ void EngineWidget::onConfigEngineClicked()
 			dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
 			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
 		} else {
-			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+			QFileDialog::Options opts;
+			opts |= QFileDialog::DontUseNativeDialog;
+			qDebug() << "Opening engine file dialog (Linux) in" << QDir("./engine").absolutePath();
+			binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"), nullptr, opts);
 		}
     }
 
@@ -425,5 +431,4 @@ void EngineWidget::onCmdSent(const QString &cmd)
     m_console->append(QStringLiteral(">> %1").arg(cmd));
     m_console->viewport()->repaint(); // force the UI to catch up
 }
-
 

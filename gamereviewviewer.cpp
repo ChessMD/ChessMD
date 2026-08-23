@@ -20,6 +20,7 @@
 #include <QOperatingSystemVersion>
 #include <QPalette>
 #include <QApplication>
+#include <QDebug>
 
 GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidget *parent)
     : QWidget(parent)
@@ -194,7 +195,10 @@ GameReviewViewer::GameReviewViewer(QSharedPointer<NotationMove> rootMove, QWidge
 				dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
 				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), dirBin.filePath("./engine"), tr("(*)"));
 			} else {
-				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"));
+				QFileDialog::Options opts;
+				opts |= QFileDialog::DontUseNativeDialog;
+				qDebug() << "Opening engine file dialog (Linux) in" << QDir("./engine").absolutePath();
+				binary = QFileDialog::getOpenFileName(this, tr("Select a chess engine file"), "./engine", tr("(*)"), nullptr, opts);
 			}
 		}
 
