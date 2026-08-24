@@ -10,10 +10,15 @@ class ChessQSettings  : public QSettings
 public:
     ChessQSettings();
 
+
     void setEngineFile(QString file);
     void loadSettings();
     void saveSettings();
     QString getEngineFile();
+
+    void setOpeningDirectory(const QString &directory);
+    QString getOpeningDirectory() const;
+    static QString defaultOpeningDirectory();
 
 
 protected:

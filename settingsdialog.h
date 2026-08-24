@@ -39,6 +39,7 @@ private slots:
     void onThemeChanged();
     void onLanguageChanged();
     void onDownloadLinkReply(QNetworkReply *reply);
+    void onSelectOpeningDirectoryClicked();
 
 private:
     void importPgnFileStreaming(const QString &file, QProgressBar *progressBar);
@@ -51,7 +52,6 @@ private:
     QComboBox* mThemeComboBox;
     QComboBox* mLanguageComboBox;
     QString mOpeningsPath;
-
     QLabel *mDownloadLinkLabel;
 };
 

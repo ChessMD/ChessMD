@@ -1077,104 +1077,104 @@
 <context>
     <name>OpeningViewer</name>
     <message>
-        <location filename="../openingviewer.cpp" line="471"/>
+        <location filename="../openingviewer.cpp" line="466"/>
         <source>Loading Position...</source>
         <translation>Chargement de la position...</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="474"/>
+        <location filename="../openingviewer.cpp" line="469"/>
         <source>No position data</source>
         <translation>Aucune donnée de position</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="487"/>
+        <location filename="../openingviewer.cpp" line="482"/>
         <source>Move</source>
         <translation>Coups</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="487"/>
-        <location filename="../openingviewer.cpp" line="519"/>
+        <location filename="../openingviewer.cpp" line="482"/>
+        <location filename="../openingviewer.cpp" line="514"/>
         <source>Games</source>
         <translation>Parties</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="487"/>
+        <location filename="../openingviewer.cpp" line="482"/>
         <source>Win %</source>
         <translation>Pourcentage de victoire</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>White</source>
         <translation>Blanc</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>WhiteElo</source>
         <translation>Elo Blanc</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>Black</source>
         <translation>Noir</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>BlackElo</source>
         <translation>Elo Noir</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>Result</source>
         <translation>Résultat</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>Date</source>
         <translation>Date</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="531"/>
+        <location filename="../openingviewer.cpp" line="526"/>
         <source>Event</source>
         <translation>Événement</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="627"/>
+        <location filename="../openingviewer.cpp" line="622"/>
         <source>%1 Games</source>
         <translation>%1 Parties</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="659"/>
+        <location filename="../openingviewer.cpp" line="654"/>
         <source>Starting Position</source>
         <translation>Position de départ</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="659"/>
+        <location filename="../openingviewer.cpp" line="654"/>
         <source>Position after %1%2</source>
         <translation>Position après %1%2</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="665"/>
-        <location filename="../openingviewer.cpp" line="777"/>
+        <location filename="../openingviewer.cpp" line="660"/>
+        <location filename="../openingviewer.cpp" line="772"/>
         <source>Games: 0 of 0 shown</source>
         <translation>Parties : 0 sur 0 affichées</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="666"/>
+        <location filename="../openingviewer.cpp" line="661"/>
         <source>0 Games</source>
         <translation>0 Parties</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="803"/>
+        <location filename="../openingviewer.cpp" line="795"/>
         <source>Games: %1 of %2 shown</source>
         <translation>Parties : %1 sur %2 affichées</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="913"/>
+        <location filename="../openingviewer.cpp" line="905"/>
         <source>Save PGN Game</source>
         <translation>Enregistrer la partie PGN</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="913"/>
+        <location filename="../openingviewer.cpp" line="905"/>
         <source>PGN files %1</source>
         <translation>Fichiers PGN %1</translation>
     </message>
@@ -1183,12 +1183,12 @@
         <translation type="vanished">Fichiers PGN (*.pgn)</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="920"/>
+        <location filename="../openingviewer.cpp" line="912"/>
         <source>Save Error</source>
         <translation>Erreur de sauvegarde</translation>
     </message>
     <message>
-        <location filename="../openingviewer.cpp" line="920"/>
+        <location filename="../openingviewer.cpp" line="912"/>
         <source>Unable to open file for writing.</source>
         <translation>Impossible d&apos;ouvrir le fichier en mode écriture.</translation>
     </message>
@@ -1288,147 +1288,182 @@
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../settingsdialog.cpp" line="26"/>
+        <location filename="../settingsdialog.cpp" line="27"/>
         <source>Settings</source>
         <translation>Paramètres</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="33"/>
+        <location filename="../settingsdialog.cpp" line="34"/>
         <source>Engine</source>
         <translation>Moteur</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="34"/>
+        <location filename="../settingsdialog.cpp" line="35"/>
         <source>Opening</source>
         <translation>Ouverture</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="35"/>
+        <location filename="../settingsdialog.cpp" line="36"/>
         <source>Theme</source>
         <translation>Thème</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="36"/>
+        <location filename="../settingsdialog.cpp" line="37"/>
         <source>Language</source>
         <translation>Langue</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="50"/>
+        <location filename="../settingsdialog.cpp" line="53"/>
         <source>None</source>
         <translation>Aucun</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="52"/>
+        <location filename="../settingsdialog.cpp" line="55"/>
         <source>Select Engine...</source>
         <translation>Sélectionner un moteur...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="74"/>
-        <source>Load PGN...</source>
-        <translation>Charger un PGN...</translation>
+        <location filename="../settingsdialog.cpp" line="72"/>
+        <location filename="../settingsdialog.cpp" line="665"/>
+        <source>Exists!</source>
+        <translation>Existe !</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="75"/>
+        <source>Load PGN...</source>
+        <translation type="vanished">Charger un PGN...</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="77"/>
         <source>In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).</source>
         <translation>Dans %1, les bases de données de moins de 1 GB peuvent être traitées correctement par la plupart des appareils (~10 GB de RAM nécessaires par 1 GB).</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="83"/>
+        <location filename="../settingsdialog.cpp" line="86"/>
         <source>Checking for a remote download link...</source>
         <translation>Vérification d&apos;un lien de téléchargement distant...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="88"/>
+        <location filename="../settingsdialog.cpp" line="91"/>
         <source>After downloading, extract the files and move them under the opening folder.</source>
         <translation>Après le téléchargement, extrayez les fichiers et déplacez-les dans le dossier d&apos;ouverture.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="100"/>
+        <location filename="../settingsdialog.cpp" line="103"/>
         <source>No remote download JSON configured.</source>
         <translation>Aucun fichier JSON de téléchargement distant configuré.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="107"/>
+        <location filename="../settingsdialog.cpp" line="112"/>
         <source>Theme:</source>
         <translation>Thème :</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="109"/>
+        <location filename="../settingsdialog.cpp" line="114"/>
         <source>Light</source>
         <translation>Clair</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="110"/>
+        <location filename="../settingsdialog.cpp" line="115"/>
         <source>Dark</source>
         <translation>Sombre</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="111"/>
+        <location filename="../settingsdialog.cpp" line="116"/>
         <source>System</source>
         <translation>Système</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="120"/>
+        <location filename="../settingsdialog.cpp" line="125"/>
         <source>Theme changes will be applied when you restart the application.</source>
         <translation>Les changements de thème seront appliqués lors de le redémarrage de l&apos;application.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="132"/>
+        <location filename="../settingsdialog.cpp" line="139"/>
         <source>Language:</source>
         <translation>Langue :</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="50"/>
-        <location filename="../settingsdialog.cpp" line="183"/>
-        <location filename="../settingsdialog.cpp" line="282"/>
+        <location filename="../settingsdialog.cpp" line="76"/>
+        <location filename="../settingsdialog.cpp" line="616"/>
+        <location filename="../settingsdialog.cpp" line="652"/>
+        <source>Select opening database directory</source>
+        <translation>Sélectionner le dossier de la base de données d&apos;ouvertures</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="660"/>
+        <source>Invalid Opening Database</source>
+        <translation>Base de données d&apos;ouvertures invalide</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="660"/>
+        <source>The selected directory does not contain both openings.bin and openings.headers.</source>
+        <translation>Le dossier sélectionné ne contient pas à la fois les fichiers openings.bin et openings.headers.</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="72"/>
+        <location filename="../settingsdialog.cpp" line="665"/>
+        <source>Opening database: %1
+Location: %2</source>
+        <translation type="unfinished">Base de données d&apos;ouvertures : %1
+Emplacement : %2</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="72"/>
+        <source>Not found</source>
+        <translation>Introuvable</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="53"/>
+        <location filename="../settingsdialog.cpp" line="193"/>
+        <location filename="../settingsdialog.cpp" line="292"/>
         <source>Current engine: %1</source>
         <translation>Moteur actuel : %1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="147"/>
-        <location filename="../settingsdialog.cpp" line="159"/>
+        <location filename="../settingsdialog.cpp" line="154"/>
+        <location filename="../settingsdialog.cpp" line="166"/>
         <source>Language changes will be applied when you restart the application.</source>
         <translation>Les changements de langue seront appliqués lors de le redémarrage de l&apos;application.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="192"/>
+        <location filename="../settingsdialog.cpp" line="202"/>
         <source>Failed to fetch remote link (no reply).</source>
         <translation>Échec du chargement du lien distant (aucune réponse).</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="197"/>
+        <location filename="../settingsdialog.cpp" line="207"/>
         <source>Failed to fetch remote link: %1</source>
         <translation>Échec du chargement du lien distant : %1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="208"/>
+        <location filename="../settingsdialog.cpp" line="218"/>
         <source>Invalid JSON from server.</source>
         <translation>JSON invalide reçu du serveur.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="241"/>
+        <location filename="../settingsdialog.cpp" line="251"/>
         <source>No download link found in JSON.</source>
         <translation>Aucun lien de téléchargement trouvé dans le JSON.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="249"/>
+        <location filename="../settingsdialog.cpp" line="259"/>
         <source>Found link is invalid or unsupported.</source>
         <translation>Le lien trouvé est invalide ou non pris en charge.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="253"/>
+        <location filename="../settingsdialog.cpp" line="263"/>
         <source>Download processsed database with 1+ million games (open link in browser, requires 3 GB disk space)</source>
         <translation>Téléchargement de la base de données traitée avec 1+ million de parties (ouvrir le lien dans le navigateur, nécessite 3 GB d&apos;espace disque)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="265"/>
-        <location filename="../settingsdialog.cpp" line="270"/>
-        <location filename="../settingsdialog.cpp" line="272"/>
+        <location filename="../settingsdialog.cpp" line="275"/>
+        <location filename="../settingsdialog.cpp" line="280"/>
+        <location filename="../settingsdialog.cpp" line="282"/>
         <source>Select a chess engine file</source>
         <translation>Sélectionnez un fichier d&apos;engine d&apos;échecs</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="265"/>
+        <location filename="../settingsdialog.cpp" line="275"/>
         <source>Executable files (*.exe)</source>
         <translation>Fichiers exécutables (*.exe)</translation>
     </message>
@@ -1437,39 +1472,56 @@
         <translation type="obsolete">(*)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="349"/>
+        <location filename="../settingsdialog.cpp" line="367"/>
         <source>Failed to open file</source>
         <translation>Échec lors de l&apos;ouverture du fichier</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="367"/>
+        <location filename="../settingsdialog.cpp" line="385"/>
         <source>Failed to create temporary headers file</source>
         <translation>Échec lors de la création du fichier d&apos;en-têtes temporaire</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="544"/>
         <source>Failed to write headers file</source>
-        <translation>Échec lors de l&apos;écriture du fichier d&apos;en-têtes</translation>
+        <translation type="vanished">Échec lors de l&apos;écriture du fichier d&apos;en-têtes</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="71"/>
-        <location filename="../settingsdialog.cpp" line="583"/>
-        <location filename="../settingsdialog.cpp" line="614"/>
+        <location filename="../settingsdialog.cpp" line="601"/>
         <source>Current opening database: %1</source>
         <translation>Base de données d&apos;ouverture actuelle : %1</translation>
     </message>
     <message>
+        <location filename="../settingsdialog.cpp" line="556"/>
+        <source>Failed to create opening database directory</source>
+        <translation>Impossible de créer le dossier de la base de données d&apos;ouvertures</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="75"/>
+        <source>Create new opening database</source>
+        <translation>Créer une nouvelle base de données d&apos;ouvertures</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="564"/>
+        <source>Failed to write opening headers file</source>
+        <translation>Impossible d&apos;écrire le fichier d&apos;en-têtes des ouvertures</translation>
+    </message>
+    <message>
         <location filename="../settingsdialog.cpp" line="591"/>
+        <source>Failed to write opening binary file</source>
+        <translation>Impossible d&apos;écrire le fichier binaire des ouvertures</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="609"/>
         <source>Select a chess PGN file</source>
         <translation>Sélectionnez un fichier PGN d&apos;échecs</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="591"/>
+        <location filename="../settingsdialog.cpp" line="609"/>
         <source>PGN files (*.pgn)</source>
         <translation>Fichiers PGN (*.pgn)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="595"/>
+        <location filename="../settingsdialog.cpp" line="624"/>
         <source>Processing PGN file...</source>
         <translation>Traitement du fichier PGN...</translation>
     </message>

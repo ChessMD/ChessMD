@@ -21,6 +21,7 @@ const quint64 MAGIC = 0x4F50454E424B3131ULL;
 const quint32 VERSION = 1;
 
 bool OpeningInfo::serialize(const QString& path) const {
+    qDebug() << path;
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly)) {
         qDebug() << "serialize: cannot open" << path;
@@ -451,16 +452,10 @@ void ResultBarDelegate::paint(QPainter *p, const QStyleOptionViewItem &option, c
 OpeningViewer::OpeningViewer(QWidget *parent)
     : QWidget{parent}
 {
-	
-    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-
-    // load opening book
-    QDir dirBin(QDir::current());
-    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
-        dirBin.setPath(QApplication::applicationDirPath());
-        dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
-    }
-    QString finalBinPath = dirBin.filePath("./opening/openings.bin");
+    ChessQSettings settings;
+    QDir openingDir(settings.getOpeningDirectory());
+    
+    QString finalBinPath = openingDir.filePath("openings.bin");
     mOpeningBookLoaded = mOpeningInfo.deserialize(finalBinPath);
 	
     // moves list side
@@ -780,13 +775,10 @@ void OpeningViewer::updateGamesList(const int openingIndex, const PositionWinrat
 
     mPendingGameIDs = mOpeningInfo.readGameIDs(openingIndex);
 	
-	QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-    QDir dirHeads(QDir::current());
-    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
-        dirHeads.setPath(QApplication::applicationDirPath());
-        dirHeads.cdUp(), dirHeads.cdUp(), dirHeads.cdUp();
-    }
-    QString finalHeaderPath = dirHeads.filePath("./opening/openings.headers");
+    ChessQSettings settings;
+    QDir openingDir(settings.getOpeningDirectory());
+    
+    QString finalHeaderPath = openingDir.filePath("openings.headers");
     mPendingGames = loadGameHeadersBatch(finalHeaderPath, mPendingGameIDs);
 	
     mGamesList->setRowCount(0);

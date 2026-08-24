@@ -18,6 +18,7 @@
 #include <QSettings>
 #include <QComboBox>
 #include <QTemporaryFile>
+#include <QMessageBox>
 #include <fstream>
 
 SettingsDialog::SettingsDialog(QWidget* parent)
@@ -43,7 +44,9 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
     ChessQSettings s; s.loadSettings();
 
-    // engine page
+/*----------------------------/
+\   engine page               \
+/----------------------------*/
     QString engineSaved = s.getEngineFile();
     QWidget* enginePage = new QWidget(this);
     QVBoxLayout* engineLayout = new QVBoxLayout(enginePage);
@@ -56,25 +59,25 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     engineLayout->addStretch();
     mStackedWidget->addWidget(enginePage);
     
-    // openings page
+/*----------------------------/
+\   openings page             \
+/----------------------------*/
     QWidget* openingsPage = new QWidget(this);
     QVBoxLayout* openingsLayout = new QVBoxLayout(openingsPage);
 	
-    QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-    QDir dir;
-    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
-        dir.setPath(QApplication::applicationDirPath());
-        dir.cdUp(), dir.cdUp(),dir.cdUp();
-    }
+    ChessQSettings settings;
+    const QString openingDirectory = settings.getOpeningDirectory();
+    QDir openingDir(openingDirectory);
+    bool openingFilesExist = openingDir.exists("openings.bin") && openingDir.exists("openings.headers");
+    QString openingText = tr("Opening database: %1\nLocation: %2").arg(openingFilesExist ? tr("Exists!") : tr("Not found"), openingDirectory);
 
-    bool openingFilesExist = dir.exists("./opening/openings.bin")  && dir.exists("./opening/openings.headers");
-    QString openingText = tr("Current opening database: %1").arg(openingFilesExist ? "Exists! Uploading a new PGN will replace the existing database." : "Not found.");
-	
 	mOpeningsPathLabel = new QLabel(openingText, openingsPage);
-    QPushButton* loadPgnBtn = new QPushButton(tr("Load PGN..."), openingsPage);
+    QPushButton* loadPgnBtn = new QPushButton(tr("Create new opening database"), openingsPage);
+    QPushButton *selectOpeningDirBtn = new QPushButton(tr("Select opening database directory"), openingsPage);
     QLabel* info = new QLabel(tr("In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).").arg(QCoreApplication::applicationVersion()), openingsPage);
     openingsLayout->addWidget(mOpeningsPathLabel);
     openingsLayout->addWidget(loadPgnBtn);
+    openingsLayout->addWidget(selectOpeningDirBtn);
     openingsLayout->addWidget(info);
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
@@ -100,7 +103,9 @@ SettingsDialog::SettingsDialog(QWidget* parent)
         mDownloadLinkLabel->setText(tr("No remote download JSON configured."));
     }
     
-    // theme page
+/*----------------------------/
+\   theme page                \
+/----------------------------*/
     QWidget* themePage = new QWidget(this);
     QVBoxLayout* themeLayout = new QVBoxLayout(themePage);
 
@@ -126,7 +131,9 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     themeLayout->addStretch();
     mStackedWidget->addWidget(themePage);
 
-    // language page
+/*----------------------------/
+\   language page             \
+/----------------------------*/
     QWidget* languagePage = new QWidget(this);
     QVBoxLayout* languageLayout = new QVBoxLayout(languagePage);
     QLabel* languageLabel = new QLabel(tr("Language:"), languagePage);
@@ -167,16 +174,19 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     languageLayout->addStretch();
     mStackedWidget->addWidget(languagePage);
 
+/*----------------------------/
+\   final setup               \
+/----------------------------*/
     mainLayout->addWidget(mStackedWidget);
 
     connect(mCategoryList, &QListWidget::currentRowChanged, mStackedWidget, &QStackedWidget::setCurrentIndex);
     mCategoryList->setCurrentRow(0);
     connect(loadPgnBtn, &QPushButton::clicked, this, &SettingsDialog::onLoadPgnClicked);
+    connect(selectOpeningDirBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectOpeningDirectoryClicked);
     connect(selectEngineBtn, &QPushButton::clicked, this, &SettingsDialog::onSelectEngineClicked);
     connect(mThemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onThemeChanged);
     connect(mLanguageComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsDialog::onLanguageChanged);
 
-    ChessQSettings settings;
     QString enginePath = settings.getEngineFile();
     if (!enginePath.isEmpty()) {
         QFileInfo engineInfo(enginePath);
@@ -288,8 +298,16 @@ bool finalizeHeaderFile(const QString &finalPath, const QString &tmpPath, const 
     QFile tmp(tmpPath);
     if (!tmp.open(QIODevice::ReadOnly)) return false;
 
+    QDir dir(QFileInfo(finalPath).absolutePath());
+    if (!dir.exists() && !dir.mkpath(".")) {
+        tmp.close();
+        return false;
+    }
+
     QFile out(finalPath);
     if (!out.open(QIODevice::WriteOnly)) {
+        qDebug() << "Failed to open:" << finalPath;
+        qDebug() << "Error:" << out.errorString();
         tmp.close();
         return false;
     }
@@ -529,19 +547,21 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
 
     // clean up tmp file (we need it closed before finalize)
     tmpHeader.close();
-	
-	QOperatingSystemVersion osVersion = QOperatingSystemVersion::current();
-	
-    // finalize and write final headers file
-    QDir dirHeads(QDir::current());
-    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
-        dirHeads.setPath(QApplication::applicationDirPath());
-        dirHeads.cdUp(), dirHeads.cdUp(), dirHeads.cdUp();
-    }
-    QString finalHeaderPath = dirHeads.filePath("./opening/openings.headers");
+        
+    ChessQSettings settings;
+    QDir openingDir(settings.getOpeningDirectory());
 
+    if (!openingDir.exists() && !openingDir.mkpath(".")) {
+        mOpeningsPathLabel->setText(
+            tr("Failed to create opening database directory")
+        );
+        if (progressBar) progressBar->deleteLater();
+        return;
+    }
+
+    QString finalHeaderPath = openingDir.filePath("openings.headers");
     if (!finalizeHeaderFile(finalHeaderPath, tmpHeaderPath, headerRelativeOffsets)) {
-        mOpeningsPathLabel->setText(tr("Failed to write headers file"));
+        mOpeningsPathLabel->setText(tr("Failed to write opening headers file"));
         if (progressBar) progressBar->deleteLater();
         return;
     }
@@ -566,14 +586,12 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
         openingInfo.draw.push_back(winrates.draw);
     }
 
-    // serialize openings.bin same as before
-	QDir dirBin(QDir::current());
-    if (osVersion.type() == QOperatingSystemVersion::MacOS) {
-        dirBin.setPath(QApplication::applicationDirPath());
-        dirBin.cdUp(), dirBin.cdUp(), dirBin.cdUp();
+    QString finalBinPath = openingDir.filePath("openings.bin");
+    if (!openingInfo.serialize(finalBinPath)) {
+        mOpeningsPathLabel->setText(tr("Failed to write opening binary file"));
+        if (progressBar) progressBar->deleteLater();
+        return;
     }
-    QString finalBinPath = dirBin.filePath("./opening/openings.bin");
-    openingInfo.serialize(finalBinPath);
 
     // finish UI
     if (progressBar) {
@@ -589,7 +607,18 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
 
 void SettingsDialog::onLoadPgnClicked() {
     QString file = QFileDialog::getOpenFileName(this, tr("Select a chess PGN file"), QString(), tr("PGN files (*.pgn)"));
-    if (file.isEmpty()) return;
+    if (file.isEmpty()) {
+        return;
+    }
+
+    ChessQSettings settings;
+    const QString currentDirectory = settings.getOpeningDirectory();
+    const QString selectedDirectory = QFileDialog::getExistingDirectory(this, tr("Select opening database directory"), currentDirectory, QFileDialog::ShowDirsOnly);
+    if (selectedDirectory.isEmpty()) {
+        return;
+    }
+
+    settings.setOpeningDirectory(selectedDirectory);
 
     mOpeningsPath = file;
     mOpeningsPathLabel->setText(tr("Processing PGN file..."));
@@ -610,12 +639,30 @@ void SettingsDialog::onLoadPgnClicked() {
     if (progressBar && !progressBar->parent()) {
         progressBar->deleteLater();
     }
-
-    mOpeningsPathLabel->setText(tr("Current opening database: %1").arg(file));
 }
 
 QString SettingsDialog::getOpeningsPath() const {
     return mOpeningsPath;
+}
+
+void SettingsDialog::onSelectOpeningDirectoryClicked()
+{
+    ChessQSettings settings;
+    const QString currentDirectory = settings.getOpeningDirectory();
+    const QString selectedDirectory = QFileDialog::getExistingDirectory(this, tr("Select opening database directory"), currentDirectory, QFileDialog::ShowDirsOnly);
+
+    if (selectedDirectory.isEmpty()) {
+        return;
+    }
+
+    QDir openingDir(selectedDirectory);
+    if (!openingDir.exists("openings.bin") || !openingDir.exists("openings.headers")){
+        QMessageBox::warning(this, tr("Invalid Opening Database"), tr("The selected directory does not contain both openings.bin and openings.headers."));
+        return;
+    }
+
+    settings.setOpeningDirectory(selectedDirectory);
+    mOpeningsPathLabel->setText(tr("Opening database: %1\nLocation: %2").arg(tr("Exists!"), selectedDirectory));
 }
 
 void SettingsDialog::onThemeChanged() {
