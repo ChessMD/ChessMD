@@ -29,6 +29,7 @@ public:
     const QVector<Language>& supportedLanguages() const;
     bool setLanguage(int langIndex);
     bool initializeLanguage();
+    int currentLanguage();
 
 private:
     explicit TranslationManager();

@@ -1288,141 +1288,147 @@
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../settingsdialog.cpp" line="25"/>
+        <location filename="../settingsdialog.cpp" line="26"/>
         <source>Settings</source>
         <translation>Paramètres</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="32"/>
+        <location filename="../settingsdialog.cpp" line="33"/>
         <source>Engine</source>
         <translation>Moteur</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="33"/>
+        <location filename="../settingsdialog.cpp" line="34"/>
         <source>Opening</source>
         <translation>Ouverture</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="34"/>
+        <location filename="../settingsdialog.cpp" line="35"/>
         <source>Theme</source>
         <translation>Thème</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="35"/>
+        <location filename="../settingsdialog.cpp" line="36"/>
         <source>Language</source>
         <translation>Langue</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="48"/>
+        <location filename="../settingsdialog.cpp" line="50"/>
         <source>None</source>
         <translation>Aucun</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="50"/>
+        <location filename="../settingsdialog.cpp" line="52"/>
         <source>Select Engine...</source>
         <translation>Sélectionner un moteur...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="72"/>
+        <location filename="../settingsdialog.cpp" line="74"/>
         <source>Load PGN...</source>
         <translation>Charger un PGN...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="73"/>
+        <location filename="../settingsdialog.cpp" line="75"/>
         <source>In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).</source>
         <translation>Dans %1, les bases de données de moins de 1 GB peuvent être traitées correctement par la plupart des appareils (~10 GB de RAM nécessaires par 1 GB).</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="81"/>
+        <location filename="../settingsdialog.cpp" line="83"/>
         <source>Checking for a remote download link...</source>
         <translation>Vérification d&apos;un lien de téléchargement distant...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="86"/>
+        <location filename="../settingsdialog.cpp" line="88"/>
         <source>After downloading, extract the files and move them under the opening folder.</source>
         <translation>Après le téléchargement, extrayez les fichiers et déplacez-les dans le dossier d&apos;ouverture.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="98"/>
+        <location filename="../settingsdialog.cpp" line="100"/>
         <source>No remote download JSON configured.</source>
         <translation>Aucun fichier JSON de téléchargement distant configuré.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="105"/>
+        <location filename="../settingsdialog.cpp" line="107"/>
         <source>Theme:</source>
         <translation>Thème :</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="107"/>
+        <location filename="../settingsdialog.cpp" line="109"/>
         <source>Light</source>
         <translation>Clair</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="108"/>
+        <location filename="../settingsdialog.cpp" line="110"/>
         <source>Dark</source>
         <translation>Sombre</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="109"/>
+        <location filename="../settingsdialog.cpp" line="111"/>
         <source>System</source>
         <translation>Système</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="118"/>
+        <location filename="../settingsdialog.cpp" line="120"/>
         <source>Theme changes will be applied when you restart the application.</source>
         <translation>Les changements de thème seront appliqués lors de le redémarrage de l&apos;application.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="130"/>
+        <location filename="../settingsdialog.cpp" line="132"/>
         <source>Language:</source>
         <translation>Langue :</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="48"/>
-        <location filename="../settingsdialog.cpp" line="164"/>
-        <location filename="../settingsdialog.cpp" line="263"/>
+        <location filename="../settingsdialog.cpp" line="50"/>
+        <location filename="../settingsdialog.cpp" line="183"/>
+        <location filename="../settingsdialog.cpp" line="282"/>
         <source>Current engine: %1</source>
         <translation>Moteur actuel : %1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="173"/>
+        <location filename="../settingsdialog.cpp" line="147"/>
+        <location filename="../settingsdialog.cpp" line="159"/>
+        <source>Language changes will be applied when you restart the application.</source>
+        <translation>Les changements de langue seront appliqués lors de le redémarrage de l&apos;application.</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="192"/>
         <source>Failed to fetch remote link (no reply).</source>
         <translation>Échec du chargement du lien distant (aucune réponse).</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="178"/>
+        <location filename="../settingsdialog.cpp" line="197"/>
         <source>Failed to fetch remote link: %1</source>
         <translation>Échec du chargement du lien distant : %1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="189"/>
+        <location filename="../settingsdialog.cpp" line="208"/>
         <source>Invalid JSON from server.</source>
         <translation>JSON invalide reçu du serveur.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="222"/>
+        <location filename="../settingsdialog.cpp" line="241"/>
         <source>No download link found in JSON.</source>
         <translation>Aucun lien de téléchargement trouvé dans le JSON.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="230"/>
+        <location filename="../settingsdialog.cpp" line="249"/>
         <source>Found link is invalid or unsupported.</source>
         <translation>Le lien trouvé est invalide ou non pris en charge.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="234"/>
+        <location filename="../settingsdialog.cpp" line="253"/>
         <source>Download processsed database with 1+ million games (open link in browser, requires 3 GB disk space)</source>
         <translation>Téléchargement de la base de données traitée avec 1+ million de parties (ouvrir le lien dans le navigateur, nécessite 3 GB d&apos;espace disque)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="246"/>
-        <location filename="../settingsdialog.cpp" line="251"/>
-        <location filename="../settingsdialog.cpp" line="253"/>
+        <location filename="../settingsdialog.cpp" line="265"/>
+        <location filename="../settingsdialog.cpp" line="270"/>
+        <location filename="../settingsdialog.cpp" line="272"/>
         <source>Select a chess engine file</source>
         <translation>Sélectionnez un fichier d&apos;engine d&apos;échecs</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="246"/>
+        <location filename="../settingsdialog.cpp" line="265"/>
         <source>Executable files (*.exe)</source>
         <translation>Fichiers exécutables (*.exe)</translation>
     </message>
@@ -1431,39 +1437,39 @@
         <translation type="obsolete">(*)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="330"/>
+        <location filename="../settingsdialog.cpp" line="349"/>
         <source>Failed to open file</source>
         <translation>Échec lors de l&apos;ouverture du fichier</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="348"/>
+        <location filename="../settingsdialog.cpp" line="367"/>
         <source>Failed to create temporary headers file</source>
         <translation>Échec lors de la création du fichier d&apos;en-têtes temporaire</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="525"/>
+        <location filename="../settingsdialog.cpp" line="544"/>
         <source>Failed to write headers file</source>
         <translation>Échec lors de l&apos;écriture du fichier d&apos;en-têtes</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="69"/>
-        <location filename="../settingsdialog.cpp" line="564"/>
-        <location filename="../settingsdialog.cpp" line="595"/>
+        <location filename="../settingsdialog.cpp" line="71"/>
+        <location filename="../settingsdialog.cpp" line="583"/>
+        <location filename="../settingsdialog.cpp" line="614"/>
         <source>Current opening database: %1</source>
         <translation>Base de données d&apos;ouverture actuelle : %1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="572"/>
+        <location filename="../settingsdialog.cpp" line="591"/>
         <source>Select a chess PGN file</source>
         <translation>Sélectionnez un fichier PGN d&apos;échecs</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="572"/>
+        <location filename="../settingsdialog.cpp" line="591"/>
         <source>PGN files (*.pgn)</source>
         <translation>Fichiers PGN (*.pgn)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="576"/>
+        <location filename="../settingsdialog.cpp" line="595"/>
         <source>Processing PGN file...</source>
         <translation>Traitement du fichier PGN...</translation>
     </message>

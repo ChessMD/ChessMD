@@ -3,6 +3,7 @@
 #include "chessqsettings.h"
 #include "openingviewer.h"
 #include "translationmanager.h"
+#include "helpers.h"
 
 #include <QListWidget>
 #include <QStackedWidget>
@@ -29,10 +30,11 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
     mCategoryList = new QListWidget(this);
     mCategoryList->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    mCategoryList->addItem(tr("Engine"));
-    mCategoryList->addItem(tr("Opening"));
-    mCategoryList->addItem(tr("Theme"));
-    mCategoryList->addItem(tr("Language"));
+    mCategoryList->addItem(new QListWidgetItem(QIcon(getIconPath("engine.png")), tr("Engine")));
+    mCategoryList->addItem(new QListWidgetItem(QIcon(getIconPath("book.png")), tr("Opening")));
+    mCategoryList->addItem(new QListWidgetItem(QIcon(getIconPath("edit.png")), tr("Theme")));
+    mCategoryList->addItem(new QListWidgetItem(QIcon(getIconPath("translate.png")), tr("Language")));
+    mCategoryList->setIconSize(QSize(20, 20));
     mCategoryList->setFixedWidth(120);
     mainLayout->addWidget(mCategoryList);
 
@@ -116,7 +118,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     else mThemeComboBox->setCurrentIndex(0);
 
     QLabel* themeInfo = new QLabel(tr("Theme changes will be applied when you restart the application."), themePage);
-    themeInfo->setStyleSheet("color: palette(text); font-size: 11px;"); 
+    themeInfo->setStyleSheet("color: palette(text); font-size: 11px;");
 
     themeLayout->addWidget(themeLabel);
     themeLayout->addWidget(mThemeComboBox);
@@ -135,18 +137,35 @@ SettingsDialog::SettingsDialog(QWidget* parent)
         mLanguageComboBox->addItem(language.name);
     }
 
-    int curLangIndex = tsettings.value("language").toInt();
+    int curLangIndex = TranslationManager::instance().currentLanguage();
     if (curLangIndex < 0 || curLangIndex >= supportedLanguages.size()) {
+        TranslationManager::instance().setLanguage(0);
         curLangIndex = 0; // english fallback
     }
     mLanguageComboBox->setCurrentIndex(curLangIndex);
 
+    QLabel* languageInfo = new QLabel(tr("Language changes will be applied when you restart the application."), languagePage);
+    languageInfo->setStyleSheet("color: palette(text); font-size: 11px;");
+
+    connect(mLanguageComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), languageInfo, [this, languageInfo](){
+        QString infoText = "Language changes will be applied when you restart the application.";
+        int index = this->mLanguageComboBox->currentIndex();
+        auto supportedLanguages = TranslationManager::instance().supportedLanguages();
+        if (index < 0 || index >= supportedLanguages.size() || index == 0){
+            languageInfo->setText(infoText); // english
+        } else {
+            QTranslator translator;
+            if (translator.load(QString(":/i18n/ChessMD_%1.qm").arg(supportedLanguages[index].code))) {
+                languageInfo->setText(translator.translate("SettingsDialog", "Language changes will be applied when you restart the application."));
+            }
+        }
+    });
+
     languageLayout->addWidget(languageLabel);
     languageLayout->addWidget(mLanguageComboBox);
+    languageLayout->addWidget(languageInfo);
     languageLayout->addStretch();
-
     mStackedWidget->addWidget(languagePage);
-
 
     mainLayout->addWidget(mStackedWidget);
 
@@ -628,7 +647,8 @@ void SettingsDialog::onLanguageChanged() {
         index = 0; // english fallback
     }
 
-    TranslationManager::instance().setLanguage(index);
+    // TranslationManager::instance().setLanguage(index);
+    // ^ uncomment when implementing instant language switching ^
 
     QSettings settings;
     settings.setValue("language", index);

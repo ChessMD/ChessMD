@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QSettings>
+#include <QLocale>
 
 const QVector<Language> TranslationManager::m_supportedLanguages = {
     {"en", "English"},
@@ -12,17 +13,32 @@ const QVector<Language> TranslationManager::m_supportedLanguages = {
 
 TranslationManager::TranslationManager() = default;
 
+int TranslationManager::currentLanguage(){
+    return m_curLangIndex;
+}
+
 bool TranslationManager::initializeLanguage()
 {
+    // attempt saved preference first
     QSettings settings;
-
-    int curLangIndex = settings.value("language").toInt();
-    if (curLangIndex < 0 || curLangIndex >= m_supportedLanguages.size()) {
-        m_curLangIndex = 0;
-        return false;
+    int curLangIndex = settings.value("language", -1).toInt();
+    if (curLangIndex >= 0 && curLangIndex < m_supportedLanguages.size()){
+        return setLanguage(curLangIndex);
     }
-    setLanguage(curLangIndex);
-    return true;
+
+    // use system language for first-time launch or fallback
+    const QStringList uiLanguages = QLocale::system().uiLanguages();
+    for (const QString &localeStr: uiLanguages) {
+        QLocale sysLocale(localeStr);
+        QString systemLangCode = QLocale::languageToCode(sysLocale.language());
+        for (int i = 0; i < m_supportedLanguages.size(); i++) {
+            if (systemLangCode == m_supportedLanguages[i].code) {
+                return setLanguage(i);
+            }
+        }
+    }
+
+    return false;
 }
 
 TranslationManager& TranslationManager::instance()
@@ -42,9 +58,9 @@ bool TranslationManager::setLanguage(int langIndex)
         return false;
     }
 
-    if (m_curLangIndex == langIndex){
-        return true;
-    }
+    // if (m_curLangIndex == langIndex){
+    //     return false;
+    // }
 
     if (m_supportedLanguages[langIndex].code == "en"){
         if (m_translator) {

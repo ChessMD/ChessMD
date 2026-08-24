@@ -73,5 +73,7 @@
         <file>img/white_icons/flag.png</file>
         <file>img/white_icons/flip-board.png</file>
         <file>img/white_icons/robot-face.png</file>
+        <file>img/translate.png</file>
+        <file>img/white_icons/translate.png</file>
     </qresource>
 </RCC>
