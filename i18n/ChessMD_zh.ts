@@ -1221,43 +1221,43 @@
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../settingsdialog.cpp" line="27"/>
+        <location filename="../settingsdialog.cpp" line="29"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="34"/>
+        <location filename="../settingsdialog.cpp" line="36"/>
         <source>Engine</source>
         <translation>引擎</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="35"/>
+        <location filename="../settingsdialog.cpp" line="37"/>
         <source>Opening</source>
         <translation>开局</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="36"/>
+        <location filename="../settingsdialog.cpp" line="38"/>
         <source>Theme</source>
         <translation>主题</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="37"/>
+        <location filename="../settingsdialog.cpp" line="39"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="53"/>
+        <location filename="../settingsdialog.cpp" line="55"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="55"/>
+        <location filename="../settingsdialog.cpp" line="57"/>
         <source>Select Engine...</source>
         <translation>选择引擎...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="72"/>
-        <location filename="../settingsdialog.cpp" line="665"/>
+        <location filename="../settingsdialog.cpp" line="74"/>
+        <location filename="../settingsdialog.cpp" line="671"/>
         <source>Exists!</source>
         <translation>已存在！</translation>
     </message>
@@ -1266,191 +1266,214 @@
         <translation type="vanished">加载PGN...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="77"/>
         <source>In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).</source>
-        <translation>在%1中，大多数设备可以处理小于1GB的数据库（每1GB需要约10GB内存）。</translation>
+        <translation type="vanished">在%1中，大多数设备可以处理小于1GB的数据库（每1GB需要约10GB内存）。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="86"/>
+        <location filename="../settingsdialog.cpp" line="103"/>
         <source>Checking for a remote download link...</source>
         <translation>查找远程下载链接...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="91"/>
+        <location filename="../settingsdialog.cpp" line="108"/>
         <source>After downloading, extract the files and move them under the opening folder.</source>
         <translation>下载后，解压文件并将它们移动到开局文件夹下。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="103"/>
+        <location filename="../settingsdialog.cpp" line="120"/>
         <source>No remote download JSON configured.</source>
         <translation>未配置远程下载JSON。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="112"/>
+        <location filename="../settingsdialog.cpp" line="129"/>
         <source>Theme:</source>
         <translation>主题:</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="114"/>
+        <location filename="../settingsdialog.cpp" line="131"/>
         <source>Light</source>
         <translation>浅色</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="115"/>
+        <location filename="../settingsdialog.cpp" line="132"/>
         <source>Dark</source>
         <translation>深色</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="116"/>
+        <location filename="../settingsdialog.cpp" line="133"/>
         <source>System</source>
         <translation>系统</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="125"/>
+        <location filename="../settingsdialog.cpp" line="142"/>
         <source>Theme changes will be applied when you restart the application.</source>
         <translation>主题更改将在重启应用程序后生效。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="139"/>
+        <location filename="../settingsdialog.cpp" line="156"/>
         <source>Language:</source>
         <translation>语言:</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="76"/>
-        <location filename="../settingsdialog.cpp" line="616"/>
-        <location filename="../settingsdialog.cpp" line="652"/>
+        <location filename="../settingsdialog.cpp" line="622"/>
+        <location filename="../settingsdialog.cpp" line="658"/>
         <source>Select opening database directory</source>
         <translation>选择开局数据库目录</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="72"/>
-        <location filename="../settingsdialog.cpp" line="665"/>
+        <location filename="../settingsdialog.cpp" line="74"/>
+        <location filename="../settingsdialog.cpp" line="671"/>
         <source>Opening database: %1
 Location: %2</source>
-        <translation type="unfinished">开局数据库：%1
+        <translation>开局数据库：%1
 位置：%2</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="72"/>
+        <location filename="../settingsdialog.cpp" line="74"/>
         <source>Not found</source>
         <translation>未找到</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="53"/>
-        <location filename="../settingsdialog.cpp" line="193"/>
-        <location filename="../settingsdialog.cpp" line="292"/>
+        <location filename="../settingsdialog.cpp" line="55"/>
+        <location filename="../settingsdialog.cpp" line="199"/>
+        <location filename="../settingsdialog.cpp" line="298"/>
         <source>Current engine: %1</source>
         <translation>当前引擎: %1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="154"/>
-        <location filename="../settingsdialog.cpp" line="166"/>
+        <location filename="../settingsdialog.cpp" line="78"/>
+        <source>Switch opening database directory</source>
+        <translation>更改开局数据库目录</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="79"/>
+        <source>Convert a PGN to an opening database. RAM usage per PGN size in %1: 10 GB to 1 GB.</source>
+        <translation>将 PGN 转换为开局数据库。PGN 大小为 %1 时，内存使用量约为 10 GB/1 GB。</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="80"/>
+        <source>The new directory should contain openings.bin and openings.header.</source>
+        <translation>新目录应包含 openings.bin 和 openings.header。</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="172"/>
+        <location filename="../settingsdialog.cpp" line="703"/>
         <source>Language changes will be applied when you restart the application.</source>
         <translation>语言更改将在重启应用程序后生效。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="202"/>
+        <location filename="../settingsdialog.cpp" line="208"/>
         <source>Failed to fetch remote link (no reply).</source>
         <translation>无法获取远程链接（无响应）。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="207"/>
+        <location filename="../settingsdialog.cpp" line="213"/>
         <source>Failed to fetch remote link: %1</source>
         <translation>无法获取远程链接：%1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="218"/>
+        <location filename="../settingsdialog.cpp" line="224"/>
         <source>Invalid JSON from server.</source>
         <translation>从服务器获取的JSON无效。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="251"/>
+        <location filename="../settingsdialog.cpp" line="257"/>
         <source>No download link found in JSON.</source>
         <translation>在JSON中未找到下载链接。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="259"/>
+        <location filename="../settingsdialog.cpp" line="265"/>
         <source>Found link is invalid or unsupported.</source>
         <translation>找到的链接无效或不受支持。</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="263"/>
+        <location filename="../settingsdialog.cpp" line="269"/>
         <source>Download processsed database with 1+ million games (open link in browser, requires 3 GB disk space)</source>
         <translation>下载包含100万+棋局的数据库（在浏览器中打开链接，需要3GB磁盘空间）</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="275"/>
-        <location filename="../settingsdialog.cpp" line="280"/>
-        <location filename="../settingsdialog.cpp" line="282"/>
+        <location filename="../settingsdialog.cpp" line="281"/>
+        <location filename="../settingsdialog.cpp" line="286"/>
+        <location filename="../settingsdialog.cpp" line="288"/>
         <source>Select a chess engine file</source>
         <translation>选择一个国际象棋引擎文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="275"/>
+        <location filename="../settingsdialog.cpp" line="281"/>
         <source>Executable files (*.exe)</source>
         <translation>可执行文件 (*.exe)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="367"/>
+        <location filename="../settingsdialog.cpp" line="373"/>
         <source>Failed to open file</source>
         <translation>无法打开文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="385"/>
+        <location filename="../settingsdialog.cpp" line="391"/>
         <source>Failed to create temporary headers file</source>
         <translation>无法创建临时头文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="660"/>
+        <location filename="../settingsdialog.cpp" line="666"/>
         <source>Invalid Opening Database</source>
         <translation>无效的开局数据库</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="660"/>
+        <location filename="../settingsdialog.cpp" line="666"/>
         <source>The selected directory does not contain both openings.bin and openings.headers.</source>
         <translation>所选目录未同时包含 openings.bin 和 openings.headers 文件。</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="705"/>
+        <source>Translation Error</source>
+        <translation>翻译错误</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="705"/>
+        <source>Unable to translate to language: %1.</source>
+        <translation>无法翻译为语言：%1。</translation>
     </message>
     <message>
         <source>Failed to write headers file</source>
         <translation type="vanished">无法写入头文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="601"/>
+        <location filename="../settingsdialog.cpp" line="607"/>
         <source>Current opening database: %1</source>
         <translation>当前开局数据库：%1</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="556"/>
+        <location filename="../settingsdialog.cpp" line="562"/>
         <source>Failed to create opening database directory</source>
         <translation>无法创建开局数据库目录</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="75"/>
+        <location filename="../settingsdialog.cpp" line="77"/>
         <source>Create new opening database</source>
         <translation>创建新的开局数据库</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="564"/>
+        <location filename="../settingsdialog.cpp" line="570"/>
         <source>Failed to write opening headers file</source>
         <translation>无法写入开局数据库头文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="591"/>
+        <location filename="../settingsdialog.cpp" line="597"/>
         <source>Failed to write opening binary file</source>
         <translation>无法写入开局数据库二进制文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="609"/>
+        <location filename="../settingsdialog.cpp" line="615"/>
         <source>Select a chess PGN file</source>
         <translation>选择一个国际象棋PGN文件</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="609"/>
+        <location filename="../settingsdialog.cpp" line="615"/>
         <source>PGN files (*.pgn)</source>
         <translation>PGN文件 (*.pgn)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="624"/>
+        <location filename="../settingsdialog.cpp" line="630"/>
         <source>Processing PGN file...</source>
         <translation>正在处理PGN文件...</translation>
     </message>
