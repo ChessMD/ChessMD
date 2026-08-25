@@ -5,10 +5,23 @@
 #include <QSettings>
 #include <QLocale>
 
+/*------------------------------------------------------\
+\   update the following to add new language:           /
+/   1. m_supportedLanguages                             \
+\   2. qt_add_translations() in CMakeLists.txt          /
+/   3. TRANSLATIONS in ChessMD-master-static-build.pro  \
+\------------------------------------------------------*/
 const QVector<Language> TranslationManager::m_supportedLanguages = {
     {"en", "English"},
     {"fr", "Français"},
-    {"zh", "中文"}
+    {"zh", "中文"},
+    {"es", "Español"},
+    {"de", "Deutsch"},
+    {"ru", "Русский"},
+    {"pt", "Português"},
+    {"hi", "हिन्दी"},
+    {"tl", "Filipino"},
+    {"id", "Bahasa"}
 };
 
 TranslationManager::TranslationManager() = default;

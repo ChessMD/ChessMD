@@ -118,7 +118,13 @@ qt_add_translations(${PROJECT_NAME}
     TS_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_fr.ts"
         "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_zh.ts"
-
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_es.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_de.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_ru.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_pt.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_hi.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_tl.ts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/i18n/${PROJECT_NAME}_id.ts"
 )
 
 target_link_libraries(ChessMD PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::QuickWidgets Qt6::Svg Qt6::Sql Qt6::Charts)

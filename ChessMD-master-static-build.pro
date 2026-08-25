@@ -91,7 +91,14 @@ RESOURCES += img.qrc qml.qrc resource.qrc resources.qrc
 QT += widgets quickwidgets graphs charts
 
 TRANSLATIONS += i18n/ChessMD_fr.ts \
-               i18n/ChessMD_zh.ts
+                i18n/ChessMD_zh.ts \
+                i18n/ChessMD_es.ts \
+                i18n/ChessMD_de.ts \
+                i18n/ChessMD_ru.ts \
+			    i18n/ChessMD_pt.ts \
+			    i18n/ChessMD_hi.ts \
+			    i18n/ChessMD_tl.ts \
+			    i18n/ChessMD_id.ts 
 
 CONFIG += lrelease embed_translations
 
