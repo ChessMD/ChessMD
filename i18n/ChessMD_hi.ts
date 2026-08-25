@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="hi">
+<TS version="2.1" language="hi_IN">
 <context>
     <name>ChessGameTabDialog</name>
     <message>
@@ -1264,7 +1264,7 @@
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Opening database: %1
 Location: %2</source>
         <translation type="unfinished">ओपनिंग डेटाबेस: %1
@@ -1272,7 +1272,7 @@ Location: %2</source>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Exists!</source>
         <translation type="unfinished">मौजूद है!</translation>
     </message>
@@ -1348,7 +1348,7 @@ Location: %2</source>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="172"/>
-        <location filename="../settingsdialog.cpp" line="703"/>
+        <location filename="../settingsdialog.cpp" line="716"/>
         <source>Language changes will be applied when you restart the application.</source>
         <translation type="unfinished">एप्लिकेशन पुनः आरंभ करने पर भाषा परिवर्तन लागू होंगे।</translation>
     </message>
@@ -1436,32 +1436,52 @@ Location: %2</source>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="622"/>
-        <location filename="../settingsdialog.cpp" line="658"/>
+        <location filename="../settingsdialog.cpp" line="671"/>
         <source>Select opening database directory</source>
         <translation type="unfinished">ओपनिंग डेटाबेस निर्देशिका चुनें</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="630"/>
+        <source>Opening Database Already Exists</source>
+        <translation type="unfinished">ओपनिंग डेटाबेस पहले से मौजूद है</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="631"/>
+        <source>The selected directory already contains opening database files. Creating a new opening database will replace the existing files. Do you want to continue?</source>
+        <translation type="unfinished">चयनित फ़ोल्डर में पहले से ही ओपनिंग डेटाबेस की फ़ाइलें मौजूद हैं। नया ओपनिंग डेटाबेस बनाने पर मौजूदा फ़ाइलें बदल दी जाएँगी। क्या आप जारी रखना चाहते हैं?</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="632"/>
+        <source>Yes</source>
+        <translation type="unfinished">हाँ</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="633"/>
+        <source>No</source>
+        <translation type="unfinished">नहीं</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="643"/>
         <source>Processing PGN file...</source>
         <translation type="unfinished">PGN फ़ाइल प्रोसेस हो रही है...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>Invalid Opening Database</source>
         <translation type="unfinished">अमान्य ओपनिंग डेटाबेस</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>The selected directory does not contain both openings.bin and openings.headers.</source>
         <translation type="unfinished">चयनित निर्देशिका में openings.bin और openings.headers दोनों नहीं हैं।</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Translation Error</source>
         <translation type="unfinished">अनुवाद में त्रुटि</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Unable to translate to language: %1.</source>
         <translation type="unfinished">भाषा %1 में अनुवाद करने में असमर्थ।</translation>
     </message>

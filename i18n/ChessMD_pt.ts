@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="pt">
+<TS version="2.1" language="pt_BR">
 <context>
     <name>ChessGameTabDialog</name>
     <message>
@@ -1264,7 +1264,7 @@
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Opening database: %1
 Location: %2</source>
         <translation type="unfinished">Banco de dados de aberturas: %1
@@ -1272,7 +1272,7 @@ Localização: %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Exists!</source>
         <translation type="unfinished">Existe!</translation>
     </message>
@@ -1348,7 +1348,7 @@ Localização: %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="172"/>
-        <location filename="../settingsdialog.cpp" line="703"/>
+        <location filename="../settingsdialog.cpp" line="716"/>
         <source>Language changes will be applied when you restart the application.</source>
         <translation type="unfinished">As alterações de idioma serão aplicadas quando você reiniciar o aplicativo.</translation>
     </message>
@@ -1436,32 +1436,52 @@ Localização: %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="622"/>
-        <location filename="../settingsdialog.cpp" line="658"/>
+        <location filename="../settingsdialog.cpp" line="671"/>
         <source>Select opening database directory</source>
         <translation type="unfinished">Selecionar diretório do banco de dados de aberturas</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="630"/>
+        <source>Opening Database Already Exists</source>
+        <translation type="unfinished">A base de dados de aberturas já existe</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="631"/>
+        <source>The selected directory already contains opening database files. Creating a new opening database will replace the existing files. Do you want to continue?</source>
+        <translation type="unfinished">O diretório selecionado já contém ficheiros da base de dados de aberturas. A criação de uma nova base de dados de aberturas irá substituir os ficheiros existentes. Deseja continuar?</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="632"/>
+        <source>Yes</source>
+        <translation type="unfinished">Sim</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="633"/>
+        <source>No</source>
+        <translation type="unfinished">Não</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="643"/>
         <source>Processing PGN file...</source>
         <translation type="unfinished">Processando arquivo PGN...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>Invalid Opening Database</source>
         <translation type="unfinished">Banco de dados de aberturas inválido</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>The selected directory does not contain both openings.bin and openings.headers.</source>
         <translation type="unfinished">O diretório selecionado não contém openings.bin e openings.headers.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Translation Error</source>
         <translation type="unfinished">Erro de tradução</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Unable to translate to language: %1.</source>
         <translation type="unfinished">Não foi possível traduzir para o idioma: %1.</translation>
     </message>

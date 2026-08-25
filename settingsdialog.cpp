@@ -624,6 +624,19 @@ void SettingsDialog::onLoadPgnClicked() {
         return;
     }
 
+    QDir openingDir(selectedDirectory);
+    if (openingDir.exists("openings.bin") || openingDir.exists("openings.headers")){
+        QMessageBox box(this);
+        box.setWindowTitle(tr("Opening Database Already Exists"));
+        box.setText(tr("The selected directory already contains opening database files. Creating a new opening database will replace the existing files. Do you want to continue?"));
+        QPushButton *yesButton = box.addButton(tr("Yes"), QMessageBox::YesRole);
+        QPushButton *noButton = box.addButton(tr("No"), QMessageBox::NoRole);
+        box.setDefaultButton(noButton);
+        box.exec();
+        if (box.clickedButton() != yesButton)
+            return;
+    }
+
     settings.setOpeningDirectory(selectedDirectory);
 
     mOpeningsPath = file;

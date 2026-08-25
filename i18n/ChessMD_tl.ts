@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="tl">
+<TS version="2.1" language="fil_PH">
 <context>
     <name>ChessGameTabDialog</name>
     <message>
@@ -1264,7 +1264,7 @@
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Opening database: %1
 Location: %2</source>
         <translation type="unfinished">Opening database: %1
@@ -1272,7 +1272,7 @@ Lokasyon: %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Exists!</source>
         <translation type="unfinished">Umiiral!</translation>
     </message>
@@ -1348,7 +1348,7 @@ Lokasyon: %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="172"/>
-        <location filename="../settingsdialog.cpp" line="703"/>
+        <location filename="../settingsdialog.cpp" line="716"/>
         <source>Language changes will be applied when you restart the application.</source>
         <translation type="unfinished">Ilalapat ang mga pagbabago sa wika kapag ni-restart mo ang application.</translation>
     </message>
@@ -1436,32 +1436,52 @@ Lokasyon: %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="622"/>
-        <location filename="../settingsdialog.cpp" line="658"/>
+        <location filename="../settingsdialog.cpp" line="671"/>
         <source>Select opening database directory</source>
         <translation type="unfinished">Pumili ng direktoryo ng opening database</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="630"/>
+        <source>Opening Database Already Exists</source>
+        <translation type="unfinished">Umiiral na ang database ng mga pambungad</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="631"/>
+        <source>The selected directory already contains opening database files. Creating a new opening database will replace the existing files. Do you want to continue?</source>
+        <translation type="unfinished">Naglalaman na ang napiling folder ng mga file ng database ng mga pambungad. Papalitan ng paggawa ng bagong database ng mga pambungad ang mga umiiral na file. Gusto mo bang magpatuloy?</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="632"/>
+        <source>Yes</source>
+        <translation type="unfinished">Oo</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="633"/>
+        <source>No</source>
+        <translation type="unfinished">Hindi</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="643"/>
         <source>Processing PGN file...</source>
         <translation type="unfinished">Pinoproseso ang PGN file...</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>Invalid Opening Database</source>
         <translation type="unfinished">Hindi Wastong Opening Database</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>The selected directory does not contain both openings.bin and openings.headers.</source>
         <translation type="unfinished">Ang napiling direktoryo ay walang parehong openings.bin at openings.headers.</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Translation Error</source>
         <translation type="unfinished">Error sa Pagsasalin</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Unable to translate to language: %1.</source>
         <translation type="unfinished">Hindi maisalin sa wika: %1.</translation>
     </message>

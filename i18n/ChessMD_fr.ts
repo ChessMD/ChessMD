@@ -1324,7 +1324,7 @@
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Exists!</source>
         <translation>Existe !</translation>
     </message>
@@ -1383,23 +1383,23 @@
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="622"/>
-        <location filename="../settingsdialog.cpp" line="658"/>
+        <location filename="../settingsdialog.cpp" line="671"/>
         <source>Select opening database directory</source>
         <translation>Sélectionner le dossier de la base de données d&apos;ouvertures</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>Invalid Opening Database</source>
         <translation>Base de données d&apos;ouvertures invalide</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="666"/>
+        <location filename="../settingsdialog.cpp" line="679"/>
         <source>The selected directory does not contain both openings.bin and openings.headers.</source>
         <translation>Le dossier sélectionné ne contient pas à la fois les fichiers openings.bin et openings.headers.</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="74"/>
-        <location filename="../settingsdialog.cpp" line="671"/>
+        <location filename="../settingsdialog.cpp" line="684"/>
         <source>Opening database: %1
 Location: %2</source>
         <translation>Base de données d&apos;ouvertures : %1
@@ -1434,7 +1434,7 @@ Emplacement : %2</translation>
     </message>
     <message>
         <location filename="../settingsdialog.cpp" line="172"/>
-        <location filename="../settingsdialog.cpp" line="703"/>
+        <location filename="../settingsdialog.cpp" line="716"/>
         <source>Language changes will be applied when you restart the application.</source>
         <translation>Les changements de langue seront appliqués lors de le redémarrage de l&apos;application.</translation>
     </message>
@@ -1481,12 +1481,32 @@ Emplacement : %2</translation>
         <translation>Fichiers exécutables (*.exe)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="630"/>
+        <source>Opening Database Already Exists</source>
+        <translation type="unfinished">La base de données d&apos;ouvertures existe déjà</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="631"/>
+        <source>The selected directory already contains opening database files. Creating a new opening database will replace the existing files. Do you want to continue?</source>
+        <translation type="unfinished">Le dossier sélectionné contient déjà des fichiers de base de données d&apos;ouvertures. La création d&apos;une nouvelle base de données d&apos;ouvertures remplacera les fichiers existants. Voulez-vous continuer ?</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="632"/>
+        <source>Yes</source>
+        <translation type="unfinished">Oui</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="633"/>
+        <source>No</source>
+        <translation type="unfinished">Non</translation>
+    </message>
+    <message>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Translation Error</source>
         <translation>Erreur de traduction</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="705"/>
+        <location filename="../settingsdialog.cpp" line="718"/>
         <source>Unable to translate to language: %1.</source>
         <translation>Impossible de traduire dans la langue : %1.</translation>
     </message>
@@ -1544,7 +1564,7 @@ Emplacement : %2</translation>
         <translation>Fichiers PGN (*.pgn)</translation>
     </message>
     <message>
-        <location filename="../settingsdialog.cpp" line="630"/>
+        <location filename="../settingsdialog.cpp" line="643"/>
         <source>Processing PGN file...</source>
         <translation>Traitement du fichier PGN...</translation>
     </message>
