@@ -44,11 +44,13 @@ private slots:
 private:
     void importPgnFileStreaming(const QString &file, QProgressBar *progressBar);
     void reportProgress(qint64 bytesRead, qint64 total, QProgressBar *progressBar);
+    void updateLanguageInfo(const int languageInd);
 
     QListWidget* mCategoryList;
     QStackedWidget* mStackedWidget;
     QLabel* mOpeningsPathLabel;
     QLabel* mEnginePathLabel;
+    QLabel* mLanguageInfo;
     QComboBox* mThemeComboBox;
     QComboBox* mLanguageComboBox;
     QString mOpeningsPath;

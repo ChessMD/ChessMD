@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::setOrganizationName("ChessMD");
     QCoreApplication::setApplicationName("ChessMD");
-    QCoreApplication::setApplicationVersion("v1.0");
+    QCoreApplication::setApplicationVersion("v1.1");
     QApplication app(argc, argv);
     QString lockPath = QDir::temp().absoluteFilePath(QCoreApplication::applicationName() + ".lock");
     QLockFile lockFile(lockPath);

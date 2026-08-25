@@ -44,7 +44,8 @@ HEADERS += chessgamefilesdata.h \
 	   gameplayviewer.h \
 	   engineviewer.h \
 	   draggablecheckbox.h \
-	   theme.h 
+	   theme.h \
+	   translationmanager.h
 
 FORMS += databasefilter.ui \
          databaselibrary.ui \
@@ -82,7 +83,8 @@ SOURCES += chessgamefilesdata.cpp \
 	   gameplayviewer.cpp \
 	   engineviewer.cpp \
 	   draggablecheckbox.cpp \
-	   theme.cpp 
+	   theme.cpp \
+	   translationmanager.cpp
 
 RESOURCES += img.qrc qml.qrc resource.qrc resources.qrc
 

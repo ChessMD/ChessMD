@@ -5,6 +5,7 @@
 #include "translationmanager.h"
 #include "helpers.h"
 
+
 #include <QListWidget>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -19,6 +20,7 @@
 #include <QComboBox>
 #include <QTemporaryFile>
 #include <QMessageBox>
+#include <QTimer>
 #include <fstream>
 
 SettingsDialog::SettingsDialog(QWidget* parent)
@@ -73,12 +75,27 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
 	mOpeningsPathLabel = new QLabel(openingText, openingsPage);
     QPushButton* loadPgnBtn = new QPushButton(tr("Create new opening database"), openingsPage);
-    QPushButton *selectOpeningDirBtn = new QPushButton(tr("Select opening database directory"), openingsPage);
-    QLabel* info = new QLabel(tr("In %1, databases with sizes less than 1 GB can be processed fine by most devices (~10 GB RAM needed per 1 GB).").arg(QCoreApplication::applicationVersion()), openingsPage);
+    QPushButton *selectOpeningDirBtn = new QPushButton(tr("Switch opening database directory"), openingsPage);
+    QLabel* info = new QLabel(tr("Convert a PGN to an opening database. RAM usage per PGN size in %1: 10 GB to 1 GB.").arg(QCoreApplication::applicationVersion()), openingsPage);
+    QLabel* info2 = new QLabel(tr("The new directory should contain openings.bin and openings.header."), openingsPage);
+
+    auto createHorizontalLine = []{
+        QFrame *line = new QFrame;
+        line->setFrameShape(QFrame::HLine);
+        line->setFrameShadow(QFrame::Sunken);
+        return line;
+    };
+
     openingsLayout->addWidget(mOpeningsPathLabel);
     openingsLayout->addWidget(loadPgnBtn);
-    openingsLayout->addWidget(selectOpeningDirBtn);
     openingsLayout->addWidget(info);
+    openingsLayout->addSpacing(8);
+    openingsLayout->addWidget(createHorizontalLine());
+    openingsLayout->addSpacing(8);
+    openingsLayout->addWidget(selectOpeningDirBtn);
+    openingsLayout->addWidget(info2);
+    openingsLayout->addSpacing(8);
+    openingsLayout->addWidget(createHorizontalLine());
     openingsLayout->addStretch();
     mStackedWidget->addWidget(openingsPage);
 
@@ -144,33 +161,22 @@ SettingsDialog::SettingsDialog(QWidget* parent)
         mLanguageComboBox->addItem(language.name);
     }
 
-    int curLangIndex = TranslationManager::instance().currentLanguage();
+    int curLangIndex = tsettings.value("language", 0).toInt();
     if (curLangIndex < 0 || curLangIndex >= supportedLanguages.size()) {
         TranslationManager::instance().setLanguage(0);
         curLangIndex = 0; // english fallback
     }
     mLanguageComboBox->setCurrentIndex(curLangIndex);
+    QTimer::singleShot(0, this, [](){ /* code here */ });
 
-    QLabel* languageInfo = new QLabel(tr("Language changes will be applied when you restart the application."), languagePage);
-    languageInfo->setStyleSheet("color: palette(text); font-size: 11px;");
+    mLanguageInfo = new QLabel(tr("Language changes will be applied when you restart the application."), languagePage);
+    mLanguageInfo->setStyleSheet("color: palette(text); font-size: 11px;");
 
-    connect(mLanguageComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), languageInfo, [this, languageInfo](){
-        QString infoText = "Language changes will be applied when you restart the application.";
-        int index = this->mLanguageComboBox->currentIndex();
-        auto supportedLanguages = TranslationManager::instance().supportedLanguages();
-        if (index < 0 || index >= supportedLanguages.size() || index == 0){
-            languageInfo->setText(infoText); // english
-        } else {
-            QTranslator translator;
-            if (translator.load(QString(":/i18n/ChessMD_%1.qm").arg(supportedLanguages[index].code))) {
-                languageInfo->setText(translator.translate("SettingsDialog", "Language changes will be applied when you restart the application."));
-            }
-        }
-    });
+    updateLanguageInfo(curLangIndex);
 
     languageLayout->addWidget(languageLabel);
     languageLayout->addWidget(mLanguageComboBox);
-    languageLayout->addWidget(languageInfo);
+    languageLayout->addWidget(mLanguageInfo);
     languageLayout->addStretch();
     mStackedWidget->addWidget(languagePage);
 
@@ -686,6 +692,20 @@ void SettingsDialog::onThemeChanged() {
     settings.setValue("theme", theme);
 }
 
+
+void SettingsDialog::updateLanguageInfo(const int languageInd){
+    auto supportedLanguages = TranslationManager::instance().supportedLanguages();
+    QTranslator translator;
+
+    if (languageInd == 0){
+        mLanguageInfo->setText("Language changes will be applied when you restart the application.");
+    } else if (translator.load(QString(":/i18n/ChessMD_%1.qm").arg(supportedLanguages[languageInd].code))) {
+        mLanguageInfo->setText(translator.translate("SettingsDialog", "Language changes will be applied when you restart the application."));
+    } else {
+        QMessageBox::warning(this, tr("Translation Error"), tr("Unable to translate to language: %1.").arg(supportedLanguages[languageInd].name));
+    }
+}
+
 void SettingsDialog::onLanguageChanged() {
     int index = mLanguageComboBox->currentIndex();
     auto supportedLanguages = TranslationManager::instance().supportedLanguages();
@@ -699,4 +719,5 @@ void SettingsDialog::onLanguageChanged() {
 
     QSettings settings;
     settings.setValue("language", index);
+    updateLanguageInfo(index);
 }
