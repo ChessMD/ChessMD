@@ -90,6 +90,9 @@ RESOURCES += img.qrc qml.qrc resource.qrc resources.qrc
 
 QT += widgets quickwidgets graphs charts
 
+TRANSLATIONS += i18n/ChessMD_fr.ts \
+               i18n/ChessMD_zh.ts
+
 win32 {
 	LIBS    += -static-libgcc -static-libstdc++ -static
 } unix {
