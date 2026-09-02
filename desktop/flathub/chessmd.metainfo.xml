@@ -61,14 +61,14 @@
   <url type="bugtracker">https://github.com/ChessMD/ChessMD/issues</url>
 
   <releases>
-    <release version="1.0.0" date="2025-09-11">
+    <release version="1.1.0" date="2026-08-28">
       <url type="details">https://github.com/ChessMD/ChessMD/releases</url>
       <description>
         <p>Release description</p>
           <ul>
-            <li>Introduced play against bots: play live chess games against bots, featuring customizable skill levels and time controls</li>
-            <li>Revamped opening explorer: process opening databases containing hundreds of thousands of games with ease to get detailed insights on position win rates and play rates</li>
-	        <li>Polished several features to offer a better user experience</li>
+            <li>Added language support, with translations to 10 languages</li>
+            <li>Fixed several UI bugs</li>
+	    <li>Improved UX for managing opening database settings</li>
           </ul>
       </description>
     </release>
