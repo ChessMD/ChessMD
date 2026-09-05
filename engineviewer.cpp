@@ -290,12 +290,15 @@ void EngineWidget::onEngineMoveClicked(QSharedPointer<NotationMove>& move)
 
 void EngineWidget::doPendingAnalysis()
 {
-    m_engine->setPosition(m_currentFen);
     analysePosition();
 }
 
 void EngineWidget::analysePosition() {
     if (m_currentFen.isEmpty()) return;
+
+    // New force FEN refresh when asked to analyse
+    m_currentFen = m_currentMove->m_position->positionToFEN();
+                
 
     m_console->clear();
     QLayoutItem *child;
@@ -316,7 +319,7 @@ void EngineWidget::analysePosition() {
         m_lineWidgets[i] = lineW;
     }
     m_containerLay->addStretch();
-    m_engine->startInfiniteSearch(m_multiPv);
+    m_engine->startInfiniteSearch(m_multiPv, m_currentFen);
 }
 
 void EngineWidget::onPvUpdate(PvInfo &info) {

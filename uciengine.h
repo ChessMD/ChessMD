@@ -27,7 +27,7 @@ public:
     void setOption(const QString &name, const QString &value);
     void setPosition(const QString &fen);
 
-    void startInfiniteSearch(int maxMultiPV = 1);
+    void startInfiniteSearch(int maxMultiPV = 1, const QString &fen = QString());
     void stopSearch();
 
     void goMovetime(int milliseconds);

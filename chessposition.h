@@ -36,6 +36,19 @@ class ChessPosition: public QObject
 public:
     explicit ChessPosition(QObject *parent = nullptr);
 
+    // Allow public setting
+    void setCastlingRights(bool wk, bool wq, bool bk, bool bq) {
+        m_castling.whiteKing  = wk;
+        m_castling.whiteQueen = wq;
+        m_castling.blackKing  = bk;
+        m_castling.blackQueen = bq;
+    }
+    void setFenState(const QString &enPassant, int halfmove, int fullmove) {
+        m_enPassantTarget = enPassant;
+        m_halfmoveClock   = halfmove;
+        m_fullmoveNumber  = fullmove;
+    }
+
     QVector<QVector<QString>> boardData() const;
     void setBoardData(const QVector<QVector<QString>> &data);
 

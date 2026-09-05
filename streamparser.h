@@ -15,5 +15,6 @@ private:
     std::istream &streamBuffer;
 };
 
-void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff = false);
+void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff = false, const QString &fenHeader = "");
+void parseGameFromPGN(PGNGame &game, bool openingCutoff = false);
 bool isHeaderLine(const std::string &line);

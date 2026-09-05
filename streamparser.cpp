@@ -30,9 +30,47 @@ bool isHeaderLine(const std::string &line) {
     return i == line.size();
 }
 
+void parseGameFromPGN(PGNGame &game, bool openingCutoff) {
+     // Initialize root move if it doesn't exist yet
+    if (game.rootMove.isNull()) {
+        ChessPosition startPos;
+        game.rootMove = QSharedPointer<NotationMove>::create("", startPos);
+    }
+    // Look for and save FEN in header, if present
+    QString fenHeader = "";
+    for (const auto &h : game.headerInfo) {
+        if (h.first == "FEN") {
+            fenHeader = h.second;
+            break;
+        }
+    }
+    // Parse with original function, but passing fenHeader too
+    parseBodyText(game.bodyText, game.rootMove, openingCutoff, fenHeader);
+}
 
-void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff){
-    rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
+void parseBodyText(QString &bodyText, QSharedPointer<NotationMove> &rootMove, bool openingCutoff, const QString &fenHeader){
+    if(!fenHeader.isEmpty()) {
+        rootMove->FEN = fenHeader;
+        QStringList parts = fenHeader.split(' ');
+        rootMove->m_position->setBoardData(convertFenToBoardData(fenHeader));
+        if (parts.size() >= 2) rootMove->m_position->m_sideToMove = parts[1][0].toLatin1();
+        if (parts.size() >= 3) {
+            QString cr = parts[2];
+            rootMove->m_position->setCastlingRights(
+                cr.contains('K'),
+                cr.contains('Q'),
+                cr.contains('k'),
+                cr.contains('q')
+            );
+        }
+        rootMove->m_position->setFenState(
+        parts.size() >= 4 ? parts[3] : "-",
+        parts.size() >= 5 ? parts[4].toInt() : 0,
+        parts.size() >= 6 ? parts[5].toInt() : 1
+        );
+    } else {
+        rootMove->m_position->setBoardData(convertFenToBoardData(rootMove->FEN));
+    }
     parseBodyAndBuild(bodyText, rootMove, openingCutoff);
 }
 
@@ -88,6 +126,9 @@ std::vector<PGNGame> StreamParser::parseDatabase(){
 
             if (tag == "Result"){
                 game.result = value;
+            }
+            else if (tag == "FEN"){
+                game.fenStartPosition = value;
             }
 
             game.headerInfo.push_back({tag, value});

@@ -46,6 +46,12 @@ ChessGameWindow::ChessGameWindow(QWidget *parent, PGNGame game)
     // link to the rootmove containing the entire game tree
     m_notationViewer = new NotationViewer(game, this);
     m_notationViewer->setRootMove(m_notationViewer->getRootMove());
+    
+    // Sync the board display with the root move's FEN
+    auto rootMove = m_notationViewer->getRootMove();
+    if (!rootMove.isNull() && !rootMove->m_position.isNull()) {
+        m_positionViewer->setBoardData(rootMove->m_position->boardData());
+    }
 
     QShortcut* prevMove = new QShortcut(QKeySequence(Qt::Key_Left), this);
     QShortcut* nextMove = new QShortcut(QKeySequence(Qt::Key_Right), this);

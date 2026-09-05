@@ -500,7 +500,10 @@ void SettingsDialog::importPgnFileStreaming(const QString &file, QProgressBar *p
 
         QElapsedTimer timer;
         timer.start();
-        parseBodyText(game.bodyText, game.rootMove, true);
+        
+        // Replacing old parseBodyText call
+        parseGameFromPGN(game, true);
+        
         parseTime += timer.elapsed();
 
         // collect zobrist hashes along first-variation/mainline

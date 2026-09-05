@@ -891,7 +891,8 @@ void OpeningViewer::onGameSelected(QTableWidgetItem* item)
     PGNGame game;
     game.copyFrom(dbGame);
     if (!game.isParsed){
-        parseBodyText(game.bodyText, game.rootMove);
+        // Replace old parseBodyText call
+        parseGameFromPGN(dbGame, false);
         game.isParsed = true;
     }
 

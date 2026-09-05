@@ -638,7 +638,8 @@ void DatabaseViewer::onSingleSelected(const QModelIndex &proxyIndex, const QMode
     int row = sourceIndex.row();
     PGNGame &dbGame = dbModel->getGame(row);
     if (!dbGame.isParsed){
-        parseBodyText(dbGame.bodyText, dbGame.rootMove);
+        // Replace old parseBodyText call
+        parseGameFromPGN(dbGame, false);
         dbGame.isParsed = true;
     }
     PGNGame game;
